@@ -55,6 +55,7 @@ const ScrollStack: React.FC<ScrollStackProps> = ({
   const animationFrameRef = useRef<number | null>(null);
   const lenisRef = useRef<Lenis | null>(null);
   const cardsRef = useRef<HTMLElement[]>([]);
+  const cardOffsetsRef = useRef<number[]>([]);
 
   const calculateProgress = useCallback((scrollTop: number, start: number, end: number) => {
     if (scrollTop < start) return 0;
@@ -114,7 +115,7 @@ const ScrollStack: React.FC<ScrollStackProps> = ({
     cardsRef.current.forEach((card, i) => {
       if (!card) return;
 
-      const cardTop = getElementOffset(card);
+      const cardTop = cardOffsetsRef.current[i];
       const triggerStart = cardTop - stackPositionPx - itemStackDistance * i;
       const triggerEnd = cardTop - scaleEndPositionPx;
       const pinStart = cardTop - stackPositionPx - itemStackDistance * i;
@@ -152,10 +153,10 @@ const ScrollStack: React.FC<ScrollStackProps> = ({
       }
 
       const newTransform = {
-        translateY: Math.round(translateY * 100) / 100,
-        scale: Math.round(scale * 1000) / 1000,
-        rotation: Math.round(rotation * 100) / 100,
-        blur: Math.round(blur * 100) / 100
+        translateY,
+        scale,
+        rotation,
+        blur
       };
 
       const transform = `translate3d(0, ${newTransform.translateY}px, 0) scale(${newTransform.scale}) rotate(${newTransform.rotation}deg)`;
@@ -259,6 +260,7 @@ const ScrollStack: React.FC<ScrollStackProps> = ({
         : (scrollerRef.current?.querySelectorAll('.scroll-stack-card') ?? [])
     ) as HTMLElement[];
     cardsRef.current = cards;
+    cardOffsetsRef.current = cards.map(card => getElementOffset(card));
 
     cards.forEach((card, i) => {
       if (i < cards.length - 1) {
@@ -286,6 +288,7 @@ const ScrollStack: React.FC<ScrollStackProps> = ({
       }
       stackCompletedRef.current = false;
       cardsRef.current = [];
+      cardOffsetsRef.current = [];
     };
   }, [
     itemDistance,

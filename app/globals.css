@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+html {
+  scroll-behavior: smooth;
+}
+
 :root {
   --background: #f2e8be;
   --foreground: #171717;
@@ -25,3 +29,21 @@ body {
   color: var(--foreground);
   font-family: var(--font-poppins), sans-serif;
 }
+
+.scroll-snap-x-mandatory {
+  scroll-snap-type: x mandatory;
+}
+
+.scroll-snap-center {
+  scroll-snap-align: center;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+

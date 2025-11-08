@@ -54,7 +54,7 @@ const Pill = ({ text, color }) => {
 
 export default function BenefitSection() {
   return (
-    <section className="relative bg-[#fff9e6] py-20">
+    <section id="features" className="relative bg-[#fff9e6] py-20">
       {/* The shape divider is complex and has a specific class, so we leave it as is */}
       <div className="custom-shape-divider-top-1762325819">
         <svg data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">

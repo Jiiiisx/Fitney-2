@@ -1,0 +1,20 @@
+.custom-shape-divider-bottom-pricing {
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    overflow: hidden;
+    line-height: 0;
+    transform: rotate(180deg);
+}
+
+.custom-shape-divider-bottom-pricing svg {
+    position: relative;
+    display: block;
+    width: calc(100% + 1.3px);
+    height: 150px;
+}
+
+.custom-shape-divider-bottom-pricing .shape-fill {
+    fill: #1f2937; /* Corresponds to gray-800 */
+}

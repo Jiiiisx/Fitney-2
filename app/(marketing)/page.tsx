@@ -1,7 +1,11 @@
 import Image from "next/image";
-import About from "./components/About";
-import BenefitSection from "./components/BenefitSection";
-import Testimonials from "./components/Testimonials";
+import About from "../(marketing)/About";
+import BenefitSection from "../(marketing)/BenefitSection";
+import Testimonials from "../(marketing)/Testimonials";
+import Pricing from "../(marketing)/Pricing";
+import Faq from "../(marketing)/Faq";
+import ClosingCta from "../(marketing)/ClosingCta";
+import Footer from "../(marketing)/Footer";
 
 export default function Home() {
   return (
@@ -44,6 +48,10 @@ export default function Home() {
       <About />
       <BenefitSection />
       <Testimonials />
+      <Pricing />
+      <Faq />
+      <ClosingCta />
+      <Footer />
     </>
   );
 }
