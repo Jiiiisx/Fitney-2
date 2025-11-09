@@ -36,7 +36,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${poppins.variable} scrollbar-hide`}>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gradient-to-b from-[#f2e8be] to-white`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gradient-to-b from-[#f2e8be] to-slate-100`}
       >
         {children}
       </body>

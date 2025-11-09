@@ -1,15 +1,26 @@
-// app/(app)/layout.tsx
-import Header from '../components/Dashboard/Header';
+'use client';
+
+import { usePathname } from 'next/navigation';
+import Header from './components/Header';
+import { cn } from '../lib/utils';
 
 export default function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const isHistoryPage = pathname === '/history';
+
   return (
-    <div className="min-h-screen font-poppins">
+    <div className={cn(
+      "font-poppins",
+      isHistoryPage ? "h-screen flex flex-col" : "min-h-screen"
+    )}>
       <Header />
-      <main className="p-8 pt-0">
+      <main className={cn(
+        isHistoryPage ? "flex-grow overflow-hidden" : "p-8"
+      )}>
         {children}
       </main>
     </div>
