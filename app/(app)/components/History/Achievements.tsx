@@ -1,12 +1,38 @@
-'use client';
+"use client";
 
-import { Award, Star, TrendingUp, Flame } from 'lucide-react';
+import { Award, Star, TrendingUp, Flame } from "lucide-react";
 
 const achievements = [
-  { name: '7-Day Streak', progress: 100, description: 'Completed a workout 7 days in a row!', icon: Award, unlocked: true, recent: true },
-  { name: '10k Calories', progress: 80, description: 'Burn a total of 10,000 calories.', icon: Flame, unlocked: false },
-  { name: 'Marathoner', progress: 25, description: 'Run a total of 42km.', icon: Star, unlocked: false },
-  { name: 'Century Club', progress: 100, description: 'Complete 100 workouts.', icon: TrendingUp, unlocked: true, recent: false },
+  {
+    name: "7-Day Streak",
+    progress: 100,
+    description: "Completed a workout 7 days in a row!",
+    icon: Award,
+    unlocked: true,
+    recent: true,
+  },
+  {
+    name: "10k Calories",
+    progress: 80,
+    description: "Burn a total of 10,000 calories.",
+    icon: Flame,
+    unlocked: false,
+  },
+  {
+    name: "Marathoner",
+    progress: 25,
+    description: "Run a total of 42km.",
+    icon: Star,
+    unlocked: false,
+  },
+  {
+    name: "Century Club",
+    progress: 100,
+    description: "Complete 100 workouts.",
+    icon: TrendingUp,
+    unlocked: true,
+    recent: false,
+  },
 ];
 
 const CircularProgressMini = ({ percentage }: { percentage: number }) => {
@@ -17,7 +43,15 @@ const CircularProgressMini = ({ percentage }: { percentage: number }) => {
   return (
     <div className="relative flex items-center justify-center w-10 h-10">
       <svg className="absolute w-full h-full" viewBox="0 0 40 40">
-        <circle className="text-gray-200" strokeWidth="4" stroke="currentColor" fill="transparent" r={radius} cx="20" cy="20" />
+        <circle
+          className="text-gray-200"
+          strokeWidth="4"
+          stroke="currentColor"
+          fill="transparent"
+          r={radius}
+          cx="20"
+          cy="20"
+        />
         <circle
           className="text-yellow-500"
           strokeWidth="4"
@@ -37,11 +71,15 @@ const CircularProgressMini = ({ percentage }: { percentage: number }) => {
   );
 };
 
-const AchievementItem = ({ item }: { item: typeof achievements[0] }) => (
+const AchievementItem = ({ item }: { item: (typeof achievements)[0] }) => (
   <div className="relative group flex flex-col items-center text-center">
     {item.unlocked ? (
-      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${item.recent ? 'bg-yellow-400' : 'bg-gray-200'}`}>
-        <item.icon className={`w-6 h-6 ${item.recent ? 'text-white' : 'text-gray-500'}`} />
+      <div
+        className={`w-12 h-12 rounded-full flex items-center justify-center ${item.recent ? "bg-yellow-400" : "bg-gray-200"}`}
+      >
+        <item.icon
+          className={`w-6 h-6 ${item.recent ? "text-white" : "text-gray-500"}`}
+        />
       </div>
     ) : (
       <CircularProgressMini percentage={item.progress} />

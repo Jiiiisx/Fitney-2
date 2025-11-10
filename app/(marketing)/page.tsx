@@ -24,8 +24,8 @@ export default function Home() {
                 Fitney
               </h1>
               <p className="text-gray-600 mt-4 max-w-xl">
-                Track workouts, monitor health, plan meals, and stay motivated. A
-                brighter, balanced lifestyle starts here.
+                Track workouts, monitor health, plan meals, and stay motivated.
+                A brighter, balanced lifestyle starts here.
               </p>
               <p className="text-gray-500 mt-6 italic">
                 "Start small, stay consistent, and see the change."
@@ -40,7 +40,13 @@ export default function Home() {
               </div>
             </div>
             <div>
-              <Image src="/assets/hero.png" width={1200} height={1200} alt="Fitness" className="rounded-lg" />
+              <Image
+                src="/assets/hero.png"
+                width={1200}
+                height={1200}
+                alt="Fitness"
+                className="rounded-lg"
+              />
             </div>
           </div>
         </div>

@@ -1,24 +1,48 @@
 // app/(app)/components/RecentActivityList.tsx
-import { query } from '@/app/lib/db';
-import { Dumbbell, Zap, Heart, Award } from 'lucide-react';
-import React from 'react';
+import { query } from "@/app/lib/db";
+import { Dumbbell, Zap, Heart, Award } from "lucide-react";
+import React from "react";
 
 type RecentWorkout = {
   log_id: number;
   exercise_name: string;
   details: string;
   created_at: Date;
-  type: 'strength' | 'cardio' | 'flexibility'; // Add workout type
+  type: "strength" | "cardio" | "flexibility"; // Add workout type
   is_pr: boolean; // Add personal record flag
 };
 
 // This function would need to be updated in a real scenario to fetch the new 'type' and 'is_pr' fields.
-async function getRecentWorkouts(userId: number, limit: number = 3): Promise<RecentWorkout[]> {
+async function getRecentWorkouts(
+  userId: number,
+  limit: number = 3,
+): Promise<RecentWorkout[]> {
   // For now, we return a richer hardcoded list to demonstrate the UI.
   return [
-    { log_id: 1, exercise_name: 'Bench Press', details: '3 sets x 5 reps @ 80 kg', created_at: new Date(), type: 'strength', is_pr: true },
-    { log_id: 2, exercise_name: 'Treadmill Run', details: '5 km in 25 min', created_at: new Date(Date.now() - 2 * 60 * 60 * 1000), type: 'cardio', is_pr: false },
-    { log_id: 3, exercise_name: 'Yoga Flow', details: '30 min session', created_at: new Date(Date.now() - 5 * 60 * 60 * 1000), type: 'flexibility', is_pr: false },
+    {
+      log_id: 1,
+      exercise_name: "Bench Press",
+      details: "3 sets x 5 reps @ 80 kg",
+      created_at: new Date(),
+      type: "strength",
+      is_pr: true,
+    },
+    {
+      log_id: 2,
+      exercise_name: "Treadmill Run",
+      details: "5 km in 25 min",
+      created_at: new Date(Date.now() - 2 * 60 * 60 * 1000),
+      type: "cardio",
+      is_pr: false,
+    },
+    {
+      log_id: 3,
+      exercise_name: "Yoga Flow",
+      details: "30 min session",
+      created_at: new Date(Date.now() - 5 * 60 * 60 * 1000),
+      type: "flexibility",
+      is_pr: false,
+    },
   ];
 }
 
@@ -29,9 +53,9 @@ const workoutIcons = {
 };
 
 const workoutColors = {
-  strength: 'bg-blue-500',
-  cardio: 'bg-yellow-500',
-  flexibility: 'bg-pink-500',
+  strength: "bg-blue-500",
+  cardio: "bg-yellow-500",
+  flexibility: "bg-pink-500",
 };
 
 const ActivityCard = ({ workout }: { workout: RecentWorkout }) => (
@@ -52,7 +76,10 @@ const ActivityCard = ({ workout }: { workout: RecentWorkout }) => (
       <p className="text-sm text-gray-600">{workout.details}</p>
     </div>
     <p className="text-xs text-gray-400 mt-3 text-right">
-      {workout.created_at.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+      {workout.created_at.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })}
     </p>
   </div>
 );
@@ -71,7 +98,9 @@ export default async function RecentActivityList() {
           ))}
         </div>
       ) : (
-        <p className="text-center text-gray-500 py-4">No recent activities found.</p>
+        <p className="text-center text-gray-500 py-4">
+          No recent activities found.
+        </p>
       )}
     </div>
   );

@@ -1,31 +1,35 @@
-'use client';
+"use client";
 
-import Image from 'next/image';
-import { useState, useEffect, useRef } from 'react';
-import '../components/ShapeDivider/ShapeDivider.css';
+import Image from "next/image";
+import { useState, useEffect, useRef } from "react";
+import "../components/ShapeDivider/ShapeDivider.css";
 
 // Updated placeholder data with descriptive image paths
 const testimonials = [
   {
-    quote: "Awalnya saya ragu, tapi Fitney benar-benar mengubah cara saya melihat fitness. Saya tidak pernah se-konsisten ini sebelumnya!",
+    quote:
+      "Awalnya saya ragu, tapi Fitney benar-benar mengubah cara saya melihat fitness. Saya tidak pernah se-konsisten ini sebelumnya!",
     name: "Sarah J.",
     result: "Turun 8kg dalam 3 Bulan",
     imageSrc: "/assets/Testimonial/sarah-j.jpg",
   },
   {
-    quote: "Rencana latihan yang dibuat khusus untuk saya sangat efektif. Saya bisa merasakan kekuatan saya bertambah setiap minggu.",
+    quote:
+      "Rencana latihan yang dibuat khusus untuk saya sangat efektif. Saya bisa merasakan kekuatan saya bertambah setiap minggu.",
     name: "Michael B.",
     result: "Angkat Beban Naik 20%",
     imageSrc: "/assets/Testimonial/michael-b.jpg",
   },
   {
-    quote: "Fitur pelacak nutrisi adalah game-changer. Akhirnya saya sadar apa yang masuk ke tubuh saya dan bisa membuat pilihan yang lebih baik.",
+    quote:
+      "Fitur pelacak nutrisi adalah game-changer. Akhirnya saya sadar apa yang masuk ke tubuh saya dan bisa membuat pilihan yang lebih baik.",
     name: "Emily K.",
     result: "Berhasil Lari 5k Pertama",
     imageSrc: "/assets/Testimonial/emily-k.jpg",
   },
   {
-    quote: "Dukungan komunitasnya luar biasa. Rasanya seperti punya tim sorak pribadi yang membuat saya terus termotivasi.",
+    quote:
+      "Dukungan komunitasnya luar biasa. Rasanya seperti punya tim sorak pribadi yang membuat saya terus termotivasi.",
     name: "David L.",
     result: "Konsisten Latihan 4x Seminggu",
     imageSrc: "/assets/Testimonial/david-l.jpg",
@@ -41,14 +45,14 @@ export default function Testimonials() {
   const loopedTestimonials = [
     ...testimonials.slice(-itemsToClone),
     ...testimonials,
-    ...testimonials.slice(0, itemsToClone)
+    ...testimonials.slice(0, itemsToClone),
   ];
 
   const resetTimeout = () => {
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
-  }
+  };
 
   useEffect(() => {
     resetTimeout();
@@ -56,7 +60,7 @@ export default function Testimonials() {
       () => {
         setCurrentIndex((prevIndex) => prevIndex + 1);
       },
-      3000 // Change slide every 3 seconds
+      3000, // Change slide every 3 seconds
     );
 
     return () => {
@@ -70,10 +74,10 @@ export default function Testimonials() {
 
     if (currentIndex >= testimonials.length + itemsToClone) {
       const timer = setTimeout(() => {
-        track.style.transition = 'none';
+        track.style.transition = "none";
         setCurrentIndex(itemsToClone);
         requestAnimationFrame(() => {
-          track.style.transition = 'transform 700ms ease-in-out';
+          track.style.transition = "transform 700ms ease-in-out";
         });
       }, 700);
       return () => clearTimeout(timer);
@@ -81,10 +85,10 @@ export default function Testimonials() {
 
     if (currentIndex < itemsToClone) {
       const timer = setTimeout(() => {
-        track.style.transition = 'none';
+        track.style.transition = "none";
         setCurrentIndex(currentIndex + testimonials.length);
         requestAnimationFrame(() => {
-          track.style.transition = 'transform 700ms ease-in-out';
+          track.style.transition = "transform 700ms ease-in-out";
         });
       }, 700);
       return () => clearTimeout(timer);
@@ -92,55 +96,88 @@ export default function Testimonials() {
   }, [currentIndex, testimonials.length]);
 
   return (
-    <section id="testimonials" className="relative bg-gray-800 text-white py-20 overflow-hidden">
+    <section
+      id="testimonials"
+      className="relative bg-gray-800 text-white py-20 overflow-hidden"
+    >
       <div className="custom-shape-divider-top-1762325819">
-        <svg data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
-            <defs>
-                <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" style={{ stopColor: '#fffbeb' }} />
-                    <stop offset="50%" style={{ stopColor: '#ffffff' }} />
-                    <stop offset="100%" style={{ stopColor: '#fffbeb' }} />
-                </linearGradient>
-            </defs>
-            <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" opacity=".25" className="shape-fill"></path>
-            <path d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z" opacity=".5" className="shape-fill"></path>
-            <path d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z" className="shape-fill"></path>
+        <svg
+          data-name="Layer 1"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 1200 120"
+          preserveAspectRatio="none"
+        >
+          <defs>
+            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style={{ stopColor: "#fffbeb" }} />
+              <stop offset="50%" style={{ stopColor: "#ffffff" }} />
+              <stop offset="100%" style={{ stopColor: "#fffbeb" }} />
+            </linearGradient>
+          </defs>
+          <path
+            d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z"
+            opacity=".25"
+            className="shape-fill"
+          ></path>
+          <path
+            d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z"
+            opacity=".5"
+            className="shape-fill"
+          ></path>
+          <path
+            d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z"
+            className="shape-fill"
+          ></path>
         </svg>
       </div>
       <div className="container mx-auto px-4 text-center pt-16 mt-24">
-        <h2 className="text-4xl font-bold mb-4">Kisah Mereka yang Telah Bertransformasi</h2>
-        <p className="text-gray-400 max-w-2xl mx-auto mb-16">Lihat bagaimana Fitney membantu orang-orang seperti Anda mencapai tujuan mereka.</p>
+        <h2 className="text-4xl font-bold mb-4">
+          Kisah Mereka yang Telah Bertransformasi
+        </h2>
+        <p className="text-gray-400 max-w-2xl mx-auto mb-16">
+          Lihat bagaimana Fitney membantu orang-orang seperti Anda mencapai
+          tujuan mereka.
+        </p>
       </div>
 
       <div className="relative h-[400px]">
-        <div 
+        <div
           ref={trackRef}
           className="flex items-center h-full transition-transform duration-700 ease-in-out"
-          style={{ transform: `translateX(calc(50% - ${currentIndex * 33.33}% - 16.665%))` }}
+          style={{
+            transform: `translateX(calc(50% - ${currentIndex * 33.33}% - 16.665%))`,
+          }}
         >
           {loopedTestimonials.map((testimonial, index) => {
             const isActive = index === currentIndex;
             return (
-              <div 
-                key={index} 
-                className={`w-full md:w-1/3 flex-shrink-0 px-4 transition-all duration-500 ease-in-out ${isActive ? 'opacity-100' : 'opacity-50'}`}
-                style={{ transform: `scale(${isActive ? 1 : 0.9})`, filter: `blur(${isActive ? 0 : '4px'})` }}
+              <div
+                key={index}
+                className={`w-full md:w-1/3 flex-shrink-0 px-4 transition-all duration-500 ease-in-out ${isActive ? "opacity-100" : "opacity-50"}`}
+                style={{
+                  transform: `scale(${isActive ? 1 : 0.9})`,
+                  filter: `blur(${isActive ? 0 : "4px"})`,
+                }}
               >
                 <div className="w-full bg-gray-900 rounded-lg mx-auto flex flex-col items-center text-center p-8">
                   <div className="relative mb-6">
                     <Image
-                        src={testimonial.imageSrc}
-                        alt={testimonial.name}
-                        width={128}
-                        height={128}
-                        className="rounded-full object-cover border-4 border-yellow-400"
-                      />
+                      src={testimonial.imageSrc}
+                      alt={testimonial.name}
+                      width={128}
+                      height={128}
+                      className="rounded-full object-cover border-4 border-yellow-400"
+                    />
                   </div>
                   <blockquote className="text-lg italic mb-4 max-w-md">
                     “{testimonial.quote}”
                   </blockquote>
-                  <div className="font-bold text-yellow-400 text-base mt-auto pt-4">{testimonial.name}</div>
-                  <div className="text-gray-500 text-sm">{testimonial.result}</div>
+                  <div className="font-bold text-yellow-400 text-base mt-auto pt-4">
+                    {testimonial.name}
+                  </div>
+                  <div className="text-gray-500 text-sm">
+                    {testimonial.result}
+                  </div>
                 </div>
               </div>
             );
@@ -150,22 +187,40 @@ export default function Testimonials() {
 
       <div className="text-center mt-8 pb-16 mb-24">
         {testimonials.map((_, index) => {
-          const dotIndex = (currentIndex - itemsToClone + testimonials.length) % testimonials.length;
+          const dotIndex =
+            (currentIndex - itemsToClone + testimonials.length) %
+            testimonials.length;
           return (
             <button
               key={index}
               onClick={() => setCurrentIndex(index + itemsToClone)}
-              className={`h-3 w-3 rounded-full mx-1 transition-colors ${dotIndex === index ? 'bg-yellow-400' : 'bg-gray-600'}`}
+              className={`h-3 w-3 rounded-full mx-1 transition-colors ${dotIndex === index ? "bg-yellow-400" : "bg-gray-600"}`}
             />
           );
         })}
       </div>
 
       <div className="custom-shape-divider-bottom-1762412495">
-        <svg data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
-            <path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" opacity=".25" className="shape-fill"></path>
-            <path d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z" opacity=".5" className="shape-fill"></path>
-            <path d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z" className="shape-fill"></path>
+        <svg
+          data-name="Layer 1"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 1200 120"
+          preserveAspectRatio="none"
+        >
+          <path
+            d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z"
+            opacity=".25"
+            className="shape-fill"
+          ></path>
+          <path
+            d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z"
+            opacity=".5"
+            className="shape-fill"
+          ></path>
+          <path
+            d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z"
+            className="shape-fill"
+          ></path>
         </svg>
       </div>
     </section>

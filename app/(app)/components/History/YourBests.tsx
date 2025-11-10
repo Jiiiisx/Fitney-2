@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { Trophy } from 'lucide-react';
+import { Trophy } from "lucide-react";
 
 const personalBests = [
-  { emoji: '🏋️', text: 'Best Bench Press', value: '80kg (Oct 25)' },
-  { emoji: '🏃', text: 'Fastest 5K', value: '25:30 (Oct 24)' },
-  { emoji: '🔥', text: 'Longest Workout', value: '70 min (Oct 19)' },
+  { emoji: "🏋️", text: "Best Bench Press", value: "80kg (Oct 25)" },
+  { emoji: "🏃", text: "Fastest 5K", value: "25:30 (Oct 24)" },
+  { emoji: "🔥", text: "Longest Workout", value: "70 min (Oct 19)" },
 ];
 
 export default function YourBests() {

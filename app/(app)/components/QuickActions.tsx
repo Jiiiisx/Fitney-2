@@ -1,15 +1,35 @@
-'use client';
+"use client";
 
-import { Plus, Utensils, GlassWater, Bed } from 'lucide-react';
+import { Plus, Utensils, GlassWater, Bed } from "lucide-react";
 
 const actions = [
-  { label: 'Log Workout', icon: Plus, color: 'bg-blue-100', textColor: 'text-blue-600' },
-  { label: 'Add Meal', icon: Utensils, color: 'bg-green-100', textColor: 'text-green-600' },
-  { label: 'Add Water', icon: GlassWater, color: 'bg-sky-100', textColor: 'text-sky-600' },
-  { label: 'Add Sleep', icon: Bed, color: 'bg-purple-100', textColor: 'text-purple-600' },
+  {
+    label: "Log Workout",
+    icon: Plus,
+    color: "bg-blue-100",
+    textColor: "text-blue-600",
+  },
+  {
+    label: "Add Meal",
+    icon: Utensils,
+    color: "bg-green-100",
+    textColor: "text-green-600",
+  },
+  {
+    label: "Add Water",
+    icon: GlassWater,
+    color: "bg-sky-100",
+    textColor: "text-sky-600",
+  },
+  {
+    label: "Add Sleep",
+    icon: Bed,
+    color: "bg-purple-100",
+    textColor: "text-purple-600",
+  },
 ];
 
-const ActionButton = ({ action }: { action: typeof actions[0] }) => (
+const ActionButton = ({ action }: { action: (typeof actions)[0] }) => (
   <button className="flex flex-col items-center justify-center space-y-2 p-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors w-full">
     <div className={`p-3 rounded-full ${action.color}`}>
       <action.icon className={`w-6 h-6 ${action.textColor}`} />

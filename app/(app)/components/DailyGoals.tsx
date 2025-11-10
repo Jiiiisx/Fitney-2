@@ -1,30 +1,30 @@
 // app/(app)/components/DailyGoals.tsx
-import { Flame, GlassWater, Timer } from 'lucide-react';
+import { Flame, GlassWater, Timer } from "lucide-react";
 
 const goals = [
   {
     icon: <Flame className="w-6 h-6 text-red-500" />,
-    title: 'Calories',
+    title: "Calories",
     current: 1250,
     target: 2500,
-    unit: 'kcal',
-    color: 'bg-red-500',
+    unit: "kcal",
+    color: "bg-red-500",
   },
   {
     icon: <GlassWater className="w-6 h-6 text-sky-500" />,
-    title: 'Water Intake',
+    title: "Water Intake",
     current: 4,
     target: 8,
-    unit: 'glasses',
-    color: 'bg-sky-500',
+    unit: "glasses",
+    color: "bg-sky-500",
   },
   {
     icon: <Timer className="w-6 h-6 text-green-500" />,
-    title: 'Active Time',
+    title: "Active Time",
     current: 45,
     target: 60,
-    unit: 'min',
-    color: 'bg-green-500',
+    unit: "min",
+    color: "bg-green-500",
   },
 ];
 
@@ -39,7 +39,8 @@ const DailyGoalCard = ({ goal }: { goal: (typeof goals)[0] }) => {
           <h3 className="font-bold text-gray-800">{goal.title}</h3>
         </div>
         <p className="text-sm font-semibold text-gray-700">
-          <span className="font-bold">{goal.current}</span> / {goal.target} {goal.unit}
+          <span className="font-bold">{goal.current}</span> / {goal.target}{" "}
+          {goal.unit}
         </p>
       </div>
       <div className="w-full bg-gray-200 rounded-full h-2.5 mt-4">

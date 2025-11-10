@@ -1,18 +1,18 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Settings, Bell, User, Search } from 'lucide-react';
-import { motion } from 'framer-motion';
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Settings, Bell, User, Search } from "lucide-react";
+import { motion } from "framer-motion";
 
 const Header = () => {
   const pathname = usePathname();
   const navItems = [
-    { href: '/dashboard', label: 'Dashboard' },
-    { href: '/history', label: 'History' },
-    { href: '#', label: 'Analytics' },
-    { href: '#', label: 'Goals' },
-    { href: '#', label: 'Community' },
+    { href: "/dashboard", label: "Dashboard" },
+    { href: "/history", label: "History" },
+    { href: "/planner", label: "Planner" },
+    { href: "#", label: "Goals" },
+    { href: "#", label: "Community" },
   ];
 
   return (
@@ -20,7 +20,10 @@ const Header = () => {
       <div className="flex items-center justify-between w-full mx-auto bg-white/50 backdrop-blur-sm border border-gray-200/50 rounded-full p-4">
         {/* Logo */}
         <div className="pl-4">
-          <Link href="/dashboard" className="text-3xl font-bold text-gray-800 tracking-wider">
+          <Link
+            href="/dashboard"
+            className="text-3xl font-bold text-gray-800 tracking-wider"
+          >
             Fitney
           </Link>
         </div>
@@ -33,8 +36,8 @@ const Header = () => {
               href={item.href}
               className={`relative px-6 py-3 text-lg font-semibold rounded-full transition-colors duration-300 z-10 ${
                 pathname === item.href
-                  ? 'text-white'
-                  : 'text-gray-600 hover:text-gray-900'
+                  ? "text-white"
+                  : "text-gray-600 hover:text-gray-900"
               }`}
             >
               {item.label}
@@ -43,7 +46,7 @@ const Header = () => {
                   layoutId="active-pill"
                   className="absolute inset-0 bg-gray-800 rounded-full"
                   style={{ zIndex: -1 }}
-                  transition={{ type: 'spring', stiffness: 200, damping: 25 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 25 }}
                 />
               )}
             </Link>

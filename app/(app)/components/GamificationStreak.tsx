@@ -1,5 +1,5 @@
 // app/(app)/components/GamificationStreak.tsx
-import { Flame } from 'lucide-react';
+import { Flame } from "lucide-react";
 
 const GamificationStreak = () => {
   return (

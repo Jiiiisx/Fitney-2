@@ -1,4 +1,4 @@
-import { Pool } from 'pg';
+import { Pool } from "pg";
 
 // Create a new pool instance.
 // The pool will read the connection details from the .env.local file automatically

@@ -1,14 +1,39 @@
 // app/(app)/components/StatsSidebar.tsx
-import { User, MoreHorizontal, Plus } from 'lucide-react';
-import QuickActions from './QuickActions';
-import InsightSection from './InsightSection';
+import { User, MoreHorizontal, Plus } from "lucide-react";
+import QuickActions from "./QuickActions";
+import InsightSection from "./InsightSection";
 
 const communityActivities = [
-  { name: 'Jane Doe', action: 'completed a 45 min workout', time: '2h ago', emoji: '💥' },
-  { name: 'John Smith', action: 'reached a 10-day streak', time: '8h ago', emoji: '🔥' },
-  { name: 'Peter Jones', action: 'logged a new personal record', time: 'Yesterday', emoji: '🏆' },
-  { name: 'Emily K.', action: 'just finished a yoga session', time: 'Yesterday', emoji: '🧘‍♀️' },
-  { name: 'Michael B.', action: 'crushed a 5k run', time: '2 days ago', emoji: '🏃‍♂️' },
+  {
+    name: "Jane Doe",
+    action: "completed a 45 min workout",
+    time: "2h ago",
+    emoji: "💥",
+  },
+  {
+    name: "John Smith",
+    action: "reached a 10-day streak",
+    time: "8h ago",
+    emoji: "🔥",
+  },
+  {
+    name: "Peter Jones",
+    action: "logged a new personal record",
+    time: "Yesterday",
+    emoji: "🏆",
+  },
+  {
+    name: "Emily K.",
+    action: "just finished a yoga session",
+    time: "Yesterday",
+    emoji: "🧘‍♀️",
+  },
+  {
+    name: "Michael B.",
+    action: "crushed a 5k run",
+    time: "2 days ago",
+    emoji: "🏃‍♂️",
+  },
 ];
 
 const CircularProgress = ({ percentage }: { percentage: number }) => {
@@ -54,7 +79,7 @@ const CircularProgress = ({ percentage }: { percentage: number }) => {
 
 const StatsSidebar = () => {
   const user = {
-    name: 'Raji',
+    name: "Raji",
     progress: 32,
   };
 
@@ -69,13 +94,18 @@ const StatsSidebar = () => {
 
       <div className="flex flex-col items-center text-center">
         <CircularProgress percentage={user.progress} />
-        <h3 className="mt-4 text-xl font-bold text-gray-800">Good Morning, {user.name}! 🔥</h3>
-        <p className="mt-1 text-sm text-gray-500">Continue your journey to achieve your target!</p>
+        <h3 className="mt-4 text-xl font-bold text-gray-800">
+          Good Morning, {user.name}! 🔥
+        </h3>
+        <p className="mt-1 text-sm text-gray-500">
+          Continue your journey to achieve your target!
+        </p>
       </div>
 
       <div className="text-center bg-gray-100 border border-gray-200/80 rounded-lg p-3">
         <p className="text-sm text-gray-800">
-          <span className="font-bold">Good job!</span> Your workout consistency is up by <span className="font-bold">15%</span> from last week.
+          <span className="font-bold">Good job!</span> Your workout consistency
+          is up by <span className="font-bold">15%</span> from last week.
         </p>
       </div>
 
@@ -97,7 +127,8 @@ const StatsSidebar = () => {
               </div>
               <div>
                 <p className="text-sm text-gray-800">
-                  <span className="font-bold">{activity.name}</span> {activity.action} {activity.emoji}
+                  <span className="font-bold">{activity.name}</span>{" "}
+                  {activity.action} {activity.emoji}
                 </p>
                 <p className="text-xs text-gray-400 mt-0.5">{activity.time}</p>
               </div>
@@ -108,7 +139,7 @@ const StatsSidebar = () => {
           See All
         </button>
       </div>
-      
+
       <InsightSection />
     </div>
   );

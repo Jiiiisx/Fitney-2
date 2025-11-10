@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { Lightbulb } from 'lucide-react';
-import { useMemo } from 'react';
+import { Lightbulb } from "lucide-react";
+import { useState, useEffect } from "react";
 
 const insights = [
   "You’re most active on Wednesdays — try adding a leg workout today!",
@@ -12,11 +12,16 @@ const insights = [
 ];
 
 export default function InsightSection() {
-  // Select a random insight once per component mount
-  const randomInsight = useMemo(() => {
+  const [insight, setInsight] = useState("");
+
+  useEffect(() => {
     const randomIndex = Math.floor(Math.random() * insights.length);
-    return insights[randomIndex];
+    setInsight(insights[randomIndex]);
   }, []);
+
+  if (!insight) {
+    return null; // Render nothing on the server and initial client render
+  }
 
   return (
     <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
@@ -26,9 +31,7 @@ export default function InsightSection() {
         </div>
         <div className="ml-3">
           <h3 className="text-sm font-semibold text-blue-800">AI Insight</h3>
-          <p className="text-sm text-blue-700 mt-1">
-            {randomInsight}
-          </p>
+          <p className="text-sm text-blue-700 mt-1">{insight}</p>
         </div>
       </div>
     </div>
