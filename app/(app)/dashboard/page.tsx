@@ -8,24 +8,25 @@ import ProgressCharts from "../components/ProgressCharts";
 import WorkoutBreakdown from "../components/WorkoutBreakdown";
 import { query } from "@/app/lib/db";
 
-// --- Page Component ---
 export default async function DashboardPage() {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      {/* Main Content Area (Left) - 2/3 width */}
-      <div className="lg:col-span-2 space-y-8">
-        <TodaysPlanBanner />
-        <GamificationStreak />
-        <DailyGoals />
-        <RecentActivityList />
-        <ProgressCharts />
-        <WorkoutBreakdown />
-        <UpgradeBanner />
-      </div>
+    <div className="h-full">
+      <div className="grid grid-cols-1 lg:grid-cols-3 h-full">
+        {/* Main Content Area (Scrollable) */}
+        <div className="lg:col-span-2 space-y-8 overflow-y-auto p-8 scrollbar-hide">
+          <TodaysPlanBanner />
+          <GamificationStreak />
+          <DailyGoals />
+          <RecentActivityList />
+          <ProgressCharts />
+          <WorkoutBreakdown />
+          <UpgradeBanner />
+        </div>
 
-      {/* Stats Sidebar (Right) - 1/3 width */}
-      <div className="lg:col-span-1 h-fit sticky top-8">
-        <StatsSidebar />
+        {/* Stats Sidebar (Scrollable) */}
+        <div className="lg:col-span-1 space-y-8 overflow-y-auto p-8 bg-white/50 border-l border-gray-200/80 scrollbar-hide">
+          <StatsSidebar />
+        </div>
       </div>
     </div>
   );

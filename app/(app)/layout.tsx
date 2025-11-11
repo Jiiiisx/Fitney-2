@@ -6,7 +6,7 @@ import { cn } from "../lib/utils";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isHistoryPage = pathname === "/history";
+  const isHistoryPage = pathname === "/history" || pathname === "/dashboard";
 
   return (
     <div

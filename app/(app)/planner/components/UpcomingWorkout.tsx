@@ -2,14 +2,15 @@ import { Calendar, Clock } from "lucide-react";
 
 export default function UpcomingWorkout() {
   return (
-    <div>
-      <h2 className="text-lg font-semibold mb-3 text-gray-900">
+    // Using a soft yellow as a highlight background
+    <div className="bg-yellow-50 p-4 rounded-lg">
+      <h2 className="text-base font-semibold mb-3 text-yellow-900">
         Next Upcoming Workout
       </h2>
-      <div className="bg-yellow-100 p-4 rounded-lg flex items-center justify-between">
+      <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-bold text-gray-900">Leg Day</h3>
-          <p className="text-sm text-yellow-800">
+          <h3 className="font-bold text-lg text-gray-800">Leg Day</h3>
+          <p className="text-sm text-gray-600">
             The ultimate challenge for your lower body.
           </p>
         </div>

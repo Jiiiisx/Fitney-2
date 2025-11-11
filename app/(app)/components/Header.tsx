@@ -11,8 +11,8 @@ const Header = () => {
     { href: "/dashboard", label: "Dashboard" },
     { href: "/history", label: "History" },
     { href: "/planner", label: "Planner" },
-    { href: "#", label: "Goals" },
-    { href: "#", label: "Community" },
+    { href: "/goals", label: "Goals" },
+    { href: "/community", label: "Community" },
   ];
 
   return (
