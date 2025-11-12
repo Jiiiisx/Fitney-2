@@ -36,16 +36,16 @@ const diaryEntries = [
 ];
 
 const DiaryEntry = ({ entry }: { entry: (typeof diaryEntries)[0] }) => (
-  <div className="bg-white p-6 rounded-2xl shadow-sm">
+  <div className="bg-card p-6 rounded-2xl">
     {/* Header */}
-    <div className="border-b border-gray-200 pb-4 mb-4">
-      <p className="text-sm font-semibold text-yellow-600">{entry.date}</p>
-      <h3 className="text-2xl font-bold text-gray-800 mt-1">{entry.title}</h3>
+    <div className="border-b border-border pb-4 mb-4">
+      <p className="text-sm font-semibold text-primary">{entry.date}</p>
+      <h3 className="text-2xl font-bold text-foreground mt-1">{entry.title}</h3>
     </div>
 
     {/* Exercises */}
     <div className="mb-4">
-      <h4 className="text-md font-bold text-gray-700 mb-3 flex items-center gap-2">
+      <h4 className="text-md font-bold text-foreground mb-3 flex items-center gap-2">
         <Dumbbell className="w-5 h-5" />
         Exercises
       </h4>
@@ -53,10 +53,10 @@ const DiaryEntry = ({ entry }: { entry: (typeof diaryEntries)[0] }) => (
         {entry.exercises.map((ex) => (
           <li
             key={ex.name}
-            className="flex justify-between items-center text-sm bg-gray-50 p-3 rounded-lg"
+            className="flex justify-between items-center text-sm bg-background p-3 rounded-lg"
           >
-            <span className="font-medium text-gray-700">{ex.name}</span>
-            <span className="font-mono text-gray-500">{ex.details}</span>
+            <span className="font-medium text-foreground">{ex.name}</span>
+            <span className="font-mono text-secondary-foreground">{ex.details}</span>
           </li>
         ))}
       </ul>
@@ -65,11 +65,11 @@ const DiaryEntry = ({ entry }: { entry: (typeof diaryEntries)[0] }) => (
     {/* Note */}
     {entry.note && (
       <div>
-        <h4 className="text-md font-bold text-gray-700 mb-2 flex items-center gap-2">
+        <h4 className="text-md font-bold text-foreground mb-2 flex items-center gap-2">
           <MessageSquare className="w-5 h-5" />
           My Notes
         </h4>
-        <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg italic">
+        <p className="text-sm text-secondary-foreground bg-background p-3 rounded-lg italic">
           "{entry.note}"
         </p>
       </div>

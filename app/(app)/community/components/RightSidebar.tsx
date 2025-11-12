@@ -19,8 +19,8 @@ const RightSidebar = () => {
   return (
     <div className="space-y-6">
       {/* Find Friends */}
-      <div className="bg-white p-5 rounded-xl shadow-sm">
-        <h3 className="font-bold text-lg mb-4 text-gray-800">
+      <div className="bg-background p-5 rounded-xl">
+        <h3 className="font-bold text-lg mb-4 text-foreground">
           Find Friends
         </h3>
         <ul className="space-y-4">
@@ -33,11 +33,11 @@ const RightSidebar = () => {
                   className="w-10 h-10 rounded-full mr-3"
                 />
                 <div>
-                    <p className="font-bold text-gray-700">{user.name}</p>
-                    <p className="text-xs text-gray-500">{user.mutual} mutual friends</p>
+                    <p className="font-bold text-foreground">{user.name}</p>
+                    <p className="text-xs text-secondary-foreground">{user.mutual} mutual friends</p>
                 </div>
               </div>
-              <button className="text-gray-500 hover:text-yellow-600 p-2 rounded-full hover:bg-yellow-100 transition-colors">
+              <button className="text-secondary-foreground hover:text-primary p-2 rounded-full hover:bg-primary/10 transition-colors">
                 <UserPlus className="w-5 h-5" />
               </button>
             </li>
@@ -46,18 +46,18 @@ const RightSidebar = () => {
       </div>
 
       {/* Top Achievers */}
-      <div className="bg-white p-5 rounded-xl shadow-sm">
-        <h3 className="font-bold text-lg mb-4 flex items-center text-gray-800">
-          <Award className="w-5 h-5 mr-3 text-yellow-500" />
+      <div className="bg-background p-5 rounded-xl">
+        <h3 className="font-bold text-lg mb-4 flex items-center text-foreground">
+          <Award className="w-5 h-5 mr-3 text-primary" />
           Top Achievers
         </h3>
         <ul className="space-y-3">
           {topAchievers.map((achiever) => (
-            <li key={achiever.name} className="flex items-center text-gray-700">
+            <li key={achiever.name} className="flex items-center text-foreground">
               <span className="text-xl mr-3">{achiever.rank}</span>
               <div>
                 <span className="font-semibold">{achiever.name}</span>
-                <p className="text-sm text-gray-500">{achiever.stat}</p>
+                <p className="text-sm text-secondary-foreground">{achiever.stat}</p>
               </div>
             </li>
           ))}
@@ -65,16 +65,16 @@ const RightSidebar = () => {
       </div>
 
       {/* Upcoming Events */}
-      <div className="bg-white p-5 rounded-xl shadow-sm">
-        <h3 className="font-bold text-lg mb-4 flex items-center text-gray-800">
-          <Calendar className="w-5 h-5 mr-3 text-yellow-500" />
+      <div className="bg-background p-5 rounded-xl">
+        <h3 className="font-bold text-lg mb-4 flex items-center text-foreground">
+          <Calendar className="w-5 h-5 mr-3 text-primary" />
           Upcoming Events
         </h3>
         <ul className="space-y-3">
           {upcomingEvents.map((event) => (
-            <li key={event.name} className="p-2 rounded-md hover:bg-gray-50 cursor-pointer">
-              <p className="font-semibold text-gray-800">{event.name}</p>
-              <p className="text-sm text-gray-500">{event.time}</p>
+            <li key={event.name} className="p-2 rounded-md hover:bg-secondary/80 cursor-pointer">
+              <p className="font-semibold text-foreground">{event.name}</p>
+              <p className="text-sm text-secondary-foreground">{event.time}</p>
             </li>
           ))}
         </ul>

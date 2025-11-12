@@ -4,35 +4,29 @@ import RightSidebar from "./components/RightSidebar";
 
 export default function CommunityPage() {
   return (
-    <div className="bg-gray-100 min-h-screen">
-      <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <header className="mb-8">
-          <h1 className="text-4xl font-extrabold text-gray-800 tracking-tight">
-            Community Hub
-          </h1>
-          <p className="text-lg text-gray-500 mt-1">
-            Connect, share, and get motivated with the Fitney community.
-          </p>
-        </header>
-
-        {/* Main Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Sidebar */}
-          <div className="lg:col-span-3">
+    <div className="h-full flex flex-col">
+      {/* Main Layout */}
+      <div className="flex-grow flex max-w-screen-2xl mx-auto w-full overflow-hidden">
+        {/* Left Sidebar */}
+        <aside className="w-full lg:w-[25%] bg-card overflow-y-auto">
+          <div className="p-6">
             <LeftSidebar />
           </div>
+        </aside>
 
-          {/* Main Feed */}
-          <div className="lg:col-span-6">
+        {/* Main Feed */}
+        <main className="w-full lg:w-[50%] border-x border-border bg-background overflow-y-auto">
+          <div className="p-6">
             <MainFeed />
           </div>
+        </main>
 
-          {/* Right Sidebar */}
-          <div className="lg:col-span-3">
+        {/* Right Sidebar */}
+        <aside className="w-full lg:w-[25%] bg-card overflow-y-auto">
+          <div className="p-6">
             <RightSidebar />
           </div>
-        </div>
+        </aside>
       </div>
     </div>
   );

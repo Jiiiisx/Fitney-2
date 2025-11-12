@@ -3,18 +3,18 @@ import { Calendar, Clock } from "lucide-react";
 export default function UpcomingWorkout() {
   return (
     // Using a soft yellow as a highlight background
-    <div className="bg-yellow-50 p-4 rounded-lg">
-      <h2 className="text-base font-semibold mb-3 text-yellow-900">
+    <div className="bg-primary/10 p-4 rounded-lg">
+      <h2 className="text-base font-semibold mb-3 text-primary">
         Next Upcoming Workout
       </h2>
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-bold text-lg text-gray-800">Leg Day</h3>
-          <p className="text-sm text-gray-600">
+          <h3 className="font-bold text-lg text-foreground">Leg Day</h3>
+          <p className="text-sm text-secondary-foreground">
             The ultimate challenge for your lower body.
           </p>
         </div>
-        <div className="flex items-center space-x-6 text-sm text-gray-600">
+        <div className="flex items-center space-x-6 text-sm text-secondary-foreground">
           <div className="flex items-center">
             <Calendar className="w-4 h-4 mr-2" />
             <span>Wednesday</span>

@@ -32,18 +32,18 @@ const DailyGoalCard = ({ goal }: { goal: (typeof goals)[0] }) => {
   const progressPercentage = (goal.current / goal.target) * 100;
 
   return (
-    <div className="bg-white/50 backdrop-blur-sm border border-gray-200/50 rounded-2xl p-6">
+    <div className="bg-card border border-border rounded-2xl p-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           {goal.icon}
-          <h3 className="font-bold text-gray-800">{goal.title}</h3>
+          <h3 className="font-bold text-foreground">{goal.title}</h3>
         </div>
-        <p className="text-sm font-semibold text-gray-700">
+        <p className="text-sm font-semibold text-foreground">
           <span className="font-bold">{goal.current}</span> / {goal.target}{" "}
           {goal.unit}
         </p>
       </div>
-      <div className="w-full bg-gray-200 rounded-full h-2.5 mt-4">
+      <div className="w-full bg-muted rounded-full h-2.5 mt-4">
         <div
           className={`${goal.color} h-2.5 rounded-full`}
           style={{ width: `${progressPercentage}%` }}

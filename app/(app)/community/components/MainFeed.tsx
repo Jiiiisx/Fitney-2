@@ -2,7 +2,7 @@ import { Heart, MessageSquare, Share2, Image as ImageIcon, Send } from "lucide-r
 
 // A more detailed Post component
 const Post = ({ post }: { post: any }) => (
-  <div className="bg-white p-5 rounded-xl shadow-sm">
+  <div className="bg-card p-5 rounded-xl">
     {/* Post Header */}
     <div className="flex items-center mb-4">
       <img
@@ -11,13 +11,13 @@ const Post = ({ post }: { post: any }) => (
         className="w-12 h-12 rounded-full mr-4"
       />
       <div>
-        <p className="font-bold text-gray-800">{post.user.name}</p>
-        <p className="text-sm text-gray-500">{post.time}</p>
+        <p className="font-bold text-foreground">{post.user.name}</p>
+        <p className="text-sm text-secondary-foreground">{post.time}</p>
       </div>
     </div>
 
     {/* Post Content */}
-    <p className="text-gray-700 text-base mb-4">{post.content}</p>
+    <p className="text-foreground text-base mb-4">{post.content}</p>
     {post.image && (
       <img
         src={post.image}
@@ -27,16 +27,16 @@ const Post = ({ post }: { post: any }) => (
     )}
 
     {/* Post Actions */}
-    <div className="flex items-center justify-between text-gray-600 mt-4 pt-4 border-t border-gray-100">
-      <button className="flex items-center space-x-2 hover:text-red-500 transition-colors duration-300 group">
+    <div className="flex items-center justify-between text-secondary-foreground mt-4 pt-4 border-t border-border">
+      <button className="flex items-center space-x-2 hover:text-destructive transition-colors duration-300 group">
         <Heart className="w-6 h-6 group-hover:scale-110 transition-transform" />
         <span className="font-semibold">{post.likes}</span>
       </button>
-      <button className="flex items-center space-x-2 hover:text-blue-500 transition-colors duration-300 group">
+      <button className="flex items-center space-x-2 hover:text-info transition-colors duration-300 group">
         <MessageSquare className="w-6 h-6 group-hover:scale-110 transition-transform" />
         <span className="font-semibold">{post.comments}</span>
       </button>
-      <button className="flex items-center space-x-2 hover:text-green-500 transition-colors duration-300 group">
+      <button className="flex items-center space-x-2 hover:text-success transition-colors duration-300 group">
         <Share2 className="w-6 h-6 group-hover:scale-110 transition-transform" />
         <span className="font-semibold">Share</span>
       </button>
@@ -46,25 +46,25 @@ const Post = ({ post }: { post: any }) => (
 
 // A new Post Composer component
 const PostComposer = () => (
-    <div className="bg-white p-5 rounded-xl shadow-sm">
+    <div className="bg-card p-5 rounded-xl">
         <div className="flex items-start">
             <img src="/assets/Testimonial/michael-b.jpg" alt="Your avatar" className="w-12 h-12 rounded-full mr-4" />
             <textarea
-              className="w-full p-3 bg-gray-100 border-transparent focus:ring-yellow-500 focus:border-yellow-500 rounded-lg text-base text-gray-900 placeholder-gray-500"
+              className="w-full p-3 bg-background border border-border focus:ring-primary focus:border-primary rounded-lg text-base text-foreground placeholder:text-secondary-foreground"
               placeholder="Share your progress or motivation..."
               rows={3}
             ></textarea>
         </div>
         <div className="flex justify-between items-center mt-3 pl-16">
             <div className="flex space-x-2">
-                <button className="text-gray-500 hover:text-yellow-600 p-2 rounded-full hover:bg-yellow-100 transition-colors">
+                <button className="text-secondary-foreground hover:text-primary p-2 rounded-full hover:bg-primary/10 transition-colors">
                     <ImageIcon className="w-6 h-6" />
                 </button>
-                 <button className="text-gray-500 hover:text-yellow-600 p-2 rounded-full hover:bg-yellow-100 transition-colors">
+                 <button className="text-secondary-foreground hover:text-primary p-2 rounded-full hover:bg-primary/10 transition-colors">
                     <Send className="w-6 h-6" />
                 </button>
             </div>
-            <button className="bg-yellow-400 text-gray-900 font-bold py-2 px-6 rounded-full hover:bg-yellow-500 transition-all duration-300 shadow-sm hover:shadow-md">
+            <button className="bg-primary text-primary-foreground font-bold py-2 px-6 rounded-full hover:bg-primary/90 transition-all duration-300 shadow-sm hover:shadow-md">
                 Post
             </button>
         </div>

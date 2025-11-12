@@ -24,7 +24,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Stats Sidebar (Scrollable) */}
-        <div className="lg:col-span-1 space-y-8 overflow-y-auto p-8 bg-white/50 border-l border-gray-200/80 scrollbar-hide">
+        <div className="lg:col-span-1 space-y-8 overflow-y-auto p-8 bg-muted border-l border-border scrollbar-hide">
           <StatsSidebar />
         </div>
       </div>

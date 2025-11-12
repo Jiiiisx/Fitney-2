@@ -47,8 +47,8 @@ const MiniTrendChart = ({
   stroke: string;
   name: string;
 }) => (
-  <div className="p-4 bg-gray-50 rounded-lg">
-    <h4 className="font-semibold text-gray-600 mb-2 text-sm">{name}</h4>
+  <div className="p-4 bg-background rounded-lg">
+    <h4 className="font-semibold text-secondary-foreground mb-2 text-sm">{name}</h4>
     <ResponsiveContainer width="100%" height={150}>
       <LineChart data={data}>
         <XAxis dataKey="date" fontSize={10} tickLine={false} axisLine={false} />
@@ -70,19 +70,19 @@ export default function ProgressTrendSection() {
   const [isOpen, setIsOpen] = useState(true);
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm">
+    <div className="bg-card p-6 rounded-2xl">
       <button
         className="w-full flex justify-between items-center"
         onClick={() => setIsOpen(!isOpen)}
       >
         <div className="flex items-center gap-3">
-          <TrendingUp className="w-6 h-6 text-gray-800" />
-          <h2 className="text-xl font-bold text-gray-800">
+          <TrendingUp className="w-6 h-6 text-foreground" />
+          <h2 className="text-xl font-bold text-foreground">
             Your Progress Trends
           </h2>
         </div>
         <ChevronUp
-          className={`w-6 h-6 text-gray-500 transition-transform ${!isOpen && "rotate-180"}`}
+          className={`w-6 h-6 text-secondary-foreground transition-transform ${!isOpen && "rotate-180"}`}
         />
       </button>
 
@@ -91,19 +91,19 @@ export default function ProgressTrendSection() {
           <MiniTrendChart
             data={weightData}
             dataKey="weight"
-            stroke="#8884d8"
+            stroke="hsl(var(--chart-1))"
             name="Weight Lifted (kg)"
           />
           <MiniTrendChart
             data={calorieData}
             dataKey="calories"
-            stroke="#82ca9d"
+            stroke="hsl(var(--chart-2))"
             name="Calories Burned"
           />
           <MiniTrendChart
             data={durationData}
             dataKey="duration"
-            stroke="#ffc658"
+            stroke="hsl(var(--chart-3))"
             name="Avg. Duration (min)"
           />
         </div>

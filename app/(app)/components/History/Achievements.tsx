@@ -44,7 +44,7 @@ const CircularProgressMini = ({ percentage }: { percentage: number }) => {
     <div className="relative flex items-center justify-center w-10 h-10">
       <svg className="absolute w-full h-full" viewBox="0 0 40 40">
         <circle
-          className="text-gray-200"
+          className="text-border"
           strokeWidth="4"
           stroke="currentColor"
           fill="transparent"
@@ -53,7 +53,7 @@ const CircularProgressMini = ({ percentage }: { percentage: number }) => {
           cy="20"
         />
         <circle
-          className="text-yellow-500"
+          className="text-primary"
           strokeWidth="4"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
@@ -66,7 +66,7 @@ const CircularProgressMini = ({ percentage }: { percentage: number }) => {
           transform="rotate(-90 20 20)"
         />
       </svg>
-      <span className="absolute text-xs font-bold">{percentage}%</span>
+      <span className="absolute text-xs font-bold text-foreground">{percentage}%</span>
     </div>
   );
 };
@@ -75,17 +75,17 @@ const AchievementItem = ({ item }: { item: (typeof achievements)[0] }) => (
   <div className="relative group flex flex-col items-center text-center">
     {item.unlocked ? (
       <div
-        className={`w-12 h-12 rounded-full flex items-center justify-center ${item.recent ? "bg-yellow-400" : "bg-gray-200"}`}
+        className={`w-12 h-12 rounded-full flex items-center justify-center ${item.recent ? "bg-primary" : "bg-secondary"}`}
       >
         <item.icon
-          className={`w-6 h-6 ${item.recent ? "text-white" : "text-gray-500"}`}
+          className={`w-6 h-6 ${item.recent ? "text-primary-foreground" : "text-secondary-foreground"}`}
         />
       </div>
     ) : (
       <CircularProgressMini percentage={item.progress} />
     )}
-    <p className="text-sm mt-2 font-semibold text-gray-600">{item.name}</p>
-    <div className="absolute bottom-full mb-2 w-48 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+    <p className="text-sm mt-2 font-semibold text-secondary-foreground">{item.name}</p>
+    <div className="absolute bottom-full mb-2 w-48 px-3 py-2 bg-popover text-popover-foreground text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
       {item.description}
       {!item.unlocked && <span className="font-bold"> ({item.progress}%)</span>}
     </div>
@@ -94,8 +94,8 @@ const AchievementItem = ({ item }: { item: (typeof achievements)[0] }) => (
 
 export default function Achievements() {
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm">
-      <h3 className="text-lg font-semibold text-gray-800 mb-3">Achievements</h3>
+    <div className="bg-card p-6 rounded-2xl">
+      <h3 className="text-lg font-semibold text-foreground mb-3">Achievements</h3>
       <div className="grid grid-cols-4 gap-4">
         {achievements.map((item) => (
           <AchievementItem key={item.name} item={item} />

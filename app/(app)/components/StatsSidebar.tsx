@@ -13,7 +13,7 @@ const CircularProgress = ({ percentage }: { percentage: number }) => {
     <div className="relative flex items-center justify-center w-32 h-32">
       <svg className="absolute w-full h-full" viewBox="0 0 120 120">
         <circle
-          className="text-gray-200"
+          className="text-border"
           strokeWidth="10"
           stroke="currentColor"
           fill="transparent"
@@ -22,12 +22,13 @@ const CircularProgress = ({ percentage }: { percentage: number }) => {
           cy="60"
         />
         <circle
-          className="text-gray-800"
+          className="text-primary"
           strokeWidth="10"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
           strokeLinecap="round"
           stroke="currentColor"
+  
           fill="transparent"
           r={radius}
           cx="60"
@@ -35,10 +36,10 @@ const CircularProgress = ({ percentage }: { percentage: number }) => {
           transform="rotate(-90 60 60)"
         />
       </svg>
-      <div className="absolute flex items-center justify-center w-24 h-24 bg-gray-100 rounded-full">
-        <User className="w-12 h-12 text-gray-400" />
+      <div className="absolute flex items-center justify-center w-24 h-24 bg-muted rounded-full">
+        <User className="w-12 h-12 text-muted-foreground" />
       </div>
-      <div className="absolute top-0 right-0 bg-gray-800 text-white text-xs font-bold px-2 py-1 rounded-full">
+      <div className="absolute top-0 right-0 bg-foreground text-background text-xs font-bold px-2 py-1 rounded-full">
         {percentage}%
       </div>
     </div>
@@ -54,21 +55,21 @@ const StatsSidebar = () => {
   return (
     <div className="h-full flex flex-col space-y-8">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-800">Statistic</h2>
+        <h2 className="text-xl font-bold text-foreground">Statistic</h2>
       </div>
 
       <div className="flex flex-col items-center text-center">
         <CircularProgress percentage={user.progress} />
-        <h3 className="mt-4 text-xl font-bold text-gray-800">
+        <h3 className="mt-4 text-xl font-bold text-foreground">
           Good Morning, {user.name}! 🔥
         </h3>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-muted-foreground">
           Continue your journey to achieve your target!
         </p>
       </div>
 
-      <div className="text-center bg-gray-100 border border-gray-200/80 rounded-lg p-3">
-        <p className="text-sm text-gray-800">
+      <div className="text-center bg-muted border border-border rounded-lg p-3">
+        <p className="text-sm text-foreground">
           <span className="font-bold">Good job!</span> Your workout consistency
           is up by <span className="font-bold">15%</span> from last week.
         </p>

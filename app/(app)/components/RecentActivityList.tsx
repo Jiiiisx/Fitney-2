@@ -59,23 +59,23 @@ const workoutColors = {
 };
 
 const ActivityCard = ({ workout }: { workout: RecentWorkout }) => (
-  <div className="bg-white/60 backdrop-blur-sm border border-gray-200/50 rounded-2xl p-4 flex flex-col justify-between">
+  <div className="bg-card/60 dark:bg-card/90 backdrop-blur-sm border border-border rounded-2xl p-4 flex flex-col justify-between">
     <div>
       <div className="flex items-center justify-between mb-2">
         <div className={`p-2 rounded-lg ${workoutColors[workout.type]}`}>
           {workoutIcons[workout.type]}
         </div>
         {workout.is_pr && (
-          <div className="flex items-center text-xs font-bold bg-amber-400 text-amber-900 px-2 py-1 rounded-full">
+          <div className="flex items-center text-xs font-bold bg-primary text-primary-foreground px-2 py-1 rounded-full">
             <Award className="w-4 h-4 mr-1" />
             New PR!
           </div>
         )}
       </div>
-      <h4 className="font-bold text-gray-800">{workout.exercise_name}</h4>
-      <p className="text-sm text-gray-600">{workout.details}</p>
+      <h4 className="font-bold text-foreground">{workout.exercise_name}</h4>
+      <p className="text-sm text-secondary">{workout.details}</p>
     </div>
-    <p className="text-xs text-gray-400 mt-3 text-right">
+    <p className="text-xs text-secondary/70 mt-3 text-right">
       {workout.created_at.toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
@@ -89,8 +89,8 @@ export default async function RecentActivityList() {
   const recentWorkouts = await getRecentWorkouts(userId);
 
   return (
-    <div className="bg-white/50 backdrop-blur-sm border border-gray-200/50 rounded-2xl p-6">
-      <h2 className="text-2xl font-bold text-gray-800 mb-4">Recent Entries</h2>
+    <div className="bg-card/50 dark:bg-card/80 backdrop-blur-sm border border-border rounded-2xl p-6">
+      <h2 className="text-2xl font-bold text-foreground mb-4">Recent Entries</h2>
       {recentWorkouts.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {recentWorkouts.map((workout) => (
@@ -98,7 +98,7 @@ export default async function RecentActivityList() {
           ))}
         </div>
       ) : (
-        <p className="text-center text-gray-500 py-4">
+        <p className="text-center text-secondary py-4">
           No recent activities found.
         </p>
       )}

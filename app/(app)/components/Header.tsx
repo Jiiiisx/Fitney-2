@@ -58,9 +58,9 @@ const Header = () => {
           <button className="p-4 rounded-full hover:bg-gray-200/50">
             <Search size={24} className="text-gray-600" />
           </button>
-          <button className="p-4 rounded-full hover:bg-gray-200/50">
+          <Link href="/settings" className="p-4 rounded-full hover:bg-gray-200/50">
             <Settings size={24} className="text-gray-600" />
-          </button>
+          </Link>
           <button className="p-4 rounded-full hover:bg-gray-200/50">
             <Bell size={24} className="text-gray-600" />
           </button>

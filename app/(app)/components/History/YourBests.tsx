@@ -10,17 +10,17 @@ const personalBests = [
 
 export default function YourBests() {
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm">
-      <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-        <Trophy className="w-5 h-5 text-yellow-500" />
+    <div className="bg-card p-6 rounded-2xl">
+      <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+        <Trophy className="w-5 h-5 text-primary" />
         Your Bests
       </h3>
       <div className="space-y-3">
         {personalBests.map((best) => (
           <div key={best.text} className="flex items-center text-sm">
             <span className="mr-3 text-lg">{best.emoji}</span>
-            <span className="text-gray-600 flex-grow">{best.text}</span>
-            <span className="font-bold text-gray-800">{best.value}</span>
+            <span className="text-secondary-foreground flex-grow">{best.text}</span>
+            <span className="font-bold text-foreground">{best.value}</span>
           </div>
         ))}
       </div>

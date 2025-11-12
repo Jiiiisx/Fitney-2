@@ -38,13 +38,13 @@ const sampleWorkouts: { [key: string]: Workout[] } = {
 export default function CalendarGrid() {
   return (
     <div className="h-full">
-      <h2 className="text-lg font-semibold mb-4 text-gray-800">
+      <h2 className="text-lg font-semibold mb-4 text-foreground">
         This Week's Plan
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
         {days.map((day) => (
           <div key={day}>
-            <h3 className="font-semibold text-sm text-center text-gray-500 mb-3">
+            <h3 className="font-semibold text-sm text-center text-secondary-foreground mb-3">
               {day}
             </h3>
             <div className="space-y-3">
@@ -53,7 +53,7 @@ export default function CalendarGrid() {
                   <WorkoutCard key={index} workout={workout} />
                 ))
               ) : (
-                <div className="h-24 rounded-lg bg-gray-50/50"></div> // Placeholder for empty day
+                <div className="h-24 rounded-lg bg-background/50"></div> // Placeholder for empty day
               )}
             </div>
           </div>
