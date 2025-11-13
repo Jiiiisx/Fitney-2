@@ -9,6 +9,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isFixedLayoutPage =
     pathname === "/history" ||
     pathname === "/dashboard" ||
+    pathname === "/settings" ||
     pathname === "/community";
 
   return (

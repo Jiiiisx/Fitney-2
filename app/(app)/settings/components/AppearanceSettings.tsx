@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
-import { Sun, Moon, Laptop, CaseSensitive } from "lucide-react";
+import { Sun, Moon, Laptop } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -20,13 +20,13 @@ const SettingsCard = ({
   children,
 }: {
   title: string;
-  description: string;
+  description:string;
   children: React.ReactNode;
 }) => (
-  <div className="bg-white border border-gray-200/80 rounded-xl shadow-sm">
-    <div className="p-6 border-b border-gray-200/80">
-      <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
-      <p className="mt-1 text-sm text-gray-500">{description}</p>
+  <div className="bg-card border rounded-xl">
+    <div className="p-6 border-b">
+      <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+      <p className="mt-1 text-sm text-muted-foreground">{description}</p>
     </div>
     <div className="p-6 space-y-6">{children}</div>
   </div>
@@ -68,12 +68,12 @@ export default function AppearanceSettings() {
               onClick={() => setTheme(t.name)}
               className={`p-4 rounded-lg border-2 transition-colors flex flex-col items-center justify-center gap-2 ${
                 theme === t.name
-                  ? "border-yellow-400 bg-yellow-50"
-                  : "border-gray-200 bg-gray-50/50 hover:border-gray-300"
+                  ? "border-primary bg-primary/10"
+                  : "border-border bg-muted/50 hover:border-muted-foreground"
               }`}
             >
-              <t.icon className="w-7 h-7 text-gray-600" />
-              <span className="font-semibold text-sm text-gray-700">{t.label}</span>
+              <t.icon className="w-7 h-7 text-muted-foreground" />
+              <span className="font-semibold text-sm text-foreground">{t.label}</span>
             </button>
           ))}
         </div>

@@ -1,22 +1,8 @@
-2// This is the new ROOT layout.
-// It applies global styles and fonts but does NOT include the Navbar.
-// The Navbar is now in (marketing)/layout.tsx and the Sidebar is in (app)/layout.tsx.
-
+import NextTopLoader from 'nextjs-toploader';
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import { Poppins } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "./providers";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 const poppins = Poppins({
   weight: ["400", "500", "600", "700"],
@@ -40,9 +26,18 @@ export default function RootLayout({
       className={`${poppins.variable} scrollbar-hide`}
       suppressHydrationWarning
     >
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body>
+        <NextTopLoader
+            color="#FFD54F"
+            initialPosition={0.08}
+            crawlSpeed={200}
+            height={3}
+            crawl={true}
+            showSpinner={false}
+            easing="ease"
+            speed={200}
+            shadow="0 0 10px #FFD54F,0 0 5px #FFD54F"
+        />
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

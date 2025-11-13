@@ -4,6 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Settings, Bell, User, Search } from "lucide-react";
 import { motion } from "framer-motion";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { NotificationPopup } from "./NotificationPopup";
 
 const Header = () => {
   const pathname = usePathname();
@@ -17,34 +23,34 @@ const Header = () => {
 
   return (
     <header className="w-full px-4 pt-6 pb-2">
-      <div className="flex items-center justify-between w-full mx-auto bg-white/50 backdrop-blur-sm border border-gray-200/50 rounded-full p-4">
+      <div className="flex items-center justify-between w-full mx-auto bg-card/50 backdrop-blur-sm border rounded-full p-4">
         {/* Logo */}
         <div className="pl-4">
           <Link
             href="/dashboard"
-            className="text-3xl font-bold text-gray-800 tracking-wider"
+            className="text-3xl font-bold text-foreground tracking-wider"
           >
             Fitney
           </Link>
         </div>
 
         {/* Navigation */}
-        <nav className="relative flex items-center bg-white/60 border border-gray-200/50 rounded-full px-2 py-2">
+        <nav className="relative flex items-center bg-background/60 border rounded-full px-2 py-2">
           {navItems.map((item) => (
             <Link
               key={item.label}
               href={item.href}
               className={`relative px-6 py-3 text-lg font-semibold rounded-full transition-colors duration-300 z-10 ${
                 pathname === item.href
-                  ? "text-white"
-                  : "text-gray-600 hover:text-gray-900"
+                  ? "text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {item.label}
               {pathname === item.href && (
                 <motion.div
                   layoutId="active-pill"
-                  className="absolute inset-0 bg-gray-800 rounded-full"
+                  className="absolute inset-0 bg-primary rounded-full"
                   style={{ zIndex: -1 }}
                   transition={{ type: "spring", stiffness: 200, damping: 25 }}
                 />
@@ -55,17 +61,24 @@ const Header = () => {
 
         {/* User Actions */}
         <div className="flex items-center space-x-3 pr-4">
-          <button className="p-4 rounded-full hover:bg-gray-200/50">
-            <Search size={24} className="text-gray-600" />
+          <button className="p-4 rounded-full hover:bg-muted/50">
+            <Search size={24} className="text-muted-foreground" />
           </button>
-          <Link href="/settings" className="p-4 rounded-full hover:bg-gray-200/50">
-            <Settings size={24} className="text-gray-600" />
+          <Link href="/settings" className="p-4 rounded-full hover:bg-muted/50">
+            <Settings size={24} className="text-muted-foreground" />
           </Link>
-          <button className="p-4 rounded-full hover:bg-gray-200/50">
-            <Bell size={24} className="text-gray-600" />
-          </button>
-          <button className="p-4 rounded-full bg-gray-200/70">
-            <User size={24} className="text-gray-600" />
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="p-4 rounded-full hover:bg-muted/50">
+                <Bell size={24} className="text-muted-foreground" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 border-0 shadow-2xl" align="end">
+              <NotificationPopup />
+            </PopoverContent>
+          </Popover>
+          <button className="p-4 rounded-full bg-muted">
+            <User size={24} className="text-muted-foreground" />
           </button>
         </div>
       </div>
