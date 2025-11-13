@@ -57,13 +57,16 @@ export default function Navbar() {
             </Link>
           ))}
         </div>
-        <div className="hidden lg:flex lg:flex-1 lg:justify-end">
-          <a
-            href="#"
+        <div className="hidden lg:flex lg:flex-1 lg:justify-end items-center space-x-6">
+          <Link href="/login" className="text-sm font-semibold leading-6 text-gray-900 hover:text-yellow-600">
+            Log in
+          </Link>
+          <Link
+            href="/signup"
             className="rounded-full bg-yellow-400 px-5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm hover:bg-yellow-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yellow-500"
           >
-            Mulai
-          </a>
+            Sign Up
+          </Link>
         </div>
         {/* Add mobile menu button here if needed in the future */}
       </nav>
