@@ -3,8 +3,8 @@ import { Calendar, Clock } from "lucide-react";
 export default function UpcomingWorkout() {
   return (
     // Using a soft yellow as a highlight background
-    <div className="bg-primary/10 p-4 rounded-lg">
-      <h2 className="text-base font-semibold mb-3 text-primary">
+    <div className="bg-primary/10 p-4 rounded-lg border border-primary/50">
+      <h2 className="text-base font-semibold mb-3 text-secondary-foreground">
         Next Upcoming Workout
       </h2>
       <div className="flex items-center justify-between">

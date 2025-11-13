@@ -41,13 +41,13 @@ export default function CalendarGrid() {
       <h2 className="text-lg font-semibold mb-4 text-foreground">
         This Week's Plan
       </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:flex gap-4">
         {days.map((day) => (
-          <div key={day}>
+          <div key={day} className="xl:flex xl:flex-col xl:flex-1">
             <h3 className="font-semibold text-sm text-center text-secondary-foreground mb-3">
               {day}
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-3 xl:flex-grow">
               {sampleWorkouts[day] ? (
                 sampleWorkouts[day].map((workout, index) => (
                   <WorkoutCard key={index} workout={workout} />

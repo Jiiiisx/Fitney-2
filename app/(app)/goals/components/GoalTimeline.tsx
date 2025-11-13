@@ -20,9 +20,9 @@ const statusConfig = {
     text: "text-orange-500",
   },
   pending: {
-    icon: <Loader className="w-5 h-5 text-gray-500 animate-spin" />,
-    bg: "bg-gray-200",
-    text: "text-gray-500",
+    icon: <Loader className="w-5 h-5 text-muted-foreground animate-spin" />,
+    bg: "bg-muted",
+    text: "text-muted-foreground",
   },
   missed: {
     icon: <X className="w-5 h-5 text-white" />,
@@ -36,18 +36,18 @@ export default function GoalTimeline() {
 
   return (
     <section>
-      <h2 className="text-3xl font-bold tracking-tight text-gray-900 mb-6">
+      <h2 className="text-3xl font-bold tracking-tight text-foreground mb-6">
         Goal Timeline
       </h2>
-      <div className="bg-white p-6 rounded-2xl shadow-sm">
+      <div className="bg-card p-6 rounded-2xl border">
         <p className="font-semibold text-center text-xl mb-2">
           You’ve hit your weekly goal <span className="text-green-500">{completedWeeks} weeks</span> in a row!
         </p>
-        <p className="text-center text-gray-500 mb-8">Keep the flame alive! 🔥</p>
+        <p className="text-center text-muted-foreground mb-8">Keep the flame alive! 🔥</p>
         
         <div className="flex items-center justify-between relative">
           {/* Timeline line */}
-          <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-200 -translate-y-1/2">
+          <div className="absolute top-1/2 left-0 w-full h-1 bg-muted -translate-y-1/2">
             <div className="h-1 bg-green-500" style={{width: `${(completedWeeks / (weeks.length - 1)) * 100}%`, transition: 'width 0.4s ease'}}></div>
           </div>
 

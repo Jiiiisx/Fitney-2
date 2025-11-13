@@ -82,8 +82,8 @@ body {
 
 .dark {
   --radius: 0.625rem;
-  --bg: #0F172A;
-  --surface: #0F172A;
+  --bg: #111827;
+  --surface: #111827;
   --text-primary: #F8FAFC;
   --text-secondary: #94A3B8;
   --accent: #FFD54F;
