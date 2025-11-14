@@ -43,7 +43,7 @@ export default function GoalTimeline() {
         <p className="font-semibold text-center text-xl mb-2">
           You’ve hit your weekly goal <span className="text-green-500">{completedWeeks} weeks</span> in a row!
         </p>
-        <p className="text-center text-muted-foreground mb-8">Keep the flame alive! 🔥</p>
+        <p className="text-center text-muted-foreground mb-8">Keep the flame alive!</p>
         
         <div className="flex items-center justify-between relative">
           {/* Timeline line */}

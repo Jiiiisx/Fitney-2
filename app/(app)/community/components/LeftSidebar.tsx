@@ -11,13 +11,13 @@ const LeftSidebar = () => {
         </h3>
         <ul className="space-y-2">
           <li className="font-semibold text-secondary-foreground hover:text-primary hover:bg-primary/10 p-2 rounded-md cursor-pointer transition-colors">
-            🏃‍♂️ Weekend Runners
+            Weekend Runners
           </li>
           <li className="font-semibold text-secondary-foreground hover:text-primary hover:bg-primary/10 p-2 rounded-md cursor-pointer transition-colors">
-            🧘‍♀️ Morning Yoga Club
+            Morning Yoga Club
           </li>
           <li className="font-semibold text-secondary-foreground hover:text-primary hover:bg-primary/10 p-2 rounded-md cursor-pointer transition-colors">
-            🥗 Meal Prep Squad
+            Meal Prep Squad
           </li>
         </ul>
       </div>

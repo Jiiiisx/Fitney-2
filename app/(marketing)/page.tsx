@@ -32,7 +32,7 @@ export default function Home() {
               </p>
               <div className="mt-8 flex gap-4">
                 <button className="bg-yellow-400 text-gray-900 font-bold px-8 py-3 rounded-full hover:bg-yellow-500 transition-colors shadow-lg">
-                  Get Started &rarr;
+                  Get Started
                 </button>
                 <button className="bg-transparent text-gray-700 font-semibold px-8 py-3 rounded-full border border-gray-300 hover:bg-gray-100 transition-colors">
                   Explore Features
