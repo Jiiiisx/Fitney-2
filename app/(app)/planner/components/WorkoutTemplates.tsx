@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -8,70 +9,167 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Zap, Heart, Award, ArrowRight } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArrowLeft } from 'lucide-react';
+
+// This interface should match the structure returned by our new API
+interface Program {
+  id: number;
+  name: string;
+  description: string;
+  weeks: number;
+  schedule: {
+    day: number;
+    name: string;
+    exercises: {
+      name: string;
+      sets: number | null;
+      reps: string | null;
+      duration_seconds: number | null;
+    }[];
+  }[];
+}
 
 interface WorkoutTemplatesProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const templates = [
-  {
-    id: "tpl1",
-    name: "Strength Foundation",
-    description: "A 3-day plan focusing on major muscle groups to build a solid base.",
-    tags: ["Strength", "Rest"],
-    icon: Zap,
-    iconColor: "text-blue-500",
-  },
-  {
-    id: "tpl2",
-    name: "Cardio Kickstarter",
-    description: "Boost your endurance with this 4-day cardio-focused plan.",
-    tags: ["Cardio", "Flexibility"],
-    icon: Heart,
-    iconColor: "text-red-500",
-  },
-  {
-    id: "tpl3",
-    name: "Athlete's Week",
-    description: "A balanced 5-day plan for serious athletes pushing their limits.",
-    tags: ["Strength", "Cardio", "Performance"],
-    icon: Award,
-    iconColor: "text-yellow-500",
-  },
-];
-
-const TemplateCard = ({ template }: { template: (typeof templates)[0] }) => (
-  <div className="bg-gray-50/80 p-5 rounded-xl border border-gray-200/80 transition-all hover:border-yellow-400 hover:bg-gray-50">
-    <div className="flex items-start justify-between">
-      <div>
-        <div className="flex items-center gap-3 mb-2">
-          <div className={`p-2 bg-white rounded-full border ${template.iconColor.replace('text-', 'border-')}/20`}>
-            <template.icon className={`h-5 w-5 ${template.iconColor}`} />
-          </div>
-          <h3 className="text-lg font-bold text-gray-800">{template.name}</h3>
-        </div>
-        <p className="text-sm text-gray-600 mb-4">{template.description}</p>
-        <div className="flex flex-wrap gap-2">
-          {template.tags.map((tag) => (
-            <span
-              key={tag}
-              className="px-2.5 py-0.5 text-xs font-semibold text-gray-700 bg-gray-200 rounded-full"
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
-      </div>
-      <Button size="sm" variant="ghost" className="h-9 w-9 p-0 group">
-        <ArrowRight className="h-5 w-5 text-gray-400 transition-transform group-hover:translate-x-1" />
-      </Button>
-    </div>
-  </div>
-);
-
 export function WorkoutTemplates({ open, onOpenChange }: WorkoutTemplatesProps) {
+  const [programs, setPrograms] = useState<Program[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedProgram, setSelectedProgram] = useState<Program | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      setLoading(true);
+      setError(null);
+      setSelectedProgram(null);
+
+      async function fetchPrograms() {
+        try {
+          const response = await fetch('/api/workout-programs');
+          if (!response.ok) {
+            throw new Error('Failed to fetch workout programs');
+          }
+          const data = await response.json();
+          setPrograms(data);
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'An unknown error occurred');
+        } finally {
+          setLoading(false);
+        }
+      }
+      fetchPrograms();
+    }
+  }, [open]);
+
+  const renderContent = () => {
+    if (loading) {
+      return <div className="text-center p-8">Loading programs...</div>;
+    }
+
+    if (error) {
+      return <div className="text-red-500 text-center p-8">{error}</div>;
+    }
+
+    if (selectedProgram) {
+      const [isStarting, setIsStarting] = useState(false);
+      const [startError, setStartError] = useState<string | null>(null);
+
+      const handleStartProgram = async () => {
+        setIsStarting(true);
+        setStartError(null);
+        try {
+          const response = await fetch('/api/users/me/active-plan', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ programId: selectedProgram.id }),
+          });
+
+          if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error || 'Failed to start program.');
+          }
+          
+          // On success, close the modal
+          onOpenChange(false);
+          // Optionally, we could trigger a page refresh or data re-fetch here
+          // For now, we just close the modal.
+          
+        } catch (err) {
+          setStartError(err instanceof Error ? err.message : 'An unknown error occurred.');
+        } finally {
+          setIsStarting(false);
+        }
+      };
+
+      return (
+        <div>
+          <Button onClick={() => setSelectedProgram(null)} variant="ghost" className="mb-4">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Programs
+          </Button>
+          <div className="max-h-[60vh] overflow-y-auto pr-4">
+            <CardHeader className="px-1">
+              <CardTitle>{selectedProgram.name}</CardTitle>
+              <CardDescription>{selectedProgram.description}</CardDescription>
+            </CardHeader>
+            <CardContent className="px-1">
+              <div className="space-y-4">
+                <h3 className="font-semibold">Schedule ({selectedProgram.weeks} Week{selectedProgram.weeks > 1 ? 's' : ''}):</h3>
+                <ul className="space-y-3">
+                  {selectedProgram.schedule.map((day) => (
+                    <li key={day.day} className="p-3 border rounded-md bg-gray-50/50">
+                      <p className="font-bold">Day {day.day}: {day.name}</p>
+                      {day.exercises && day.exercises.length > 0 ? (
+                        <ul className="mt-2 ml-4 text-sm list-disc text-gray-600">
+                          {day.exercises.map((ex, index) => (
+                            <li key={index}>{ex.name} - {ex.sets ? `${ex.sets} sets x ` : ''}{ex.reps ? `${ex.reps} reps` : ''}{ex.duration_seconds ? `${ex.duration_seconds}s` : ''}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-gray-500">Rest Day</p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              {startError && <p className="text-sm text-red-500 mt-4">{startError}</p>}
+              <Button onClick={handleStartProgram} disabled={isStarting} className="w-full mt-6">
+                {isStarting ? 'Starting...' : 'Start This Program'}
+              </Button>
+            </CardContent>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-4">
+        {programs.map((program) => (
+          <Card key={program.id} className="flex flex-col transition-all hover:shadow-md">
+            <CardHeader>
+              <CardTitle>{program.name}</CardTitle>
+              <CardDescription>{program.description}</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-grow">
+              <div className="text-sm text-gray-500">
+                <p>Duration: {program.weeks} week{program.weeks > 1 ? 's' : ''}</p>
+              </div>
+            </CardContent>
+            <div className="p-6 pt-0">
+              <Button onClick={() => setSelectedProgram(program)} className="w-full">
+                View Program
+              </Button>
+            </div>
+          </Card>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl bg-white rounded-2xl shadow-2xl border-neutral-200/70">
@@ -80,15 +178,10 @@ export function WorkoutTemplates({ open, onOpenChange }: WorkoutTemplatesProps) 
             Workout Templates
           </DialogTitle>
           <DialogDescription className="text-gray-500 pt-1">
-            Choose a pre-made plan to kickstart your week.
+            Choose a pre-made plan to kickstart your journey.
           </DialogDescription>
         </DialogHeader>
-
-        <div className="grid gap-4 py-4">
-          {templates.map((template) => (
-            <TemplateCard key={template.id} template={template} />
-          ))}
-        </div>
+        {renderContent()}
       </DialogContent>
     </Dialog>
   );

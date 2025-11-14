@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Settings, Bell, User, Search } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Settings, Bell, User, Search, LogOut } from "lucide-react";
 import { motion } from "framer-motion";
 import {
   Popover,
@@ -10,14 +10,80 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { NotificationPopup } from "./NotificationPopup";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+
+interface UserProfile {
+  full_name: string;
+  email: string;
+  profile_picture_url?: string;
+}
+
+const Avatar = ({ user }: { user: UserProfile | null }) => {
+  if (!user) {
+    return (
+      <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+        <User size={24} className="text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (user.profile_picture_url) {
+    return (
+      <img
+        src={user.profile_picture_url}
+        alt={user.full_name}
+        className="w-12 h-12 rounded-full object-cover"
+      />
+    );
+  }
+
+  const initials = user.full_name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase();
+
+  return (
+    <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center">
+      <span className="text-primary-foreground font-bold text-lg">{initials}</span>
+    </div>
+  );
+};
+
 
 const Header = () => {
   const pathname = usePathname();
+  const router = useRouter();
+  const [user, setUser] = useState<UserProfile | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const token = localStorage.getItem("token");
+      if (token) {
+        const res = await fetch('/api/users/me', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const userData = await res.json();
+          setUser(userData);
+        }
+      }
+    };
+    fetchUser();
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    router.push("/login");
+  };
+
   const navItems = [
     { href: "/dashboard", label: "Dashboard" },
     { href: "/history", label: "History" },
     { href: "/planner", label: "Planner" },
     { href: "/goals", label: "Goals" },
+    { href: "/nutrition", label: "Nutrition" },
     { href: "/community", label: "Community" },
   ];
 
@@ -77,9 +143,29 @@ const Header = () => {
               <NotificationPopup />
             </PopoverContent>
           </Popover>
-          <button className="p-4 rounded-full bg-muted">
-            <User size={24} className="text-muted-foreground" />
-          </button>
+          
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="rounded-full focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                <Avatar user={user} />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56" align="end">
+              <div className="p-4 border-b">
+                <p className="font-bold text-foreground">{user?.full_name}</p>
+                <p className="text-sm text-muted-foreground">{user?.email}</p>
+              </div>
+              <Button
+                variant="ghost"
+                className="w-full justify-start p-4"
+                onClick={handleLogout}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Log Out
+              </Button>
+            </PopoverContent>
+          </Popover>
+
         </div>
       </div>
     </header>

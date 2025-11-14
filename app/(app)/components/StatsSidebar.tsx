@@ -1,8 +1,10 @@
-// app/(app)/components/StatsSidebar.tsx
-import { User, MoreHorizontal } from "lucide-react";
-import QuickActions from "./QuickActions";
+"use client";
 
+import { User } from "lucide-react";
+import dynamic from 'next/dynamic';
+import { useEffect, useState } from "react";
 
+const DynamicQuickActions = dynamic(() => import('./QuickActions'), { ssr: false });
 
 const CircularProgress = ({ percentage }: { percentage: number }) => {
   const radius = 50;
@@ -28,7 +30,6 @@ const CircularProgress = ({ percentage }: { percentage: number }) => {
           strokeDashoffset={offset}
           strokeLinecap="round"
           stroke="currentColor"
-  
           fill="transparent"
           r={radius}
           cx="60"
@@ -47,10 +48,62 @@ const CircularProgress = ({ percentage }: { percentage: number }) => {
 };
 
 const StatsSidebar = () => {
-  const user = {
-    name: "Raji",
-    progress: 32,
-  };
+  const [userName, setUserName] = useState("User");
+  const [stats, setStats] = useState({ consistencyChange: 0, goalProgress: 0 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        setError("Authentication token not found.");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const headers = { 'Authorization': `Bearer ${token}` };
+        
+        const userRes = await fetch('/api/users/me', { headers });
+        if (!userRes.ok) throw new Error('Failed to fetch user data');
+        const userData = await userRes.json();
+        setUserName(userData.full_name || userData.username);
+
+        const statsRes = await fetch('/api/stats/sidebar', { headers });
+        if (!statsRes.ok) throw new Error('Failed to fetch stats');
+        const statsData = await statsRes.json();
+        setStats(statsData);
+
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center space-y-4">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary"></div>
+        <p className="text-muted-foreground">Loading stats...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center text-center">
+        <p className="text-destructive">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full flex flex-col space-y-8">
@@ -59,9 +112,9 @@ const StatsSidebar = () => {
       </div>
 
       <div className="flex flex-col items-center text-center">
-        <CircularProgress percentage={user.progress} />
+        <CircularProgress percentage={stats.goalProgress} />
         <h3 className="mt-4 text-xl font-bold text-foreground">
-          Good Morning, {user.name}! 🔥
+          Good Morning, {userName}! 🔥
         </h3>
         <p className="mt-1 text-sm text-muted-foreground">
           Continue your journey to achieve your target!
@@ -71,13 +124,12 @@ const StatsSidebar = () => {
       <div className="text-center bg-muted border border-border rounded-lg p-3">
         <p className="text-sm text-foreground">
           <span className="font-bold">Good job!</span> Your workout consistency
-          is up by <span className="font-bold">15%</span> from last week.
+          is {stats.consistencyChange >= 0 ? 'up by' : 'down by'}{' '}
+          <span className="font-bold">{Math.abs(stats.consistencyChange)}%</span> from last week.
         </p>
       </div>
 
-      <QuickActions />
-
-
+      <DynamicQuickActions />
     </div>
   );
 };
