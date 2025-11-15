@@ -1,8 +1,10 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import Header from "./components/Header";
+import dynamic from 'next/dynamic';
 import { cn } from "../lib/utils";
+
+const Header = dynamic(() => import("./components/Header"), { ssr: false });
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

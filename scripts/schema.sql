@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS api_exercises_staging (
 -- This table stores logged workouts from users.
 CREATE TABLE IF NOT EXISTS workout_logs (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL, -- Should reference your users table
+    user_id TEXT NOT NULL, -- Should reference your users table
     date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     type VARCHAR(50) NOT NULL, -- 'strength' or 'cardio'
     name VARCHAR(255) NOT NULL,
@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS program_day_exercises (
 
 CREATE TABLE IF NOT EXISTS user_active_plans (
   id SERIAL PRIMARY KEY,
-  user_id INT NOT NULL, -- Should have a foreign key to your users table
+  user_id TEXT NOT NULL, -- Should have a foreign key to your users table
   program_id INT NOT NULL REFERENCES workout_programs(id),
   start_date DATE NOT NULL DEFAULT CURRENT_DATE,
   is_active BOOLEAN DEFAULT true,

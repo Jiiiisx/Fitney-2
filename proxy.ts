@@ -1,12 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 
 const secret = new TextEncoder().encode(process.env.JWT_SECRET);
 
-/**
- * @param {import('next/server').NextRequest} req
- */
-export async function middleware(req) {
+export async function proxy(req: NextRequest) {
   const token = req.headers.get('authorization')?.split(' ')[1];
 
   if (!token) {

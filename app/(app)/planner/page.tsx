@@ -45,7 +45,7 @@ export default function PlannerPage() {
               />
             </aside>
             <main className="lg:col-span-3">
-              <CalendarGrid />
+              <CalendarGrid onChooseProgramClick={() => setTemplatesModalOpen(true)} />
             </main>
           </div>
           <footer className="mt-8">

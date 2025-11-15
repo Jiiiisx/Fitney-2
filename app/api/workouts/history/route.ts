@@ -4,7 +4,7 @@ import pool from '@/app/lib/db';
 import { headers } from 'next/headers';
 
 export async function GET() {
-  const headersList = headers();
+  const headersList = await headers();
   const userId = headersList.get('x-user-id');
 
   if (!userId) {

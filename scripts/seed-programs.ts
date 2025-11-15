@@ -87,6 +87,11 @@ async function seedPrograms() {
   console.log('Starting to seed workout programs...');
 
   try {
+    // --- DEBUGGING STEP ---
+    const countRes = await client.query('SELECT COUNT(*) FROM exercises');
+    console.log(`Verification: Found ${countRes.rows[0].count} rows in exercises table.`);
+    // --- END DEBUGGING STEP ---
+
     await client.query('BEGIN');
 
     for (const programData of programs) {
@@ -133,7 +138,6 @@ async function seedPrograms() {
     console.error('Error seeding programs:', error);
   } finally {
     client.release();
-    pool.end();
   }
 }
 

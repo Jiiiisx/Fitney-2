@@ -40,12 +40,15 @@ export function WorkoutTemplates({ open, onOpenChange }: WorkoutTemplatesProps) 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedProgram, setSelectedProgram] = useState<Program | null>(null);
+  const [isStarting, setIsStarting] = useState(false);
+  const [startError, setStartError] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
       setLoading(true);
       setError(null);
       setSelectedProgram(null);
+      setStartError(null); // Reset start error when modal opens
 
       async function fetchPrograms() {
         try {
@@ -65,6 +68,40 @@ export function WorkoutTemplates({ open, onOpenChange }: WorkoutTemplatesProps) 
     }
   }, [open]);
 
+      const handleStartProgram = async () => {
+        if (!selectedProgram) return;
+
+        setIsStarting(true);
+        setStartError(null);
+        try {
+          const token = localStorage.getItem('token');
+          if (!token) {
+            throw new Error('Unauthorized. Please log in again.');
+          }
+
+          const response = await fetch('/api/users/me/active-plan', {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({ programId: selectedProgram.id }),
+          });
+
+          if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error || 'Failed to start program.');
+          }
+          
+          onOpenChange(false);
+          
+        } catch (err) {
+          setStartError(err instanceof Error ? err.message : 'An unknown error occurred.');
+        } finally {
+          setIsStarting(false);
+        }
+      };
+
   const renderContent = () => {
     if (loading) {
       return <div className="text-center p-8">Loading programs...</div>;
@@ -75,36 +112,6 @@ export function WorkoutTemplates({ open, onOpenChange }: WorkoutTemplatesProps) 
     }
 
     if (selectedProgram) {
-      const [isStarting, setIsStarting] = useState(false);
-      const [startError, setStartError] = useState<string | null>(null);
-
-      const handleStartProgram = async () => {
-        setIsStarting(true);
-        setStartError(null);
-        try {
-          const response = await fetch('/api/users/me/active-plan', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ programId: selectedProgram.id }),
-          });
-
-          if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.error || 'Failed to start program.');
-          }
-          
-          // On success, close the modal
-          onOpenChange(false);
-          // Optionally, we could trigger a page refresh or data re-fetch here
-          // For now, we just close the modal.
-          
-        } catch (err) {
-          setStartError(err instanceof Error ? err.message : 'An unknown error occurred.');
-        } finally {
-          setIsStarting(false);
-        }
-      };
-
       return (
         <div>
           <Button onClick={() => setSelectedProgram(null)} variant="ghost" className="mb-4">

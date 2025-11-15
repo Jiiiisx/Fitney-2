@@ -112,9 +112,7 @@ async function fetchAndStageExercises() {
 fetchAndStageExercises()
   .then(() => {
     console.log('Script finished successfully.');
-    pool.end(); // Close all connections in the pool
   })
   .catch((error) => {
     console.error('Script failed with an error:', error);
-    pool.end();
   });

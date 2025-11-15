@@ -92,9 +92,7 @@ async function processStagedData() {
 processStagedData()
   .then(() => {
     console.log('Script finished successfully.');
-    pool.end();
   })
   .catch((error) => {
     console.error('Script failed with an error:', error);
-    pool.end();
   });
