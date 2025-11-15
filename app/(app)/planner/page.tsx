@@ -31,7 +31,6 @@ export default function PlannerPage() {
         onPlanStarted={handlePlanChange}
       />
       <div className="bg-background min-h-screen p-4 sm:p-6 lg:p-8">
-        {/* Header */}
         <header className="mb-8">
           <h1 className="text-3xl font-bold text-foreground">
             Workout Planner
@@ -41,7 +40,6 @@ export default function PlannerPage() {
           </p>
         </header>
 
-        {/* Main Planner Section */}
         <div className="bg-card rounded-2xl p-6 lg:p-8">
           <div className="grid lg:grid-cols-4 gap-8">
             <aside className="lg:col-span-1">
@@ -62,7 +60,6 @@ export default function PlannerPage() {
           </footer>
         </div>
 
-        {/* Bottom Sections */}
         <div className="mt-8">
           <WeeklySummary />
         </div>
@@ -75,5 +72,3 @@ export default function PlannerPage() {
     </>
   );
 }
-
-

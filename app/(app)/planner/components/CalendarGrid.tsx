@@ -2,18 +2,18 @@
 
 import { useEffect, useState } from 'react';
 import WorkoutCard, { Workout } from "./WorkoutCard";
-import { getDay, startOfWeek, addDays, format } from 'date-fns';
+import { addDays, format, parseISO } from 'date-fns';
 
 import { Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-// Define the structure of the plan returned by our API
 interface ActivePlan {
   id: number;
   name: string;
   start_date: string;
   schedule: {
-    day: number;
+    id: number;
+    day_number: number;
     name: string;
     exercises: {
       name: string;
@@ -29,7 +29,6 @@ interface CalendarGridProps {
   planVersion: number;
 }
 
-// Helper to get the next 7 days starting from today
 const getWeekDays = () => {
   const today = new Date();
   return Array.from({ length: 7 }).map((_, i) => addDays(today, i));
@@ -41,38 +40,6 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion }: Cale
   const [error, setError] = useState<string | null>(null);
   
   const weekDays = getWeekDays();
-
-  const handleDelete = async (dayId: number) => {
-    const originalPlan = plan;
-    
-    // Optimistically update the UI
-    if (plan) {
-      const newSchedule = plan.schedule.filter(day => day.id !== dayId);
-      setPlan({ ...plan, schedule: newSchedule });
-    }
-
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('Authentication token not found.');
-
-      const response = await fetch(`/api/users/me/active-plan/days/${dayId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        // If the API call fails, revert the UI change
-        setPlan(originalPlan);
-        console.error('Failed to delete the workout.');
-      }
-    } catch (error) {
-      // If there's an error, revert the UI change
-      setPlan(originalPlan);
-      console.error('An error occurred while deleting the workout:', error);
-    }
-  };
 
   useEffect(() => {
     async function fetchActivePlan() {
@@ -86,9 +53,7 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion }: Cale
         }
 
         const response = await fetch('/api/users/me/active-plan', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
+          headers: { 'Authorization': `Bearer ${token}` },
         });
         
         if (response.status === 404) {
@@ -135,12 +100,14 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion }: Cale
       );
     }
 
-    // THE DEFINITIVE FIX: This handles ISO strings from the API and Date objects from state
-    const safeStartDate = new Date(plan.start_date);
+    const startDate = parseISO(plan.start_date);
 
-    // Create a map of date strings to scheduled days for quick lookups
+    if (isNaN(startDate.getTime())) {
+      return <div className="text-center text-red-500 p-8 col-span-full">Error: Invalid plan start date detected.</div>;
+    }
+
     const scheduleMap = new Map(plan.schedule.map(day => {
-      const dayDate = addDays(safeStartDate, day.day_number - 1);
+      const dayDate = addDays(startDate, day.day_number - 1);
       return [format(dayDate, 'yyyy-MM-dd'), day];
     }));
     
@@ -154,10 +121,9 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion }: Cale
       if (scheduledDay) {
         if (scheduledDay.exercises && scheduledDay.exercises.length > 0) {
           workoutsForDay.push({
-            id: scheduledDay.id,
             name: scheduledDay.name,
             type: scheduledDay.name.toLowerCase().includes('cardio') ? 'Cardio' : 'Strength', 
-            duration: 60, // Placeholder duration
+            duration: 60,
             status: 'scheduled',
             exercises: scheduledDay.exercises.map(ex => 
               `${ex.name} - ${ex.sets ? `${ex.sets} sets x ` : ''}${ex.reps ? `${ex.reps} reps` : ''}${ex.duration_seconds ? `${ex.duration_seconds}s` : ''}`
@@ -165,7 +131,6 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion }: Cale
           });
         } else {
            workoutsForDay.push({
-            id: scheduledDay.id,
             name: scheduledDay.name,
             type: 'Rest Day',
             duration: 0,
@@ -183,10 +148,10 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion }: Cale
           <div className="space-y-3 xl:flex-grow">
             {workoutsForDay.length > 0 ? (
               workoutsForDay.map((workout, index) => (
-                <WorkoutCard key={index} workout={workout} onDelete={handleDelete} />
+                <WorkoutCard key={index} workout={workout} />
               ))
             ) : (
-              <div className="h-24 rounded-lg bg-transparent"></div> // Placeholder for empty day
+              <div className="h-24 rounded-lg bg-transparent"></div>
             )}
           </div>
         </div>

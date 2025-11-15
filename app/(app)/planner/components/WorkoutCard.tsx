@@ -5,11 +5,9 @@ import {
   Dumbbell,
   HeartPulse,
   Wind,
-  X,
 } from "lucide-react";
 
 export type Workout = {
-  id: number; // user_plan_day_id
   name: string;
   type: "Strength" | "Cardio" | "Flexibility" | "Rest Day";
   duration: number; // in minutes
@@ -30,30 +28,16 @@ const typeConfig = {
   "Rest Day": { icon: <CheckCircle2 className="w-4 h-4" />, color: "text-secondary-foreground", bg: "bg-secondary" },
 };
 
-interface WorkoutCardProps {
-  workout: Workout;
-  onDelete: (id: number) => void;
-}
-
-export default function WorkoutCard({ workout, onDelete }: WorkoutCardProps) {
+export default function WorkoutCard({ workout }: { workout: Workout }) {
   const config = typeConfig[workout.type];
 
-  const handleDeleteClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent card click event
-    onDelete(workout.id);
-  };
-
   return (
-    <div className="bg-background p-3 rounded-lg transition-transform duration-300 hover:-translate-y-1 cursor-pointer border border-border hover:shadow-md relative">
+    <div className="bg-background p-3 rounded-lg transition-transform duration-300 hover:-translate-y-1 cursor-pointer border border-border hover:shadow-md">
       <div className="flex justify-between items-start">
-        <h4 className="font-bold text-sm text-foreground mb-1 pr-6">
+        <h4 className="font-bold text-sm text-foreground mb-1 pr-2">
           {workout.name}
         </h4>
-        {workout.type !== 'Rest Day' && (
-            <button onClick={handleDeleteClick} className="absolute top-2 right-2 text-muted-foreground hover:text-destructive transition-colors">
-                <X size={16} />
-            </button>
-        )}
+        {statusIcons[workout.status]}
       </div>
 
       {/* Exercise List */}

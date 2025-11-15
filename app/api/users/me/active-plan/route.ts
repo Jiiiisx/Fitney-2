@@ -2,8 +2,9 @@
 import { NextResponse } from 'next/server';
 import pool from '@/app/lib/db';
 import { headers } from 'next/headers';
+import { format, addDays } from 'date-fns';
 
-// (The existing POST function remains here)
+// POST handler to create a user-specific copy of a workout plan
 export async function POST(req: Request) {
   const headersList = await headers();
   const userId = headersList.get('x-user-id');
@@ -26,7 +27,7 @@ export async function POST(req: Request) {
     // 1. Deactivate any existing active plans for this user
     await client.query('UPDATE user_plans SET is_active = false WHERE user_id = $1 AND is_active = true', [userId]);
 
-    // 2. Create the new user_plan record
+    // 2. Create the new user_plan record and get its start date
     const userPlanRes = await client.query(
       'INSERT INTO user_plans (user_id, source_program_id, start_date, is_active) VALUES ($1, $2, CURRENT_DATE, true) RETURNING id, start_date',
       [userId, programId]
@@ -41,10 +42,9 @@ export async function POST(req: Request) {
 
     // 4. Copy the template days and their exercises to the user-specific tables
     for (const templateDay of templateDaysRes.rows) {
-      // Calculate the date on the server-side, not in the SQL query string
-      const dayDate = new Date(startDate);
-      dayDate.setDate(dayDate.getDate() + templateDay.day_number - 1);
-      const formattedDate = dayDate.toISOString().split('T')[0]; // YYYY-MM-DD
+      // Calculate the specific date for this day in TypeScript
+      const dayDate = addDays(new Date(startDate), templateDay.day_number - 1);
+      const formattedDate = format(dayDate, 'yyyy-MM-dd');
 
       // a. Create a user-specific day
       const userPlanDayRes = await client.query(
@@ -92,8 +92,6 @@ export async function POST(req: Request) {
 }
 
 
-// --- NEW GET HANDLER ---
-
 // Helper function to structure the data from the new user-specific tables
 function structureActivePlan(rows: any[]) {
   if (rows.length === 0) {
@@ -102,7 +100,7 @@ function structureActivePlan(rows: any[]) {
 
   const plan = {
     id: rows[0].user_plan_id,
-    name: rows[0].program_name, // Name of the original program
+    name: rows[0].program_name,
     start_date: rows[0].start_date,
     schedule: new Map(),
   };
@@ -110,8 +108,8 @@ function structureActivePlan(rows: any[]) {
   for (const row of rows) {
     if (row.day_id && !plan.schedule.has(row.day_id)) {
       plan.schedule.set(row.day_id, {
-        id: row.day_id, // Pass the user_plan_day_id to the frontend
-        day: row.day_number,
+        id: row.day_id,
+        day_number: row.day_number,
         name: row.day_name,
         exercises: [],
       });
@@ -128,11 +126,11 @@ function structureActivePlan(rows: any[]) {
     }
   }
 
-  plan.schedule = Array.from(plan.schedule.values()).sort((a, b) => a.day - b.day);
+  plan.schedule = Array.from(plan.schedule.values()).sort((a, b) => a.day_number - b.day_number);
   return plan;
 }
 
-
+// GET handler to read the user-specific plan
 export async function GET() {
   const headersList = await headers();
   const userId = headersList.get('x-user-id');
@@ -144,7 +142,6 @@ export async function GET() {
   const client = await pool.connect();
 
   try {
-    // Query using the new user-specific tables
     const query = `
       SELECT
         up.id as user_plan_id,
@@ -170,7 +167,7 @@ export async function GET() {
     const result = await client.query(query, [userId]);
 
     if (result.rows.length === 0) {
-      return NextResponse.json(null); // No active plan found
+      return NextResponse.json(null);
     }
 
     const structuredPlan = structureActivePlan(result.rows);
