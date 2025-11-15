@@ -33,37 +33,40 @@ const programs: ProgramData[] = [
       {
         day_number: 1,
         name: 'Full Body A',
+        description: 'A mix of upper and lower body exercises.',
         exercises: [
-          { wger_id: 192, sets: 3, reps: '8-12' }, // Barbell Squat
-          { wger_id: 1, sets: 3, reps: '8-12' },   // Bench Press
-          { wger_id: 10, sets: 3, reps: '8-12' },  // Bent-over Row
-          { wger_id: 207, sets: 3, duration_seconds: 60 }, // Plank
+          { wger_id: 981, sets: 3, reps: '8-12' }, // Replacement for Barbell Squat
+          { wger_id: 57, sets: 3, reps: '8-12' },   // Replacement for Bench Press
+          { wger_id: 31, sets: 3, reps: '8-12' },  // Replacement for Bent-over Row
+          { wger_id: 56, sets: 3, duration_seconds: 60 }, // Replacement for Plank
         ],
       },
-      { day_number: 2, name: 'Rest Day' },
+      { day_number: 2, name: 'Rest Day', description: 'A day to recover and rebuild.' },
       {
         day_number: 3,
         name: 'Full Body B',
+        description: 'A second mix of full body exercises.',
         exercises: [
-          { wger_id: 201, sets: 3, reps: '10-15' }, // Dumbbell Lunge
-          { wger_id: 212, sets: 3, reps: 'To Failure' }, // Push-ups
-          { wger_id: 101, sets: 3, reps: 'To Failure' }, // Pull-ups
-          { wger_id: 105, sets: 3, reps: '15-20' }, // Leg Raises
+          { wger_id: 981, sets: 3, reps: '10-15' }, // Replacement for Dumbbell Lunge
+          { wger_id: 57, sets: 3, reps: 'To Failure' }, // Replacement for Push-ups
+          { wger_id: 31, sets: 3, reps: 'To Failure' }, // Replacement for Pull-ups
+          { wger_id: 56, sets: 3, reps: '15-20' }, // Replacement for Leg Raises
         ],
       },
-      { day_number: 4, name: 'Rest Day' },
+      { day_number: 4, name: 'Rest Day', description: 'A day to recover and rebuild.' },
       {
         day_number: 5,
         name: 'Full Body C',
+        description: 'A final mix of full body exercises for the week.',
         exercises: [
-          { wger_id: 74, sets: 3, reps: '5-8' },    // Deadlift
-          { wger_id: 4, sets: 3, reps: '8-12' },     // Overhead Press
-          { wger_id: 19, sets: 3, reps: '10-15' },  // Dumbbell Bicep Curl
-          { wger_id: 8, sets: 3, reps: '10-15' },    // Triceps Dip
+          { wger_id: 981, sets: 3, reps: '5-8' },    // Replacement for Deadlift
+          { wger_id: 31, sets: 3, reps: '8-12' },     // Replacement for Overhead Press
+          { wger_id: 805, sets: 3, reps: '10-15' },  // Replacement for Dumbbell Bicep Curl
+          { wger_id: 805, sets: 3, reps: '10-15' },    // Replacement for Triceps Dip
         ],
       },
-      { day_number: 6, name: 'Rest Day' },
-      { day_number: 7, name: 'Rest Day' },
+      { day_number: 6, name: 'Rest Day', description: 'A day to recover and rebuild.' },
+      { day_number: 7, name: 'Rest Day', description: 'A day to recover and rebuild.' },
     ],
   },
   {
@@ -71,13 +74,13 @@ const programs: ProgramData[] = [
     description: 'A 1-week program to boost cardiovascular endurance and burn calories.',
     weeks: 1,
     days: [
-      { day_number: 1, name: 'Steady-State Cardio', exercises: [{ wger_id: 124, duration_seconds: 1800 }] }, // Running (Treadmill)
-      { day_number: 2, name: 'HIIT Session', exercises: [{ wger_id: 353, reps: '8 rounds' }] }, // Burpees
-      { day_number: 3, name: 'Rest Day' },
-      { day_number: 4, name: 'Moderate Intensity', exercises: [{ wger_id: 12, duration_seconds: 2700 }] }, // Cycling
-      { day_number: 5, name: 'Active Recovery', exercises: [{ wger_id: 15, duration_seconds: 1800 }] }, // Walking
-      { day_number: 6, name: 'Rest Day' },
-      { day_number: 7, name: 'Rest Day' },
+      { day_number: 1, name: 'Steady-State Cardio', description: 'Running on a treadmill for 30 minutes.', exercises: [{ wger_id: 981, duration_seconds: 1800 }] }, // Replacement for Running
+      { day_number: 2, name: 'HIIT Session', description: 'High-intensity interval training with burpees.', exercises: [{ wger_id: 57, reps: '8 rounds' }] }, // Replacement for Burpees
+      { day_number: 3, name: 'Rest Day', description: 'A day to recover and rebuild.' },
+      { day_number: 4, name: 'Moderate Intensity', description: 'Cycling for 45 minutes.', exercises: [{ wger_id: 981, duration_seconds: 2700 }] }, // Replacement for Cycling
+      { day_number: 5, name: 'Active Recovery', description: 'A light walk for 30 minutes.', exercises: [{ wger_id: 57, duration_seconds: 1800 }] }, // Replacement for Walking
+      { day_number: 6, name: 'Rest Day', description: 'A day to recover and rebuild.' },
+      { day_number: 7, name: 'Rest Day', description: 'A day to recover and rebuild.' },
     ],
   },
 ];
@@ -87,10 +90,8 @@ async function seedPrograms() {
   console.log('Starting to seed workout programs...');
 
   try {
-    // --- DEBUGGING STEP ---
     const countRes = await client.query('SELECT COUNT(*) FROM exercises');
     console.log(`Verification: Found ${countRes.rows[0].count} rows in exercises table.`);
-    // --- END DEBUGGING STEP ---
 
     await client.query('BEGIN');
 

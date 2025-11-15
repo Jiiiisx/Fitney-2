@@ -13,6 +13,11 @@ import { WorkoutTemplates } from "./components/WorkoutTemplates";
 export default function PlannerPage() {
   const [isAddWorkoutModalOpen, setAddWorkoutModalOpen] = useState(false);
   const [isTemplatesModalOpen, setTemplatesModalOpen] = useState(false);
+  const [planVersion, setPlanVersion] = useState(0);
+
+  const handlePlanChange = () => {
+    setPlanVersion(v => v + 1);
+  };
 
   return (
     <>
@@ -23,6 +28,7 @@ export default function PlannerPage() {
       <WorkoutTemplates
         open={isTemplatesModalOpen}
         onOpenChange={setTemplatesModalOpen}
+        onPlanStarted={handlePlanChange}
       />
       <div className="bg-background min-h-screen p-4 sm:p-6 lg:p-8">
         {/* Header */}
@@ -45,7 +51,10 @@ export default function PlannerPage() {
               />
             </aside>
             <main className="lg:col-span-3">
-              <CalendarGrid onChooseProgramClick={() => setTemplatesModalOpen(true)} />
+              <CalendarGrid 
+                planVersion={planVersion}
+                onChooseProgramClick={() => setTemplatesModalOpen(true)} 
+              />
             </main>
           </div>
           <footer className="mt-8">

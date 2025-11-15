@@ -89,17 +89,37 @@ CREATE TABLE IF NOT EXISTS program_day_exercises (
   display_order INT DEFAULT 0
 );
 
-CREATE TABLE IF NOT EXISTS user_active_plans (
+CREATE TABLE IF NOT EXISTS user_plans (
   id SERIAL PRIMARY KEY,
   user_id TEXT NOT NULL, -- Should have a foreign key to your users table
-  program_id INT NOT NULL REFERENCES workout_programs(id),
+  source_program_id INT REFERENCES workout_programs(id), -- Track original template
   start_date DATE NOT NULL DEFAULT CURRENT_DATE,
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Ensures a user can only have one plan where is_active = true
--- This is a partial unique index.
 CREATE UNIQUE INDEX IF NOT EXISTS user_active_plan_is_active_idx
-ON user_active_plans (user_id)
+ON user_plans (user_id)
 WHERE (is_active = true);
+
+-- These tables will hold the user's own editable copy of the plan
+CREATE TABLE IF NOT EXISTS user_plan_days (
+  id SERIAL PRIMARY KEY,
+  user_plan_id INT NOT NULL REFERENCES user_plans(id) ON DELETE CASCADE,
+  day_number INT NOT NULL, -- The day number within the plan (e.g., 1, 2, 3...)
+  date DATE, -- The specific calendar date for this workout
+  name VARCHAR(255),
+  description TEXT
+);
+
+CREATE TABLE IF NOT EXISTS user_plan_day_exercises (
+  id SERIAL PRIMARY KEY,
+  user_plan_day_id INT NOT NULL REFERENCES user_plan_days(id) ON DELETE CASCADE,
+  exercise_id INT NOT NULL REFERENCES exercises(id),
+  sets INT,
+  reps VARCHAR(50),
+  duration_seconds INT,
+  notes TEXT,
+  display_order INT DEFAULT 0
+);

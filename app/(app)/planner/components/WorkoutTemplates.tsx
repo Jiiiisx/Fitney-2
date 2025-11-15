@@ -33,9 +33,10 @@ interface Program {
 interface WorkoutTemplatesProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onPlanStarted: () => void;
 }
 
-export function WorkoutTemplates({ open, onOpenChange }: WorkoutTemplatesProps) {
+export function WorkoutTemplates({ open, onOpenChange, onPlanStarted }: WorkoutTemplatesProps) {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -93,6 +94,7 @@ export function WorkoutTemplates({ open, onOpenChange }: WorkoutTemplatesProps) 
             throw new Error(err.error || 'Failed to start program.');
           }
           
+          onPlanStarted(); // Signal to the parent that the plan has changed
           onOpenChange(false);
           
         } catch (err) {

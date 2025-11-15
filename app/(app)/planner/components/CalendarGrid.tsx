@@ -15,33 +15,72 @@ interface ActivePlan {
   schedule: {
     day: number;
     name: string;
-    exercises: { name:string }[];
+    exercises: {
+      name: string;
+      sets: number | null;
+      reps: string | null;
+      duration_seconds: number | null;
+    }[];
   }[];
 }
 
 interface CalendarGridProps {
   onChooseProgramClick: () => void;
+  planVersion: number;
 }
 
-// Helper to get the days of the current week starting from Monday
+// Helper to get the next 7 days starting from today
 const getWeekDays = () => {
-  const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 }); // 1 = Monday
-  return Array.from({ length: 7 }).map((_, i) => addDays(weekStart, i));
+  const today = new Date();
+  return Array.from({ length: 7 }).map((_, i) => addDays(today, i));
 };
 
-export default function CalendarGrid({ onChooseProgramClick }: CalendarGridProps) {
+export default function CalendarGrid({ onChooseProgramClick, planVersion }: CalendarGridProps) {
   const [plan, setPlan] = useState<ActivePlan | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
   const weekDays = getWeekDays();
 
+  const handleDelete = async (dayId: number) => {
+    const originalPlan = plan;
+    
+    // Optimistically update the UI
+    if (plan) {
+      const newSchedule = plan.schedule.filter(day => day.id !== dayId);
+      setPlan({ ...plan, schedule: newSchedule });
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('Authentication token not found.');
+
+      const response = await fetch(`/api/users/me/active-plan/days/${dayId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        // If the API call fails, revert the UI change
+        setPlan(originalPlan);
+        console.error('Failed to delete the workout.');
+      }
+    } catch (error) {
+      // If there's an error, revert the UI change
+      setPlan(originalPlan);
+      console.error('An error occurred while deleting the workout:', error);
+    }
+  };
+
   useEffect(() => {
     async function fetchActivePlan() {
+      setLoading(true);
+      setError(null);
       try {
         const token = localStorage.getItem('token');
         if (!token) {
-          // No need to throw an error, just means user is not logged in or has no plan
           setPlan(null);
           return;
         }
@@ -52,9 +91,15 @@ export default function CalendarGrid({ onChooseProgramClick }: CalendarGridProps
           },
         });
         
+        if (response.status === 404) {
+          setPlan(null);
+          return;
+        }
+
         if (!response.ok) {
           throw new Error('Failed to fetch active plan');
         }
+        
         const data = await response.json();
         setPlan(data);
       } catch (err) {
@@ -64,7 +109,7 @@ export default function CalendarGrid({ onChooseProgramClick }: CalendarGridProps
       }
     }
     fetchActivePlan();
-  }, []);
+  }, [planVersion]);
 
   const renderContent = () => {
     if (loading) {
@@ -90,28 +135,37 @@ export default function CalendarGrid({ onChooseProgramClick }: CalendarGridProps
       );
     }
 
-    // Calculate workouts for the current week view
-    const startDate = new Date(plan.start_date);
+    // THE DEFINITIVE FIX: This handles ISO strings from the API and Date objects from state
+    const safeStartDate = new Date(plan.start_date);
+
+    // Create a map of date strings to scheduled days for quick lookups
+    const scheduleMap = new Map(plan.schedule.map(day => {
+      const dayDate = addDays(safeStartDate, day.day_number - 1);
+      return [format(dayDate, 'yyyy-MM-dd'), day];
+    }));
     
-    return weekDays.map(dayDate => {
-      const dayOfWeekName = format(dayDate, 'EEEE'); // Monday, Tuesday...
-      const dayDiff = Math.floor((dayDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24));
+    return weekDays.map((dayDate, index) => {
+      const dayOfWeekName = format(dayDate, 'EEEE');
+      const dateString = format(dayDate, 'yyyy-MM-dd');
+      const scheduledDay = scheduleMap.get(dateString);
       
       let workoutsForDay: Workout[] = [];
       
-      if (dayDiff >= 0) {
-        const planDayIndex = (dayDiff % plan.schedule.length);
-        const scheduledDay = plan.schedule[planDayIndex];
-
-        if (scheduledDay && scheduledDay.exercises && scheduledDay.exercises.length > 0) {
+      if (scheduledDay) {
+        if (scheduledDay.exercises && scheduledDay.exercises.length > 0) {
           workoutsForDay.push({
+            id: scheduledDay.id,
             name: scheduledDay.name,
             type: scheduledDay.name.toLowerCase().includes('cardio') ? 'Cardio' : 'Strength', 
             duration: 60, // Placeholder duration
-            status: 'scheduled'
+            status: 'scheduled',
+            exercises: scheduledDay.exercises.map(ex => 
+              `${ex.name} - ${ex.sets ? `${ex.sets} sets x ` : ''}${ex.reps ? `${ex.reps} reps` : ''}${ex.duration_seconds ? `${ex.duration_seconds}s` : ''}`
+            )
           });
-        } else if (scheduledDay) {
+        } else {
            workoutsForDay.push({
+            id: scheduledDay.id,
             name: scheduledDay.name,
             type: 'Rest Day',
             duration: 0,
@@ -121,7 +175,7 @@ export default function CalendarGrid({ onChooseProgramClick }: CalendarGridProps
       }
 
       return (
-        <div key={dayOfWeekName} className="xl:flex xl:flex-col xl:flex-1">
+        <div key={index} className="xl:flex xl:flex-col xl:flex-1">
           <h3 className="font-semibold text-sm text-center text-secondary-foreground mb-3">
             {dayOfWeekName}
             <span className="block text-xs">{format(dayDate, 'd MMM')}</span>
@@ -129,7 +183,7 @@ export default function CalendarGrid({ onChooseProgramClick }: CalendarGridProps
           <div className="space-y-3 xl:flex-grow">
             {workoutsForDay.length > 0 ? (
               workoutsForDay.map((workout, index) => (
-                <WorkoutCard key={index} workout={workout} />
+                <WorkoutCard key={index} workout={workout} onDelete={handleDelete} />
               ))
             ) : (
               <div className="h-24 rounded-lg bg-transparent"></div> // Placeholder for empty day

@@ -4,14 +4,17 @@ import {
   Clock,
   Dumbbell,
   HeartPulse,
-  Wind, // Replaced Zap for better Flexibility icon
+  Wind,
+  X,
 } from "lucide-react";
 
 export type Workout = {
+  id: number; // user_plan_day_id
   name: string;
   type: "Strength" | "Cardio" | "Flexibility" | "Rest Day";
   duration: number; // in minutes
   status: "completed" | "scheduled" | "missed";
+  exercises?: string[];
 };
 
 const statusIcons = {
@@ -27,18 +30,44 @@ const typeConfig = {
   "Rest Day": { icon: <CheckCircle2 className="w-4 h-4" />, color: "text-secondary-foreground", bg: "bg-secondary" },
 };
 
-export default function WorkoutCard({ workout }: { workout: Workout }) {
+interface WorkoutCardProps {
+  workout: Workout;
+  onDelete: (id: number) => void;
+}
+
+export default function WorkoutCard({ workout, onDelete }: WorkoutCardProps) {
   const config = typeConfig[workout.type];
 
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click event
+    onDelete(workout.id);
+  };
+
   return (
-    <div className="bg-background p-3 rounded-lg transition-transform duration-300 hover:-translate-y-1 cursor-pointer border border-border hover:shadow-md">
+    <div className="bg-background p-3 rounded-lg transition-transform duration-300 hover:-translate-y-1 cursor-pointer border border-border hover:shadow-md relative">
       <div className="flex justify-between items-start">
-        <h4 className="font-bold text-sm text-foreground mb-1 pr-2">
+        <h4 className="font-bold text-sm text-foreground mb-1 pr-6">
           {workout.name}
         </h4>
-        {statusIcons[workout.status]}
+        {workout.type !== 'Rest Day' && (
+            <button onClick={handleDeleteClick} className="absolute top-2 right-2 text-muted-foreground hover:text-destructive transition-colors">
+                <X size={16} />
+            </button>
+        )}
       </div>
-      <div className="flex items-center text-xs text-secondary-foreground space-x-2 mt-2">
+
+      {/* Exercise List */}
+      {workout.exercises && workout.exercises.length > 0 && (
+        <ul className="mt-2 ml-1 space-y-1 text-xs text-muted-foreground">
+          {workout.exercises.map((ex, index) => (
+            <li key={index} className="pl-2 border-l-2 border-border">
+              {ex}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="flex items-center text-xs text-secondary-foreground space-x-2 mt-3">
         <div className={`flex items-center px-2 py-1 rounded-full text-xs font-semibold ${config.bg} ${config.color}`}>
           {config.icon}
           <span className="ml-1.5">{workout.type}</span>

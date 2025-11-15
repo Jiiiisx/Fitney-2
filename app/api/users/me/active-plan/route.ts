@@ -21,30 +21,70 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'programId is required' }, { status: 400 });
     }
 
-    // Start a transaction
     await client.query('BEGIN');
 
     // 1. Deactivate any existing active plans for this user
-    const deactivateQuery = 'UPDATE user_active_plans SET is_active = false WHERE user_id = $1 AND is_active = true';
-    await client.query(deactivateQuery, [userId]);
+    await client.query('UPDATE user_plans SET is_active = false WHERE user_id = $1 AND is_active = true', [userId]);
 
-    // 2. Insert the new active plan
-    const insertQuery = `
-      INSERT INTO user_active_plans (user_id, program_id, start_date, is_active)
-      VALUES ($1, $2, CURRENT_DATE, true)
-      RETURNING *;
-    `;
-    const result = await client.query(insertQuery, [userId, programId]);
+    // 2. Create the new user_plan record
+    const userPlanRes = await client.query(
+      'INSERT INTO user_plans (user_id, source_program_id, start_date, is_active) VALUES ($1, $2, CURRENT_DATE, true) RETURNING id, start_date',
+      [userId, programId]
+    );
+    const { id: userPlanId, start_date: startDate } = userPlanRes.rows[0];
 
-    // Commit the transaction
+    // 3. Get all days from the source program template
+    const templateDaysRes = await client.query(
+      'SELECT id, day_number, name, description FROM program_days WHERE program_id = $1 ORDER BY day_number',
+      [programId]
+    );
+
+    // 4. Copy the template days and their exercises to the user-specific tables
+    for (const templateDay of templateDaysRes.rows) {
+      // Calculate the date on the server-side, not in the SQL query string
+      const dayDate = new Date(startDate);
+      dayDate.setDate(dayDate.getDate() + templateDay.day_number - 1);
+      const formattedDate = dayDate.toISOString().split('T')[0]; // YYYY-MM-DD
+
+      // a. Create a user-specific day
+      const userPlanDayRes = await client.query(
+        'INSERT INTO user_plan_days (user_plan_id, day_number, date, name, description) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+        [userPlanId, templateDay.day_number, formattedDate, templateDay.name, templateDay.description]
+      );
+      const userPlanDayId = userPlanDayRes.rows[0].id;
+
+      // b. Get exercises for the template day
+      const templateExercisesRes = await client.query(
+        'SELECT exercise_id, sets, reps, duration_seconds, notes, display_order FROM program_day_exercises WHERE program_day_id = $1',
+        [templateDay.id]
+      );
+
+      // c. Copy exercises to the user-specific day
+      for (const templateExercise of templateExercisesRes.rows) {
+        await client.query(
+          `INSERT INTO user_plan_day_exercises 
+            (user_plan_day_id, exercise_id, sets, reps, duration_seconds, notes, display_order) 
+           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+          [
+            userPlanDayId,
+            templateExercise.exercise_id,
+            templateExercise.sets,
+            templateExercise.reps,
+            templateExercise.duration_seconds,
+            templateExercise.notes,
+            templateExercise.display_order,
+          ]
+        );
+      }
+    }
+
     await client.query('COMMIT');
 
-    return NextResponse.json(result.rows[0], { status: 201 });
+    return NextResponse.json({ success: true, userPlanId }, { status: 201 });
 
   } catch (error) {
-    // If any error occurs, roll back the transaction
     await client.query('ROLLBACK');
-    console.error('Error setting active plan:', error);
+    console.error('Error creating user plan copy:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   } finally {
     client.release();
@@ -54,24 +94,23 @@ export async function POST(req: Request) {
 
 // --- NEW GET HANDLER ---
 
-// Helper function to structure the data (similar to the other route)
+// Helper function to structure the data from the new user-specific tables
 function structureActivePlan(rows: any[]) {
   if (rows.length === 0) {
     return null;
   }
 
-  const program = {
-    id: rows[0].program_id,
-    name: rows[0].program_name,
-    description: rows[0].program_description,
-    weeks: rows[0].weeks,
+  const plan = {
+    id: rows[0].user_plan_id,
+    name: rows[0].program_name, // Name of the original program
     start_date: rows[0].start_date,
     schedule: new Map(),
   };
 
   for (const row of rows) {
-    if (row.day_id && !program.schedule.has(row.day_id)) {
-      program.schedule.set(row.day_id, {
+    if (row.day_id && !plan.schedule.has(row.day_id)) {
+      plan.schedule.set(row.day_id, {
+        id: row.day_id, // Pass the user_plan_day_id to the frontend
         day: row.day_number,
         name: row.day_name,
         exercises: [],
@@ -79,7 +118,7 @@ function structureActivePlan(rows: any[]) {
     }
 
     if (row.day_id && row.exercise_id) {
-      const day = program.schedule.get(row.day_id);
+      const day = plan.schedule.get(row.day_id);
       day.exercises.push({
         name: row.exercise_name,
         sets: row.sets,
@@ -89,8 +128,8 @@ function structureActivePlan(rows: any[]) {
     }
   }
 
-  program.schedule = Array.from(program.schedule.values()).sort((a, b) => a.day - b.day);
-  return program;
+  plan.schedule = Array.from(plan.schedule.values()).sort((a, b) => a.day - b.day);
+  return plan;
 }
 
 
@@ -105,59 +144,42 @@ export async function GET() {
   const client = await pool.connect();
 
   try {
-    // Step 1: Find the active plan for the user
-    let activePlanRes;
-    try {
-      const activePlanQuery = 'SELECT program_id, start_date FROM user_active_plans WHERE user_id = $1 AND is_active = true';
-      activePlanRes = await client.query(activePlanQuery, [userId]);
-    } catch (e) {
-      console.error('Error during active plan lookup:', e);
-      throw new Error('Database query for active plan failed.');
-    }
+    // Query using the new user-specific tables
+    const query = `
+      SELECT
+        up.id as user_plan_id,
+        up.start_date,
+        wp.name as program_name,
+        upd.id as day_id,
+        upd.day_number,
+        upd.name as day_name,
+        upde.sets,
+        upde.reps,
+        upde.duration_seconds,
+        e.id as exercise_id,
+        e.name as exercise_name
+      FROM user_plans up
+      JOIN user_plan_days upd ON up.id = upd.user_plan_id
+      LEFT JOIN user_plan_day_exercises upde ON upd.id = upde.user_plan_day_id
+      LEFT JOIN exercises e ON upde.exercise_id = e.id
+      LEFT JOIN workout_programs wp ON up.source_program_id = wp.id
+      WHERE up.user_id = $1 AND up.is_active = true
+      ORDER BY upd.day_number, upde.display_order;
+    `;
+    
+    const result = await client.query(query, [userId]);
 
-    if (activePlanRes.rows.length === 0) {
+    if (result.rows.length === 0) {
       return NextResponse.json(null); // No active plan found
     }
 
-    const { program_id, start_date } = activePlanRes.rows[0];
-
-    // Step 2: Fetch the full details of that plan
-    let fullPlanRes;
-    try {
-      const fullPlanQuery = `
-        SELECT
-          p.id as program_id, p.name as program_name, p.description as program_description, p.weeks,
-          d.id as day_id, d.day_number, d.name as day_name,
-          de.sets, de.reps, de.duration_seconds,
-          e.id as exercise_id, e.name as exercise_name
-        FROM workout_programs p
-        LEFT JOIN program_days d ON p.id = d.program_id
-        LEFT JOIN program_day_exercises de ON d.id = de.program_day_id
-        LEFT JOIN exercises e ON de.exercise_id = e.id
-        WHERE p.id = $1
-        ORDER BY d.day_number, de.display_order;
-      `;
-      fullPlanRes = await client.query(fullPlanQuery, [program_id]);
-    } catch (e) {
-      console.error('Error during full plan query:', e);
-      throw new Error('Database query for full plan details failed.');
-    }
-    
-    // Step 3: Structure the data
-    let structuredPlan;
-    try {
-      const rowsWithStartDate = fullPlanRes.rows.map(row => ({ ...row, start_date }));
-      structuredPlan = structureActivePlan(rowsWithStartDate);
-    } catch(e) {
-      console.error('Error during data structuring:', e);
-      throw new Error('Failed to structure plan data.');
-    }
+    const structuredPlan = structureActivePlan(result.rows);
 
     return NextResponse.json(structuredPlan);
 
   } catch (error) {
     console.error('Error fetching active plan:', error);
-    return NextResponse.json({ error: 'Internal Server Error', details: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   } finally {
     client.release();
   }

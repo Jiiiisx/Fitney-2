@@ -31,7 +31,7 @@ async function fetchAndProcessAllExercises() {
 
   try {
     // 1. Fetch all exercises from WGER API into memory
-    let nextUrl: string | null = 'https://wger.de/api/v2/exerciseinfo/?limit=100&language=2';
+    let nextUrl: string | null = 'https://wger.de/api/v2/exerciseinfo/?limit=100';
     const allExercises: WgerExercise[] = [];
     while (nextUrl) {
       console.log(`Fetching from: ${nextUrl}`);
@@ -39,15 +39,10 @@ async function fetchAndProcessAllExercises() {
       if (!apiResponse.ok) throw new Error(`API request failed: ${apiResponse.statusText}`);
       const data: WgerApiResponse = await apiResponse.json();
       
-      // The old filter was wrong. We need to process each result.
       for (const exercise of data.results) {
-        // Find the English translation, which has language ID 2
         const englishTranslation = exercise.translations?.find(t => t.language === 2);
 
-        // Only add the exercise if an English translation exists and it has a name
         if (englishTranslation && englishTranslation.name) {
-          // We add the whole original exercise object, plus the specific translation
-          // to make processing easier later.
           allExercises.push({
             ...exercise,
             name: englishTranslation.name,
@@ -57,7 +52,7 @@ async function fetchAndProcessAllExercises() {
       }
       nextUrl = data.next;
     }
-    console.log(`Total exercises fetched: ${allExercises.length}`);
+    console.log(`Total exercises fetched with English translations: ${allExercises.length}`);
     if (allExercises.length === 0) {
         console.log('No exercises found to process.');
         return;
@@ -69,6 +64,14 @@ async function fetchAndProcessAllExercises() {
     let processedCount = 0;
 
     for (const exercise of allExercises) {
+      // --- ROBUSTNESS CHECK ---
+      // Ensure category exists before proceeding
+      if (!exercise.category?.name) {
+        console.warn(`Skipping exercise wger_id: ${exercise.id} ('${exercise.name}') due to missing category.`);
+        continue;
+      }
+      // --- END ROBUSTNESS CHECK ---
+
       const cleanedDescription = cleanHtml(exercise.description);
 
       // a. Get or create the category
