@@ -15,7 +15,7 @@ export async function POST(req: Request) {
   const client = await pool.connect();
 
   try {
-    const { name, type, date, duration } = await req.json();
+    const { name, type, date, duration, exercises } = await req.json();
 
     if (!name || !type || !date) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -45,13 +45,11 @@ export async function POST(req: Request) {
 
     // 3. Handle existing entries based on the new workout's type
     if (type === 'Rest Day') {
-      // If setting a Rest Day, delete EVERYTHING else on that day.
       await client.query(
         'DELETE FROM user_plan_days WHERE user_plan_id = $1 AND date = $2',
         [userPlanId, date]
       );
     } else {
-      // If adding a workout, only delete an existing Rest Day.
       await client.query(
         'DELETE FROM user_plan_days WHERE user_plan_id = $1 AND date = $2 AND name = $3',
         [userPlanId, date, 'Rest Day']
@@ -59,11 +57,43 @@ export async function POST(req: Request) {
     }
     
     // 4. Insert the new custom workout day.
-    const description = type === 'Rest Day' ? 'A day to recover and rebuild.' : `${type} workout for ${duration} minutes.`;
-    await client.query(
+    const description = `Custom workout: ${name}`;
+    const insertDayRes = await client.query(
       'INSERT INTO user_plan_days (user_plan_id, day_number, date, name, description) VALUES ($1, $2, $3, $4, $5) RETURNING id',
       [userPlanId, dayNumber, date, name, description]
     );
+    const userPlanDayId = insertDayRes.rows[0].id;
+
+    // 5. If there are exercises, insert them
+    if (exercises && exercises.length > 0) {
+      for (const [index, exercise] of exercises.entries()) {
+        if (!exercise.name) continue; // Skip empty rows
+
+        // Find the exercise_id from the exercises table.
+        const exRes = await client.query('SELECT id FROM exercises WHERE name ILIKE $1 LIMIT 1', [exercise.name]);
+        let exerciseId;
+
+        if (exRes.rows.length > 0) {
+          exerciseId = exRes.rows[0].id;
+        } else {
+          console.warn(`Exercise "${exercise.name}" not found. Skipping.`);
+          continue;
+        }
+
+        await client.query(
+          `INSERT INTO user_plan_day_exercises 
+            (user_plan_day_id, exercise_id, sets, reps, display_order) 
+           VALUES ($1, $2, $3, $4, $5)`,
+          [
+            userPlanDayId,
+            exerciseId,
+            exercise.sets ? parseInt(exercise.sets, 10) : null,
+            exercise.reps,
+            index,
+          ]
+        );
+      }
+    }
 
     await client.query('COMMIT');
 

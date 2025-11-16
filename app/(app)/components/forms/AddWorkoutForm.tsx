@@ -13,19 +13,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Calendar as CalendarIcon,
-  Clock,
   Dumbbell,
-  Heart,
-  Wind as FlexibilityIcon,
   Plus,
+  X,
 } from "lucide-react";
 
 interface AddWorkoutFormProps {
@@ -34,20 +25,40 @@ interface AddWorkoutFormProps {
   onPlanChange: () => void;
 }
 
+type ExerciseInput = {
+  name: string;
+  sets: string;
+  reps: string;
+};
+
 export function AddWorkoutForm({ open, onOpenChange, onPlanChange }: AddWorkoutFormProps) {
-  const [name, setName] = useState('');
-  const [type, setType] = useState('');
-  const [duration, setDuration] = useState('');
+  const [workoutName, setWorkoutName] = useState('');
   const [date, setDate] = useState('');
+  const [exercises, setExercises] = useState<ExerciseInput[]>([{ name: '', sets: '', reps: '' }]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleExerciseChange = (index: number, field: keyof ExerciseInput, value: string) => {
+    const newExercises = [...exercises];
+    newExercises[index][field] = value;
+    setExercises(newExercises);
+  };
+
+  const addExerciseRow = () => {
+    setExercises([...exercises, { name: '', sets: '', reps: '' }]);
+  };
+
+  const removeExerciseRow = (index: number) => {
+    const newExercises = exercises.filter((_, i) => i !== index);
+    setExercises(newExercises);
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (!name || !type || !date) {
-      setError('Please fill out all required fields.');
+    if (!workoutName || !date || exercises.some(ex => !ex.name)) {
+      setError('Please fill out workout name, date, and at least one exercise name.');
       return;
     }
 
@@ -63,10 +74,10 @@ export function AddWorkoutForm({ open, onOpenChange, onPlanChange }: AddWorkoutF
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          name,
-          type,
+          name: workoutName,
+          type: 'Strength', // Defaulting to strength as type is now implicit
           date,
-          duration: Number(duration) || 0,
+          exercises: exercises.filter(ex => ex.name), // Filter out empty exercise rows
         }),
       });
 
@@ -77,10 +88,10 @@ export function AddWorkoutForm({ open, onOpenChange, onPlanChange }: AddWorkoutF
 
       onPlanChange();
       onOpenChange(false);
-      setName('');
-      setType('');
-      setDuration('');
+      // Reset form
+      setWorkoutName('');
       setDate('');
+      setExercises([{ name: '', sets: '', reps: '' }]);
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred.');
@@ -91,73 +102,61 @@ export function AddWorkoutForm({ open, onOpenChange, onPlanChange }: AddWorkoutF
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader className="text-left">
           <DialogTitle className="text-2xl font-bold">Plan a New Workout</DialogTitle>
-          <DialogDescription>What challenge are you taking on next?</DialogDescription>
+          <DialogDescription>Build your custom workout session.</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
-          <div className="grid gap-6 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="workout-name">Workout Name</Label>
-              <div className="relative">
-                <Dumbbell className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <Input
-                  id="workout-name"
-                  placeholder="e.g., Morning Run, Leg Day"
-                  className="pl-10 h-11"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-              </div>
-            </div>
-
+          <div className="grid gap-6 py-4 max-h-[60vh] overflow-y-auto pr-4">
+            {/* Basic Info */}
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="workout-type">Type</Label>
-                <Select value={type} onValueChange={setType}>
-                  <SelectTrigger id="workout-type" className="h-11">
-                    <SelectValue placeholder="Select a type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Cardio"><div className="flex items-center gap-2"><Heart className="h-4 w-4 text-red-500" /><span>Cardio</span></div></SelectItem>
-                    <SelectItem value="Strength"><div className="flex items-center gap-2"><Dumbbell className="h-4 w-4 text-blue-500" /><span>Strength</span></div></SelectItem>
-                    <SelectItem value="Flexibility"><div className="flex items-center gap-2"><FlexibilityIcon className="h-4 w-4 text-green-500" /><span>Flexibility</span></div></SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="workout-name">Workout Name</Label>
+                <Input id="workout-name" placeholder="e.g., Leg Day" value={workoutName} onChange={(e) => setWorkoutName(e.target.value)} />
               </div>
-
               <div className="grid gap-2">
-                <Label htmlFor="duration">Duration</Label>
-                <div className="relative">
-                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <Input
-                    id="duration"
-                    type="number"
-                    placeholder="e.g., 45"
-                    className="pl-10 h-11"
-                    value={duration}
-                    onChange={(e) => setDuration(e.target.value)}
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">min</span>
-                </div>
+                <Label htmlFor="workout-date">Date</Label>
+                <Input id="workout-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
               </div>
             </div>
+            
+            <hr/>
 
-            <div className="grid gap-2">
-              <Label htmlFor="workout-date">Date</Label>
-              <div className="relative">
-                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <Input id="workout-date" type="date" className="pl-10 h-11" value={date} onChange={(e) => setDate(e.target.value)} />
-              </div>
+            {/* Dynamic Exercises */}
+            <div className="grid gap-4">
+              <Label>Exercises</Label>
+              {exercises.map((ex, index) => (
+                <div key={index} className="flex items-end gap-2">
+                  <div className="grid gap-1.5 flex-grow">
+                    <Label htmlFor={`ex-name-${index}`} className="text-xs">Exercise Name</Label>
+                    <Input id={`ex-name-${index}`} placeholder="e.g., Squats" value={ex.name} onChange={(e) => handleExerciseChange(index, 'name', e.target.value)} />
+                  </div>
+                  <div className="grid gap-1.5 w-20">
+                    <Label htmlFor={`ex-sets-${index}`} className="text-xs">Sets</Label>
+                    <Input id={`ex-sets-${index}`} placeholder="3" value={ex.sets} onChange={(e) => handleExerciseChange(index, 'sets', e.target.value)} />
+                  </div>
+                  <div className="grid gap-1.5 w-24">
+                    <Label htmlFor={`ex-reps-${index}`} className="text-xs">Reps</Label>
+                    <Input id={`ex-reps-${index}`} placeholder="8-12" value={ex.reps} onChange={(e) => handleExerciseChange(index, 'reps', e.target.value)} />
+                  </div>
+                  <Button type="button" variant="ghost" size="icon" onClick={() => removeExerciseRow(index)} disabled={exercises.length <= 1}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+              <Button type="button" variant="outline" size="sm" onClick={addExerciseRow} className="mt-2">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Exercise
+              </Button>
             </div>
             {error && <p className="text-sm text-red-500">{error}</p>}
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="mt-6">
             <Button type="submit" disabled={isSubmitting} className="w-full">
-              {isSubmitting ? 'Adding...' : <><Plus className="h-5 w-5 mr-2" /> Add to Plan</>}
+              {isSubmitting ? 'Adding...' : 'Add to Plan'}
             </Button>
           </DialogFooter>
         </form>
