@@ -1,15 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import {
   CheckCircle2,
-  Clock,
   Dumbbell,
   HeartPulse,
   Wind,
+  X,
+  ChevronDown,
 } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 
-// This type is now defined and exported from CalendarGrid.tsx, 
-// but we can redefine it here for simplicity as we rebuild.
 export type Workout = {
   id: number;
   name: string;
@@ -19,12 +20,6 @@ export type Workout = {
   exercises?: string[];
 };
 
-const statusIcons = {
-  completed: <CheckCircle2 className="w-5 h-5 text-success" />,
-  scheduled: <Clock className="w-5 h-5 text-warning" />,
-  missed: <CheckCircle2 className="w-5 h-5 text-destructive" />, // Using CheckCircle as a placeholder
-};
-
 const typeConfig = {
   Strength: { icon: <Dumbbell className="w-4 h-4" />, color: "text-blue-500", bg: "bg-blue-500/10" },
   Cardio: { icon: <HeartPulse className="w-4 h-4" />, color: "text-red-500", bg: "bg-red-500/10" },
@@ -32,28 +27,75 @@ const typeConfig = {
   "Rest Day": { icon: <CheckCircle2 className="w-4 h-4" />, color: "text-secondary-foreground", bg: "bg-secondary" },
 };
 
-// The onDelete prop is removed for now
-export default function WorkoutCard({ workout }: { workout: Workout }) {
+interface WorkoutCardProps {
+  workout: Workout;
+  onDelete: (id: number) => void;
+}
+
+export default function WorkoutCard({ workout, onDelete }: WorkoutCardProps) {
+  const [isOpen, setIsOpen] = useState(false);
   const config = typeConfig[workout.type];
+  const hasExercises = workout.exercises && workout.exercises.length > 0;
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDelete(workout.id);
+  };
+
+  const handleCardClick = () => {
+    if (hasExercises) {
+      setIsOpen(!isOpen);
+    }
+  };
 
   return (
-    <div className="bg-background p-3 rounded-lg border border-border">
-      <div className="flex justify-between items-start">
-        <h4 className="font-bold text-sm text-foreground mb-1 pr-2">
+    <div className="bg-background p-3 rounded-lg border border-border group">
+      <div 
+        className={`flex justify-between items-start ${hasExercises ? 'cursor-pointer' : ''}`}
+        onClick={handleCardClick}
+      >
+        <h4 className="font-bold text-sm text-foreground mb-1 pr-6">
           {workout.name}
         </h4>
-        {statusIcons[workout.status]}
+        
+        <div className="flex items-center space-x-2">
+          {hasExercises && (
+            <ChevronDown
+              size={18}
+              className={`text-muted-foreground transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+            />
+          )}
+          {workout.type !== 'Rest Day' && (
+            <button 
+              onClick={handleDeleteClick} 
+              className="text-muted-foreground hover:text-destructive transition-all opacity-0 group-hover:opacity-100"
+              aria-label="Delete workout"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
       </div>
 
-      {workout.exercises && workout.exercises.length > 0 && (
-        <ul className="mt-2 ml-1 space-y-1 text-xs text-muted-foreground">
-          {workout.exercises.map((ex, index) => (
-            <li key={index} className="pl-2 border-l-2 border-border">
-              {ex}
-            </li>
-          ))}
-        </ul>
-      )}
+      <AnimatePresence>
+        {isOpen && hasExercises && (
+          <motion.div
+            initial={{ height: 0, opacity: 0, marginTop: 0 }}
+            animate={{ height: 'auto', opacity: 1, marginTop: '0.5rem' }}
+            exit={{ height: 0, opacity: 0, marginTop: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <ul className="space-y-1 text-xs text-muted-foreground">
+              {workout.exercises.map((ex, index) => (
+                <li key={index} className="pl-2 border-l-2 border-border">
+                  {ex}
+                </li>
+              ))}
+            </ul>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="flex items-center text-xs text-secondary-foreground space-x-2 mt-3">
         <div className={`flex items-center px-2 py-1 rounded-full text-xs font-semibold ${config.bg} ${config.color}`}>

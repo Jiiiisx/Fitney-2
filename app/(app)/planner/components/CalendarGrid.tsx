@@ -79,6 +79,7 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion, onPlan
   };
 
   const handleDelete = async (dayId: number) => {
+    console.log("handleDelete called with dayId:", dayId);
     try {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('Authentication token not found.');
