@@ -98,9 +98,20 @@ function structureActivePlan(rows: any[]) {
     return null;
   }
 
+  // If the first row has no day_id, it means a plan exists but has no days scheduled yet.
+  // Return the basic plan info with an empty schedule.
+  if (rows[0].day_id === null) {
+    return {
+      id: rows[0].user_plan_id,
+      name: rows[0].program_name || 'My Custom Plan',
+      start_date: rows[0].start_date,
+      schedule: [],
+    };
+  }
+
   const plan = {
     id: rows[0].user_plan_id,
-    name: rows[0].program_name,
+    name: rows[0].program_name || 'My Custom Plan',
     start_date: rows[0].start_date,
     schedule: new Map(),
   };
@@ -111,6 +122,8 @@ function structureActivePlan(rows: any[]) {
         id: row.day_id,
         day_number: row.day_number,
         name: row.day_name,
+        description: row.day_description,
+        date: row.date,
         exercises: [],
       });
     }
@@ -146,17 +159,19 @@ export async function GET() {
       SELECT
         up.id as user_plan_id,
         up.start_date,
-        wp.name as program_name,
+        COALESCE(wp.name, 'My Custom Plan') as program_name,
         upd.id as day_id,
         upd.day_number,
+        upd.date,
         upd.name as day_name,
+        upd.description as day_description,
         upde.sets,
         upde.reps,
         upde.duration_seconds,
         e.id as exercise_id,
         e.name as exercise_name
       FROM user_plans up
-      JOIN user_plan_days upd ON up.id = upd.user_plan_id
+      LEFT JOIN user_plan_days upd ON up.id = upd.user_plan_id
       LEFT JOIN user_plan_day_exercises upde ON upd.id = upde.user_plan_day_id
       LEFT JOIN exercises e ON upde.exercise_id = e.id
       LEFT JOIN workout_programs wp ON up.source_program_id = wp.id

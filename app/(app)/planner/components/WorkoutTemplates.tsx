@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft } from 'lucide-react';
 
-// This interface should match the structure returned by our new API
 interface Program {
   id: number;
   name: string;
@@ -21,6 +20,7 @@ interface Program {
   schedule: {
     day: number;
     name: string;
+    description: string | null;
     exercises: {
       name: string;
       sets: number | null;
@@ -49,7 +49,7 @@ export function WorkoutTemplates({ open, onOpenChange, onPlanStarted }: WorkoutT
       setLoading(true);
       setError(null);
       setSelectedProgram(null);
-      setStartError(null); // Reset start error when modal opens
+      setStartError(null);
 
       async function fetchPrograms() {
         try {
@@ -69,40 +69,40 @@ export function WorkoutTemplates({ open, onOpenChange, onPlanStarted }: WorkoutT
     }
   }, [open]);
 
-      const handleStartProgram = async () => {
-        if (!selectedProgram) return;
+  const handleStartProgram = async () => {
+    if (!selectedProgram) return;
 
-        setIsStarting(true);
-        setStartError(null);
-        try {
-          const token = localStorage.getItem('token');
-          if (!token) {
-            throw new Error('Unauthorized. Please log in again.');
-          }
+    setIsStarting(true);
+    setStartError(null);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Unauthorized. Please log in again.');
+      }
 
-          const response = await fetch('/api/users/me/active-plan', {
-            method: 'POST',
-            headers: { 
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
-            },
-            body: JSON.stringify({ programId: selectedProgram.id }),
-          });
+      const response = await fetch('/api/users/me/active-plan', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ programId: selectedProgram.id }),
+      });
 
-          if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.error || 'Failed to start program.');
-          }
-          
-          onPlanStarted(); // Signal to the parent that the plan has changed
-          onOpenChange(false);
-          
-        } catch (err) {
-          setStartError(err instanceof Error ? err.message : 'An unknown error occurred.');
-        } finally {
-          setIsStarting(false);
-        }
-      };
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to start program.');
+      }
+      
+      onPlanStarted();
+      onOpenChange(false);
+      
+    } catch (err) {
+      setStartError(err instanceof Error ? err.message : 'An unknown error occurred.');
+    } finally {
+      setIsStarting(false);
+    }
+  };
 
   const renderContent = () => {
     if (loading) {
@@ -132,15 +132,7 @@ export function WorkoutTemplates({ open, onOpenChange, onPlanStarted }: WorkoutT
                   {selectedProgram.schedule.map((day) => (
                     <li key={day.day} className="p-3 border rounded-md bg-gray-50/50">
                       <p className="font-bold">Day {day.day}: {day.name}</p>
-                      {day.exercises && day.exercises.length > 0 ? (
-                        <ul className="mt-2 ml-4 text-sm list-disc text-gray-600">
-                          {day.exercises.map((ex, index) => (
-                            <li key={index}>{ex.name} - {ex.sets ? `${ex.sets} sets x ` : ''}{ex.reps ? `${ex.reps} reps` : ''}{ex.duration_seconds ? `${ex.duration_seconds}s` : ''}</li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="text-sm text-gray-500">Rest Day</p>
-                      )}
+                      <p className="text-sm text-gray-500">{day.description}</p>
                     </li>
                   ))}
                 </ul>
@@ -181,14 +173,10 @@ export function WorkoutTemplates({ open, onOpenChange, onPlanStarted }: WorkoutT
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl bg-white rounded-2xl shadow-2xl border-neutral-200/70">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader className="text-left">
-          <DialogTitle className="text-2xl font-bold text-gray-900 tracking-tight">
-            Workout Templates
-          </DialogTitle>
-          <DialogDescription className="text-gray-500 pt-1">
-            Choose a pre-made plan to kickstart your journey.
-          </DialogDescription>
+          <DialogTitle className="text-2xl font-bold">Workout Templates</DialogTitle>
+          <DialogDescription>Choose a pre-made plan to kickstart your journey.</DialogDescription>
         </DialogHeader>
         {renderContent()}
       </DialogContent>

@@ -24,6 +24,7 @@ export default function PlannerPage() {
       <AddWorkoutForm
         open={isAddWorkoutModalOpen}
         onOpenChange={setAddWorkoutModalOpen}
+        onPlanChange={handlePlanChange}
       />
       <WorkoutTemplates
         open={isTemplatesModalOpen}
@@ -52,6 +53,7 @@ export default function PlannerPage() {
               <CalendarGrid 
                 planVersion={planVersion}
                 onChooseProgramClick={() => setTemplatesModalOpen(true)} 
+                onPlanChange={handlePlanChange}
               />
             </main>
           </div>

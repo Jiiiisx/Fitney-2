@@ -1,13 +1,17 @@
+"use client";
+
 import {
   CheckCircle2,
-  XCircle,
   Clock,
   Dumbbell,
   HeartPulse,
   Wind,
 } from "lucide-react";
 
+// This type is now defined and exported from CalendarGrid.tsx, 
+// but we can redefine it here for simplicity as we rebuild.
 export type Workout = {
+  id: number;
   name: string;
   type: "Strength" | "Cardio" | "Flexibility" | "Rest Day";
   duration: number; // in minutes
@@ -18,7 +22,7 @@ export type Workout = {
 const statusIcons = {
   completed: <CheckCircle2 className="w-5 h-5 text-success" />,
   scheduled: <Clock className="w-5 h-5 text-warning" />,
-  missed: <XCircle className="w-5 h-5 text-destructive" />,
+  missed: <CheckCircle2 className="w-5 h-5 text-destructive" />, // Using CheckCircle as a placeholder
 };
 
 const typeConfig = {
@@ -28,11 +32,12 @@ const typeConfig = {
   "Rest Day": { icon: <CheckCircle2 className="w-4 h-4" />, color: "text-secondary-foreground", bg: "bg-secondary" },
 };
 
+// The onDelete prop is removed for now
 export default function WorkoutCard({ workout }: { workout: Workout }) {
   const config = typeConfig[workout.type];
 
   return (
-    <div className="bg-background p-3 rounded-lg transition-transform duration-300 hover:-translate-y-1 cursor-pointer border border-border hover:shadow-md">
+    <div className="bg-background p-3 rounded-lg border border-border">
       <div className="flex justify-between items-start">
         <h4 className="font-bold text-sm text-foreground mb-1 pr-2">
           {workout.name}
@@ -40,7 +45,6 @@ export default function WorkoutCard({ workout }: { workout: Workout }) {
         {statusIcons[workout.status]}
       </div>
 
-      {/* Exercise List */}
       {workout.exercises && workout.exercises.length > 0 && (
         <ul className="mt-2 ml-1 space-y-1 text-xs text-muted-foreground">
           {workout.exercises.map((ex, index) => (
