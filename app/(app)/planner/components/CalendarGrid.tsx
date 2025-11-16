@@ -7,6 +7,7 @@ import { addDays, format, parseISO } from 'date-fns';
 import { Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+// Interface for the data structure returned by the GET /api/users/me/active-plan
 interface ActivePlan {
   id: number;
   name: string;
@@ -32,6 +33,7 @@ interface CalendarGridProps {
   onPlanChange: () => void;
 }
 
+// Helper to get the 7-day rolling week view
 const getWeekDays = () => {
   const today = new Date();
   return Array.from({ length: 7 }).map((_, i) => addDays(today, i));
@@ -43,6 +45,38 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion, onPlan
   const [error, setError] = useState<string | null>(null);
   
   const weekDays = getWeekDays();
+
+  const fetchActivePlan = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setPlan(null);
+        return;
+      }
+
+      const response = await fetch('/api/users/me/active-plan', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      
+      if (response.status === 404) {
+        setPlan(null);
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch active plan');
+      }
+      
+      const data = await response.json();
+      setPlan(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleDelete = async (dayId: number) => {
     try {
@@ -94,38 +128,6 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion, onPlan
   };
 
   useEffect(() => {
-    const fetchActivePlan = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          setPlan(null);
-          return;
-        }
-
-        const response = await fetch('/api/users/me/active-plan', {
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
-        
-        if (response.status === 404) {
-          setPlan(null);
-          return;
-        }
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch active plan');
-        }
-        
-        const data = await response.json();
-        setPlan(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     fetchActivePlan();
   }, [planVersion]);
 
@@ -157,33 +159,36 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion, onPlan
       const dayOfWeekName = format(dayDate, 'EEEE');
       const dateString = format(dayDate, 'yyyy-MM-dd');
       
-      const scheduledDay = plan.schedule.find(day => 
+      const allEventsForDay = plan.schedule.filter(day => 
         day.date && format(parseISO(day.date), 'yyyy-MM-dd') === dateString
       );
-      
-      let workoutsForDay: Workout[] = [];
-      
-      if (scheduledDay) {
-        let workoutType: Workout['type'] = 'Strength';
-        if (scheduledDay.name === 'Rest Day') {
-          workoutType = 'Rest Day';
-        } else if (scheduledDay.description?.toLowerCase().includes('cardio')) {
-          workoutType = 'Cardio';
-        } else if (scheduledDay.description?.toLowerCase().includes('flexibility')) {
-          workoutType = 'Flexibility';
-        }
 
-        workoutsForDay.push({
-          id: scheduledDay.id,
-          name: scheduledDay.name,
-          type: workoutType,
-          duration: 60,
-          status: workoutType === 'Rest Day' ? 'completed' : 'scheduled',
-          exercises: scheduledDay.exercises?.map(ex => 
-            `${ex.name} - ${ex.sets ? `${ex.sets} sets x ` : ''}${ex.reps ? `${ex.reps} reps` : ''}${ex.duration_seconds ? `${ex.duration_seconds}s` : ''}`
-          ) || []
-        });
+      let eventsToShow = allEventsForDay.filter(day => day.name !== 'Rest Day');
+      if (eventsToShow.length === 0 && allEventsForDay.length > 0) {
+        eventsToShow = allEventsForDay; // Show rest day if it's the only thing
       }
+
+      const workoutsForDay: Workout[] = eventsToShow.map(scheduledDay => {
+          let workoutType: Workout['type'] = 'Strength';
+          if (scheduledDay.name === 'Rest Day') {
+            workoutType = 'Rest Day';
+          } else if (scheduledDay.description?.toLowerCase().includes('cardio')) {
+            workoutType = 'Cardio';
+          } else if (scheduledDay.description?.toLowerCase().includes('flexibility')) {
+            workoutType = 'Flexibility';
+          }
+
+          return {
+            id: scheduledDay.id,
+            name: scheduledDay.name,
+            type: workoutType,
+            duration: 60,
+            status: workoutType === 'Rest Day' ? 'completed' : 'scheduled',
+            exercises: scheduledDay.exercises?.map(ex => 
+              `${ex.name} - ${ex.sets ? `${ex.sets} sets x ` : ''}${ex.reps ? `${ex.reps} reps` : ''}${ex.duration_seconds ? `${ex.duration_seconds}s` : ''}`
+            ) || []
+          };
+        });
 
       return (
         <div key={index} className="xl:flex xl:flex-col xl:flex-1">

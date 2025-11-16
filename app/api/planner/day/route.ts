@@ -43,19 +43,27 @@ export async function POST(req: Request) {
     const workoutDate = parseISO(date);
     const dayNumber = differenceInDays(workoutDate, startDate) + 1;
 
-    // 3. Use INSERT ... ON CONFLICT to atomically "upsert" the day's workout.
-    const description = type === 'Rest Day' ? 'A day to recover and rebuild.' : `${type} workout for ${duration} minutes.`;
-    const upsertQuery = `
-      INSERT INTO user_plan_days (user_plan_id, date, day_number, name, description)
-      VALUES ($1, $2, $3, $4, $5)
-      ON CONFLICT (user_plan_id, date)
-      DO UPDATE SET
-        name = EXCLUDED.name,
-        description = EXCLUDED.description,
-        day_number = EXCLUDED.day_number;
-    `;
+    // 3. Handle existing entries based on the new workout's type
+    if (type === 'Rest Day') {
+      // If setting a Rest Day, delete EVERYTHING else on that day.
+      await client.query(
+        'DELETE FROM user_plan_days WHERE user_plan_id = $1 AND date = $2',
+        [userPlanId, date]
+      );
+    } else {
+      // If adding a workout, only delete an existing Rest Day.
+      await client.query(
+        'DELETE FROM user_plan_days WHERE user_plan_id = $1 AND date = $2 AND name = $3',
+        [userPlanId, date, 'Rest Day']
+      );
+    }
     
-    await client.query(upsertQuery, [userPlanId, date, dayNumber, name, description]);
+    // 4. Insert the new custom workout day.
+    const description = type === 'Rest Day' ? 'A day to recover and rebuild.' : `${type} workout for ${duration} minutes.`;
+    await client.query(
+      'INSERT INTO user_plan_days (user_plan_id, day_number, date, name, description) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+      [userPlanId, dayNumber, date, name, description]
+    );
 
     await client.query('COMMIT');
 

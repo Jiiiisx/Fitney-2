@@ -110,8 +110,7 @@ CREATE TABLE IF NOT EXISTS user_plan_days (
   day_number INT NOT NULL, -- The day number within the plan (e.g., 1, 2, 3...)
   date DATE, -- The specific calendar date for this workout
   name VARCHAR(255),
-  description TEXT,
-  UNIQUE (user_plan_id, date)
+  description TEXT
 );
 
 CREATE TABLE IF NOT EXISTS user_plan_day_exercises (
