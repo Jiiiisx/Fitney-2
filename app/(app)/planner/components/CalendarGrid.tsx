@@ -31,6 +31,7 @@ interface CalendarGridProps {
   onChooseProgramClick: () => void;
   planVersion: number;
   onPlanChange: () => void;
+  filters: string[];
 }
 
 // Helper to get the 7-day rolling week view
@@ -39,7 +40,7 @@ const getWeekDays = () => {
   return Array.from({ length: 7 }).map((_, i) => addDays(today, i));
 };
 
-export default function CalendarGrid({ onChooseProgramClick, planVersion, onPlanChange }: CalendarGridProps) {
+export default function CalendarGrid({ onChooseProgramClick, planVersion, onPlanChange, filters }: CalendarGridProps) {
   const [plan, setPlan] = useState<ActivePlan | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -191,7 +192,9 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion, onPlan
           };
         });
 
-      console.log(`Workouts for ${dateString}:`, workoutsForDay);
+      const filteredWorkouts = filters.length > 0 
+        ? workoutsForDay.filter(workout => filters.includes(workout.type))
+        : workoutsForDay;
 
       return (
         <div key={index} className="xl:flex xl:flex-col xl:flex-1">
@@ -199,9 +202,9 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion, onPlan
             {dayOfWeekName}
             <span className="block text-xs">{format(dayDate, 'd MMM')}</span>
           </h3>
-          <div className="space-y-3 xl:flex-grow h-full max-h-[400px] overflow-y-auto">
-            {workoutsForDay.length > 0 ? (
-              workoutsForDay.map((workout, idx) => (
+          <div className="space-y-3 xl:flex-grow h-full max-h-[400px] overflow-y-auto scrollbar-hide">
+            {filteredWorkouts.length > 0 ? (
+              filteredWorkouts.map((workout, idx) => (
                 <WorkoutCard key={idx} workout={workout} onDelete={handleDelete} />
               ))
             ) : (

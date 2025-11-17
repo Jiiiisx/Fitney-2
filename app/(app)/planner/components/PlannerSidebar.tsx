@@ -5,9 +5,24 @@ import { Plus, LayoutTemplate, Filter } from "lucide-react";
 interface PlannerSidebarProps {
   onAddWorkoutClick: () => void;
   onTemplatesClick: () => void;
+  onFilterChange: (newFilters: string[]) => void;
+  selectedFilters: string[];
 }
 
-export default function PlannerSidebar({ onAddWorkoutClick, onTemplatesClick }: PlannerSidebarProps) {
+export default function PlannerSidebar({ 
+  onAddWorkoutClick, 
+  onTemplatesClick,
+  onFilterChange,
+  selectedFilters 
+}: PlannerSidebarProps) {
+  
+  const handleCheckboxChange = (type: string) => {
+    const newFilters = selectedFilters.includes(type)
+      ? selectedFilters.filter(f => f !== type)
+      : [...selectedFilters, type];
+    onFilterChange(newFilters);
+  };
+
   return (
     // Remove background color, let it inherit from parent
     <div className="h-full">
@@ -42,6 +57,8 @@ export default function PlannerSidebar({ onAddWorkoutClick, onTemplatesClick }: 
               <input
                 type="checkbox"
                 className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                checked={selectedFilters.includes(type)}
+                onChange={() => handleCheckboxChange(type)}
               />
               <span className="font-medium">{type}</span>
             </label>

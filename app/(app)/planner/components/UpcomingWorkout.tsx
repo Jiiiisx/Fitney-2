@@ -1,28 +1,130 @@
-import { Calendar, Clock } from "lucide-react";
+"use client";
 
-export default function UpcomingWorkout() {
+import { useEffect, useState } from 'react';
+import { Calendar, Clock, Zap } from 'lucide-react';
+import { format, parseISO, isFuture, differenceInMinutes, isToday } from 'date-fns';
+
+interface UpcomingWorkoutProps {
+  planVersion: number;
+}
+
+interface Workout {
+  id: number;
+  name: string;
+  description: string | null;
+  date: string;
+  duration_minutes?: number; // Optional duration
+}
+
+export default function UpcomingWorkout({ planVersion }: UpcomingWorkoutProps) {
+  const [nextWorkout, setNextWorkout] = useState<Workout | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchNextWorkout = async () => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          setNextWorkout(null);
+          return;
+        }
+
+        const response = await fetch('/api/users/me/active-plan', {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+
+        if (!response.ok) {
+          setNextWorkout(null);
+          return;
+        }
+
+        const plan = await response.json();
+        
+        if (plan && plan.schedule) {
+          const upcoming = plan.schedule
+            .map((s: any) => ({ ...s, date: parseISO(s.date) }))
+            .filter((s: any) => (isFuture(s.date) || isToday(s.date)) && s.name !== 'Rest Day')
+            .sort((a: any, b: any) => a.date - b.date);
+
+          if (upcoming.length > 0) {
+            const next = upcoming[0];
+            // Estimate duration if not provided. Sum of exercise durations or default.
+            const totalDuration = next.exercises?.reduce((sum: number, ex: any) => sum + (ex.duration_seconds || 0), 0) / 60;
+            
+            setNextWorkout({
+              id: next.id,
+              name: next.name,
+              description: next.description,
+              date: next.date.toISOString(),
+              duration_minutes: totalDuration > 0 ? Math.round(totalDuration) : 60, // Default to 60 if no exercise durations
+            });
+          } else {
+            setNextWorkout(null);
+          }
+        } else {
+          setNextWorkout(null);
+        }
+      } catch (error) {
+        console.error("Failed to fetch next workout:", error);
+        setNextWorkout(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNextWorkout();
+  }, [planVersion]);
+
+  if (loading) {
+    return (
+      <div className="bg-primary/10 p-4 rounded-lg border border-primary/50 text-center">
+        <p className="text-secondary-foreground">Loading next workout...</p>
+      </div>
+    );
+  }
+
+  if (!nextWorkout) {
+    return (
+      <div className="bg-primary/10 p-4 rounded-lg border border-primary/50">
+        <h2 className="text-base font-semibold mb-2 text-secondary-foreground">
+          Next Upcoming Workout
+        </h2>
+        <div className="flex items-center justify-center text-center py-4">
+          <div>
+            <h3 className="font-bold text-lg text-foreground">All Clear!</h3>
+            <p className="text-sm text-secondary-foreground">
+              No upcoming workouts scheduled. Enjoy your rest!
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    // Using a soft yellow as a highlight background
     <div className="bg-primary/10 p-4 rounded-lg border border-primary/50">
       <h2 className="text-base font-semibold mb-3 text-secondary-foreground">
         Next Upcoming Workout
       </h2>
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-bold text-lg text-foreground">Leg Day</h3>
+          <h3 className="font-bold text-lg text-foreground">{nextWorkout.name}</h3>
           <p className="text-sm text-secondary-foreground">
-            The ultimate challenge for your lower body.
+            {nextWorkout.description || 'Get ready for your next session.'}
           </p>
         </div>
         <div className="flex items-center space-x-6 text-sm text-secondary-foreground">
           <div className="flex items-center">
             <Calendar className="w-4 h-4 mr-2" />
-            <span>Wednesday</span>
+            <span>{format(parseISO(nextWorkout.date), 'EEEE')}</span>
           </div>
-          <div className="flex items-center">
-            <Clock className="w-4 h-4 mr-2" />
-            <span>75 min</span>
-          </div>
+          {nextWorkout.duration_minutes && (
+            <div className="flex items-center">
+              <Clock className="w-4 h-4 mr-2" />
+              <span>{nextWorkout.duration_minutes} min</span>
+            </div>
+          )}
         </div>
       </div>
     </div>

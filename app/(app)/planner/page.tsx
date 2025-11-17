@@ -14,6 +14,11 @@ export default function PlannerPage() {
   const [isAddWorkoutModalOpen, setAddWorkoutModalOpen] = useState(false);
   const [isTemplatesModalOpen, setTemplatesModalOpen] = useState(false);
   const [planVersion, setPlanVersion] = useState(0);
+  const [filters, setFilters] = useState<string[]>([]);
+
+  const handleFilterChange = (newFilters: string[]) => {
+    setFilters(newFilters);
+  };
 
   const handlePlanChange = () => {
     setPlanVersion(v => v + 1);
@@ -47,6 +52,8 @@ export default function PlannerPage() {
               <PlannerSidebar
                 onAddWorkoutClick={() => setAddWorkoutModalOpen(true)}
                 onTemplatesClick={() => setTemplatesModalOpen(true)}
+                onFilterChange={handleFilterChange}
+                selectedFilters={filters}
               />
             </aside>
             <main className="lg:col-span-3">
@@ -54,21 +61,26 @@ export default function PlannerPage() {
                 planVersion={planVersion}
                 onChooseProgramClick={() => setTemplatesModalOpen(true)} 
                 onPlanChange={handlePlanChange}
+                filters={filters}
               />
             </main>
           </div>
           <footer className="mt-8">
-            <UpcomingWorkout />
+            <UpcomingWorkout planVersion={planVersion} />
           </footer>
         </div>
 
         <div className="mt-8">
-          <WeeklySummary />
+          <WeeklySummary planVersion={planVersion} />
         </div>
 
         <div className="mt-8 grid lg:grid-cols-2 gap-8">
-          <GoalTracker />
-          <Recommendations />
+          <GoalTracker planVersion={planVersion} />
+          <Recommendations 
+            planVersion={planVersion}
+            onAddFlexibility={() => setAddWorkoutModalOpen(true)}
+            onTryTemplate={() => setTemplatesModalOpen(true)}
+          />
         </div>
       </div>
     </>
