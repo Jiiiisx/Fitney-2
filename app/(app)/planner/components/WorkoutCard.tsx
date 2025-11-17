@@ -65,15 +65,13 @@ export default function WorkoutCard({ workout, onDelete }: WorkoutCardProps) {
               className={`text-muted-foreground transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
             />
           )}
-          {workout.type !== 'Rest Day' && (
-            <button 
-              onClick={handleDeleteClick} 
-              className="text-muted-foreground hover:text-destructive transition-all opacity-0 group-hover:opacity-100"
-              aria-label="Delete workout"
-            >
-              <X size={16} />
-            </button>
-          )}
+          <button 
+            onClick={handleDeleteClick} 
+            className="text-muted-foreground hover:text-destructive transition-all opacity-0 group-hover:opacity-100"
+            aria-label="Delete workout"
+          >
+            <X size={16} />
+          </button>
         </div>
       </div>
 

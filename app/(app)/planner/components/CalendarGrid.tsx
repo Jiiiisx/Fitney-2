@@ -191,13 +191,15 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion, onPlan
           };
         });
 
+      console.log(`Workouts for ${dateString}:`, workoutsForDay);
+
       return (
         <div key={index} className="xl:flex xl:flex-col xl:flex-1">
           <h3 className="font-semibold text-sm text-center text-secondary-foreground mb-3">
             {dayOfWeekName}
             <span className="block text-xs">{format(dayDate, 'd MMM')}</span>
           </h3>
-          <div className="space-y-3 xl:flex-grow">
+          <div className="space-y-3 xl:flex-grow h-full max-h-[400px] overflow-y-auto">
             {workoutsForDay.length > 0 ? (
               workoutsForDay.map((workout, idx) => (
                 <WorkoutCard key={idx} workout={workout} onDelete={handleDelete} />

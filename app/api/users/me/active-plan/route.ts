@@ -187,6 +187,8 @@ export async function GET() {
 
     const structuredPlan = structureActivePlan(result.rows);
 
+    console.log("Structured Plan being sent to frontend:", JSON.stringify(structuredPlan, null, 2));
+
     return NextResponse.json(structuredPlan);
 
   } catch (error) {
