@@ -33,7 +33,6 @@ function structurePrograms(rows: any[]) {
     if (row.day_id && row.exercise_id) {
       const day = program.schedule.get(row.day_id);
       day.exercises.push({
-        wger_id: row.wger_id,
         name: row.exercise_name,
         sets: row.sets,
         reps: row.reps,
@@ -66,8 +65,7 @@ export async function GET() {
         de.reps,
         de.duration_seconds,
         e.id as exercise_id,
-        e.name as exercise_name,
-        e.wger_id
+        e.name as exercise_name
       FROM workout_programs p
       LEFT JOIN program_days d ON p.id = d.program_id
       LEFT JOIN program_day_exercises de ON d.id = de.program_day_id

@@ -14,7 +14,7 @@ async function setupDatabase() {
 
   try {
     // Read the schema.sql file
-    const schemaPath = path.join(__dirname, 'schema.sql');
+    const schemaPath = path.join(__dirname, 'new_schema.sql');
     const schemaSQL = fs.readFileSync(schemaPath, 'utf-8');
     
     // Execute the SQL script

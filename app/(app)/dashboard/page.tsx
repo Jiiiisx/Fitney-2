@@ -6,14 +6,19 @@ import UpgradeBanner from "../components/UpgradeBanner";
 import GamificationStreak from "../components/GamificationStreak";
 import ProgressCharts from "../components/ProgressCharts";
 import WorkoutBreakdown from "../components/WorkoutBreakdown";
+import CompleteProfileBanner from "../components/CompleteProfileBanner"; // Import the new component
 import { query } from "@/app/lib/db";
 
 export default async function DashboardPage() {
+  // In a real app, you'd fetch user data and conditionally render the banner
+  const isProfileIncomplete = true; 
+
   return (
     <div className="h-full">
       <div className="grid grid-cols-1 lg:grid-cols-3 h-full">
         {/* Main Content Area (Scrollable) */}
         <div className="lg:col-span-2 space-y-8 overflow-y-auto p-8 scrollbar-hide">
+          {isProfileIncomplete && <CompleteProfileBanner />}
           <TodaysPlanBanner />
           <GamificationStreak />
           <DailyGoals />

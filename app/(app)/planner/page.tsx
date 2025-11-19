@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import PlannerSidebar from "./components/PlannerSidebar";
 import CalendarGrid from "./components/CalendarGrid";
 import UpcomingWorkout from "./components/UpcomingWorkout";
@@ -16,6 +16,19 @@ export default function PlannerPage() {
   const [planVersion, setPlanVersion] = useState(0);
   const [filters, setFilters] = useState<string[]>([]);
 
+  useEffect(() => {
+    const syncHistory = async () => {
+      try {
+        await fetch('/api/planner/sync-history', { method: 'POST' });
+        // We can optionally trigger a re-fetch of data here if needed
+        handlePlanChange();
+      } catch (error) {
+        console.error('Failed to sync history:', error);
+      }
+    };
+    syncHistory();
+  }, []);
+
   const handleFilterChange = (newFilters: string[]) => {
     setFilters(newFilters);
   };
@@ -23,6 +36,14 @@ export default function PlannerPage() {
   const handlePlanChange = () => {
     setPlanVersion(v => v + 1);
   };
+
+  const handleAddWorkoutClick = useCallback(() => {
+    setAddWorkoutModalOpen(true);
+  }, []);
+
+  const handleTemplatesClick = useCallback(() => {
+    setTemplatesModalOpen(true);
+  }, []);
 
   return (
     <>
@@ -50,8 +71,8 @@ export default function PlannerPage() {
           <div className="grid lg:grid-cols-4 gap-8">
             <aside className="lg:col-span-1">
               <PlannerSidebar
-                onAddWorkoutClick={() => setAddWorkoutModalOpen(true)}
-                onTemplatesClick={() => setTemplatesModalOpen(true)}
+                onAddWorkoutClick={handleAddWorkoutClick}
+                onTemplatesClick={handleTemplatesClick}
                 onFilterChange={handleFilterChange}
                 selectedFilters={filters}
               />
@@ -59,7 +80,7 @@ export default function PlannerPage() {
             <main className="lg:col-span-3">
               <CalendarGrid 
                 planVersion={planVersion}
-                onChooseProgramClick={() => setTemplatesModalOpen(true)} 
+                onChooseProgramClick={handleTemplatesClick} 
                 onPlanChange={handlePlanChange}
                 filters={filters}
               />
@@ -78,8 +99,8 @@ export default function PlannerPage() {
           <GoalTracker planVersion={planVersion} />
           <Recommendations 
             planVersion={planVersion}
-            onAddFlexibility={() => setAddWorkoutModalOpen(true)}
-            onTryTemplate={() => setTemplatesModalOpen(true)}
+            onAddFlexibility={handleAddWorkoutClick}
+            onTryTemplate={handleTemplatesClick}
           />
         </div>
       </div>

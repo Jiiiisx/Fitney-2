@@ -7,17 +7,26 @@ async function resetDatabase() {
 
   try {
     await client.query(`
-      DROP TABLE IF EXISTS 
-        program_day_exercises, 
-        program_days, 
-        workout_programs, 
+      DROP TABLE IF EXISTS
+        users,
+        goals,
+        food_logs,
+        foods,
+        workout_logs,
         user_plan_day_exercises,
         user_plan_days,
         user_plans,
-        exercises, 
-        categories, 
-        api_exercises_staging, 
-        workout_logs CASCADE;
+        program_day_exercises,
+        program_days,
+        workout_programs,
+        exercises,
+        categories,
+        api_exercises_staging,
+        user_active_plans,
+        workout_plan_exercises,
+        workout_plans,
+        workout_sessions
+      CASCADE;
     `);
     console.log('Successfully dropped all tables.');
   } catch (error) {

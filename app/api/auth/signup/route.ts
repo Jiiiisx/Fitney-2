@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/app/lib/db';
 import bcrypt from 'bcryptjs';
+import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(req: Request) {
   try {
@@ -21,10 +22,11 @@ export async function POST(req: Request) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    const userId = uuidv4();
 
     const newUser = await query(
-      'INSERT INTO users (username, email, password_hash, full_name) VALUES ($1, $2, $3, $4) RETURNING id, username, email, full_name',
-      [username, email, hashedPassword, fullName]
+      'INSERT INTO users (id, username, email, password_hash, full_name) VALUES ($1, $2, $3, $4, $5) RETURNING id, username, email, full_name',
+      [userId, username, email, hashedPassword, fullName]
     );
 
     return NextResponse.json(newUser.rows[0]);

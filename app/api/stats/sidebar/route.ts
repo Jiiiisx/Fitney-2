@@ -15,11 +15,10 @@ export async function GET(req: Request) {
     const consistencyResult = await query(
       `
       SELECT
-        COUNT(DISTINCT CASE WHEN ws.session_date >= NOW() - INTERVAL '7 days' THEN ws.session_id END) AS last_7_days,
-        COUNT(DISTINCT CASE WHEN ws.session_date >= NOW() - INTERVAL '14 days' AND ws.session_date < NOW() - INTERVAL '7 days' THEN ws.session_id END) AS previous_7_days
-      FROM workout_logs wl
-      JOIN workout_sessions ws ON wl.session_id = ws.session_id
-      WHERE ws.user_id = $1 AND ws.session_date >= NOW() - INTERVAL '14 days';
+        COUNT(DISTINCT CASE WHEN date >= NOW() - INTERVAL '7 days' THEN date::date END) AS last_7_days,
+        COUNT(DISTINCT CASE WHEN date >= NOW() - INTERVAL '14 days' AND date < NOW() - INTERVAL '7 days' THEN date::date END) AS previous_7_days
+      FROM workout_logs
+      WHERE user_id = $1 AND date >= NOW() - INTERVAL '14 days';
       `,
       [userId]
     );

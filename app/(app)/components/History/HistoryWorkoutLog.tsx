@@ -1,30 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Dumbbell, Flame } from "lucide-react";
+import { Dumbbell, Flame, Wind, CheckCircle2 } from "lucide-react";
 
 // Define the structure of a single workout log from our API
 interface WorkoutLog {
   id: number;
-  type: 'strength' | 'cardio';
+  type: 'Strength' | 'Cardio' | 'Flexibility' | 'Rest Day';
   name: string;
-  sets: number | null;
-  reps: number | null;
-  weight_kg: number | null;
-  duration_min: number | null;
-  distance_km: number | null;
-  date: string; // Formatted as 'YYYY-MM-DD HH24:MI:SS'
+  duration: number; // in minutes
+  calories: number;
+  date: string; // Formatted as 'YYYY-MM-DD'
 }
 
 // A helper to format the details of a workout log
 const formatDetails = (log: WorkoutLog) => {
-  if (log.type === 'strength') {
-    return `${log.sets || 0} sets x ${log.reps || 0} reps @ ${log.weight_kg || 0}kg`;
+  if (log.type === 'Rest Day') {
+    return 'A well-deserved rest day.';
   }
-  if (log.type === 'cardio') {
-    return `${log.duration_min || 0} min / ${log.distance_km || 0} km`;
-  }
-  return '';
+  return `${log.duration} min / ${log.calories} kcal`;
 };
 
 // A helper to format the date
@@ -43,7 +37,10 @@ const LogEntry = ({ log }: { log: WorkoutLog }) => (
     <div className="border-b border-border pb-4 mb-4">
       <p className="text-sm font-semibold text-primary">{formatDate(log.date)}</p>
       <h3 className="text-2xl font-bold text-foreground mt-1 flex items-center">
-        {log.type === 'strength' ? <Dumbbell className="w-6 h-6 mr-3 text-blue-500" /> : <Flame className="w-6 h-6 mr-3 text-red-500" />}
+        {log.type === 'Strength' ? <Dumbbell className="w-6 h-6 mr-3 text-blue-500" /> : 
+         log.type === 'Cardio' ? <Flame className="w-6 h-6 mr-3 text-red-500" /> :
+         log.type === 'Flexibility' ? <Wind className="w-6 h-6 mr-3 text-green-500" /> :
+         <CheckCircle2 className="w-6 h-6 mr-3 text-gray-500" />}
         {log.name}
       </h3>
     </div>
@@ -65,6 +62,8 @@ export default function HistoryWorkoutLog() {
 
   useEffect(() => {
     async function fetchHistory() {
+      setLoading(true);
+      setError(null);
       try {
         const response = await fetch('/api/workouts/history');
         if (!response.ok) {

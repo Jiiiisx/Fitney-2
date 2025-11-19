@@ -1,43 +1,23 @@
-// app/api/workouts/history/route.ts
 import { NextResponse } from 'next/server';
-import pool from '@/app/lib/db';
-import { headers } from 'next/headers';
+import { query } from '@/app/lib/db';
 
 export async function GET() {
-  const headersList = await headers();
-  const userId = headersList.get('x-user-id');
-
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   try {
-    const query = `
-      SELECT 
-        id, 
-        type, 
-        name, 
-        sets, 
-        reps, 
-        weight_kg, 
-        duration_min, 
-        distance_km, 
-        to_char(date, 'YYYY-MM-DD HH24:MI:SS') as date 
-      FROM workout_logs 
-      WHERE user_id = $1 
-      ORDER BY date DESC;
-    `;
+    const { rows } = await query('SELECT * FROM workout_logs ORDER BY date DESC');
     
-    const client = await pool.connect();
-    try {
-      const result = await client.query(query, [userId]);
-      return NextResponse.json(result.rows);
-    } finally {
-      client.release();
-    }
+    const formattedHistory = rows.map(row => ({
+      id: row.id,
+      date: new Date(row.date).toISOString().split('T')[0], // Format to YYYY-MM-DD
+      name: row.name,
+      type: row.type,
+      duration: row.duration_min,
+      calories: row.calories_burned, // Assuming the column is named calories_burned
+    }));
+
+    return NextResponse.json(formattedHistory);
 
   } catch (error) {
-    console.error('Error fetching workout history:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error("Error fetching workout history from DB:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
