@@ -1,17 +1,17 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/app/lib/db';
+import { query } from '@/app/lib/db.js';
 import bcrypt from 'bcryptjs';
 import { SignJWT } from 'jose';
 
 export async function POST(req: Request) {
   try {
-    const { email, password } = await req.json();
+    const { identifier, password } = await req.json();
 
-    if (!email || !password) {
-      return NextResponse.json({ error: 'Missing email or password' }, { status: 400 });
+    if (!identifier || !password) {
+      return NextResponse.json({ error: 'Missing identifier or password' }, { status: 400 });
     }
 
-    const userResult = await query('SELECT * FROM users WHERE email = $1', [email]);
+    const userResult = await query('SELECT * FROM users WHERE email = $1 OR username = $1', [identifier]);
     if (userResult.rows.length === 0) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }

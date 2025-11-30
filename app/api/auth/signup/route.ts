@@ -8,17 +8,17 @@ export async function POST(req: Request) {
     const { username, email, password, fullName } = await req.json();
 
     if (!username || !email || !password) {
-      return new NextResponse('Missing username, email, or password', { status: 400 });
+      return NextResponse.json({ error: 'Missing username, email, or password' }, { status: 400 });
     }
 
     const existingUserByEmail = await query('SELECT * FROM users WHERE email = $1', [email]);
     if (existingUserByEmail.rows.length > 0) {
-      return new NextResponse('User with this email already exists', { status: 409 });
+      return NextResponse.json({ error: 'User with this email already exists' }, { status: 409 });
     }
 
     const existingUserByUsername = await query('SELECT * FROM users WHERE username = $1', [username]);
     if (existingUserByUsername.rows.length > 0) {
-      return new NextResponse('Username is already taken', { status: 409 });
+      return NextResponse.json({ error: 'Username is already taken' }, { status: 409 });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -32,6 +32,6 @@ export async function POST(req: Request) {
     return NextResponse.json(newUser.rows[0]);
   } catch (error) {
     console.error('SIGNUP_ERROR', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

@@ -1,5 +1,8 @@
 // scripts/reset-db.ts
-import pool from '../app/lib/db.ts';
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
+
+import pool from '@/app/lib/db.js';
 
 async function resetDatabase() {
   const client = await pool.connect();

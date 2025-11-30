@@ -1,8 +1,8 @@
 // app/api/users/profile/active-plan/route.ts
 import { NextResponse, NextRequest } from 'next/server';
-import pool from '@/app/lib/db';
+import pool from '@/app/lib/db.js';
 import { format, addDays } from 'date-fns';
-import { verifyAuth } from '@/app/lib/auth';
+import { verifyAuth } from '@/app/lib/auth.js';
 
 // POST handler to create a user-specific copy of a workout plan
 export async function POST(req: NextRequest) {

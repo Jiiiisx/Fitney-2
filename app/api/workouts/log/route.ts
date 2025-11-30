@@ -1,15 +1,15 @@
 // app/api/workouts/log/route.ts
-import { NextResponse } from 'next/server';
-import pool from '@/app/lib/db';
-import { headers } from 'next/headers';
+import { NextResponse, NextRequest } from 'next/server';
+import pool from '@/app/lib/db.js';
+import { verifyAuth } from '@/app/lib/auth.js';
 
-export async function POST(req: Request) {
-  const headersList = await headers();
-  const userId = headersList.get('x-user-id');
-
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+export async function POST(req: NextRequest) {
+  const auth = await verifyAuth(req);
+  if (auth.error) {
+    return auth.error;
   }
+  const userId = auth.user.userId;
+
 
   try {
     const body = await req.json();

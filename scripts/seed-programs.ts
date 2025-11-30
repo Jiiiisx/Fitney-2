@@ -1,5 +1,8 @@
 // scripts/seed-programs.ts
-import pool from '../app/lib/db.ts';
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
+
+import pool from '@/app/lib/db.js';
 
 // --- Type Definitions for our Seeder Data ---
 interface ExerciseData {

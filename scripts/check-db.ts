@@ -1,5 +1,5 @@
 // scripts/check-db.ts
-import pool from '../app/lib/db.ts';
+import pool from '@/app/lib/db.js';
 
 async function checkDatabase() {
   const client = await pool.connect();

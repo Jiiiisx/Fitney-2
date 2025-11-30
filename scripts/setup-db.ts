@@ -1,5 +1,8 @@
 // scripts/setup-db.ts
-import pool from '../app/lib/db.ts';
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
+
+import pool from '@/app/lib/db.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';

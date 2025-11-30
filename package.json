@@ -11,6 +11,7 @@
     "db:seed-exercises": "ts-node -r dotenv/config -r tsconfig-paths/register scripts/seed-all-exercises.ts",
     "db:seed-programs": "ts-node -r dotenv/config -r tsconfig-paths/register scripts/seed-programs.ts",
     "db:seed": "npm run db:reset && npm run db:setup && npm run db:seed-exercises && npm run db:seed-programs",
+    "db:all": "ts-node scripts/run-full-db-setup.ts",
     "db:check": "ts-node -r dotenv/config -r tsconfig-paths/register scripts/check-db.ts",
     "test": "jest",
     "test:watch": "jest --watch"

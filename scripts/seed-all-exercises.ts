@@ -1,5 +1,8 @@
 // scripts/seed-all-exercises.ts
-import pool from '../app/lib/db.ts';
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
+
+import pool from '@/app/lib/db.js';
 
 // --- Type Definitions ---
 interface Translation {

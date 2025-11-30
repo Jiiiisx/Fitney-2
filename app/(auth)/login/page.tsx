@@ -20,7 +20,7 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
@@ -34,7 +34,7 @@ export default function LoginPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ identifier, password }),
       });
 
       if (res.ok) {
@@ -43,7 +43,7 @@ export default function LoginPage() {
         router.push('/dashboard');
       } else {
         const data = await res.json();
-        setError(data.message || 'Invalid credentials');
+        setError(data.error || 'Invalid credentials');
       }
     } catch (err) {
       setError('Something went wrong');
@@ -76,8 +76,8 @@ export default function LoginPage() {
 
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-2">
-            <Label htmlFor="email">Email Address</Label>
-            <Input id="email" type="email" placeholder="name@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Label htmlFor="identifier">Email or Username</Label>
+            <Input id="identifier" type="text" placeholder="yourname or name@example.com" required value={identifier} onChange={(e) => setIdentifier(e.target.value)} />
           </div>
           <div className="space-y-2">
             <div className="flex justify-between items-center">

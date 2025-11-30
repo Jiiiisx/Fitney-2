@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { query } from '@/app/lib/db';
-import { isPast, parseISO } from 'date-fns';
+import { query } from '@/app/lib/db.js';
+import { isBefore, startOfToday, parseISO } from 'date-fns';
 import { verifyAuth } from '@/app/lib/auth';
 
 export async function POST(req: NextRequest) {
@@ -23,14 +23,14 @@ export async function POST(req: NextRequest) {
     const userPlanId = planResult.rows[0].id;
 
     // 2. Find all past, unsynced days for that plan
-    // We'll need a way to mark days as "synced" to avoid duplicates.
-    // For now, we'll just grab all past days. A real implementation would be more robust.
     const daysResult = await query(
       'SELECT id, date, name FROM user_plan_days WHERE user_plan_id = $1',
       [userPlanId]
     );
 
-    const pastDays = daysResult.rows.filter(day => day.date && isPast(day.date));
+    // Use a more robust date check to only get days strictly before today
+    const today = startOfToday();
+    const pastDays = daysResult.rows.filter(day => day.date && isBefore(parseISO(day.date), today));
 
     if (pastDays.length === 0) {
       return NextResponse.json({ message: 'No past workout days to sync.' });
@@ -38,9 +38,9 @@ export async function POST(req: NextRequest) {
 
     // 3. For each past day, create an entry in workout_logs
     for (const day of pastDays) {
-      // Check if it's already logged to prevent duplicates
+      // Check if it's already logged to prevent duplicates, casting the timestamp to a date
       const existingLog = await query(
-        'SELECT id FROM workout_logs WHERE user_id = $1 AND date = $2 AND name = $3',
+        'SELECT id FROM workout_logs WHERE user_id = $1 AND date::date = $2 AND name = $3',
         [userId, day.date, day.name]
       );
 
