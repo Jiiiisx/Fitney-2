@@ -30,7 +30,7 @@ export default function UpcomingWorkout({ planVersion }: UpcomingWorkoutProps) {
           return;
         }
 
-        const response = await fetch('/api/users/me/active-plan', {
+        const response = await fetch('/api/users/profile/active-plan', {
           headers: { 'Authorization': `Bearer ${token}` },
         });
 

@@ -19,7 +19,15 @@ export default function PlannerPage() {
   useEffect(() => {
     const syncHistory = async () => {
       try {
-        await fetch('/api/planner/sync-history', { method: 'POST' });
+        const token = localStorage.getItem('token');
+        if (!token) return; // Don't run if not logged in
+        
+        await fetch('/api/planner/sync-history', { 
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
         // We can optionally trigger a re-fetch of data here if needed
         handlePlanChange();
       } catch (error) {

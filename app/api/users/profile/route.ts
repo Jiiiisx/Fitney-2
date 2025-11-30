@@ -1,15 +1,15 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { query } from '@/app/lib/db';
 import { format } from 'date-fns';
+import { verifyAuth } from '@/app/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(req: Request) {
-  const userId = req.headers.get('x-user-id');
+export async function GET(req: NextRequest) {
+  const auth = await verifyAuth(req);
+  if (auth.error) return auth.error;
 
-  if (!userId) {
-    return new NextResponse(JSON.stringify({ message: 'Unauthorized' }), { status: 401 });
-  }
+  const userId = auth.user.userId;
 
   try {
     // Get user's base info

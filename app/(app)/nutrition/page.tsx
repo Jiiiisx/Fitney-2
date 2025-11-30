@@ -54,7 +54,6 @@ export default function NutritionPage() {
 
   const renderContent = () => {
     if (loading) {
-      // You can replace this with a proper spinner component
       return <div className="text-center p-12">Loading...</div>;
     }
 

@@ -80,7 +80,7 @@ export function WorkoutTemplates({ open, onOpenChange, onPlanStarted }: WorkoutT
         throw new Error('Unauthorized. Please log in again.');
       }
 
-      const response = await fetch('/api/users/me/active-plan', {
+      const response = await fetch('/api/users/profile/active-plan', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

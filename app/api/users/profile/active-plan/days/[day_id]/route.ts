@@ -1,4 +1,4 @@
-// app/api/users/me/active-plan/days/[day_id]/route.ts
+// app/api/users/profile/active-plan/days/[day_id]/route.ts
 import { NextResponse } from 'next/server';
 import pool from '@/app/lib/db';
 import { headers } from 'next/headers';

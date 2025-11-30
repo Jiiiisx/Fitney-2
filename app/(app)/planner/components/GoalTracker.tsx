@@ -36,8 +36,8 @@ export default function GoalTracker({ planVersion }: GoalTrackerProps) {
 
         // Fetch goals and active plan in parallel
         const [goalsResponse, planResponse] = await Promise.all([
-          fetch('/api/users/me/goals', { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch('/api/users/me/active-plan', { headers: { 'Authorization': `Bearer ${token}` } })
+          fetch('/api/users/profile/goals', { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch('/api/users/profile/active-plan', { headers: { 'Authorization': `Bearer ${token}` } })
         ]);
 
         if (!goalsResponse.ok) {

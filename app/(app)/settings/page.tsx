@@ -2,10 +2,13 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import dynamic from 'next/dynamic';
 import SettingsSidebar from "./components/SettingsSidebar";
-import ProfileSettings from "./components/ProfileSettings";
+// import ProfileSettings from "./components/ProfileSettings";
 import AppearanceSettings from "./components/AppearanceSettings";
 import NotificationSettings from "./components/NotificationSettings";
+
+const ProfileSettings = dynamic(() => import('./components/ProfileSettings'), { ssr: false });
 
 type SettingsTab = "profile" | "appearance" | "notifications";
 

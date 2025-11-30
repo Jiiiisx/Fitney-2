@@ -38,11 +38,12 @@ const Avatar = ({ user }: { user: UserProfile | null }) => {
     );
   }
 
-  const initials = user.full_name
+  const initials = (user.full_name || '')
     .split(" ")
+    .filter(n => n)
     .map((n) => n[0])
     .join("")
-    .toUpperCase();
+    .toUpperCase() || '?';
 
   return (
     <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center">
@@ -61,7 +62,7 @@ const Header = () => {
     const fetchUser = async () => {
       const token = localStorage.getItem("token");
       if (token) {
-        const res = await fetch('/api/users/me', {
+        const res = await fetch('/api/users/profile', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {
@@ -152,7 +153,7 @@ const Header = () => {
             </PopoverTrigger>
             <PopoverContent className="w-56" align="end">
               <div className="p-4 border-b">
-                <p className="font-bold text-foreground">{user?.full_name}</p>
+                <p className="font-bold text-foreground">{user?.full_name || 'Guest'}</p>
                 <p className="text-sm text-muted-foreground">{user?.email}</p>
               </div>
               <Button

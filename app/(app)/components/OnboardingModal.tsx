@@ -41,7 +41,7 @@ const OnboardingModal = () => {
   const handleFinish = () => {
     console.log('Onboarding Complete. Final Data:', data);
     // Here you would make an API call to save the user's preferences
-    // For example: await fetch('/api/users/me/onboarding', { method: 'POST', body: JSON.stringify(data) });
+    // For example: await fetch('/api/users/profile/onboarding', { method: 'POST', body: JSON.stringify(data) });
     
     // Hide modal and persist completion status
     setIsVisible(false);

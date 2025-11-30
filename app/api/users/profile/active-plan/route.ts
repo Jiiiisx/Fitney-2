@@ -1,17 +1,14 @@
-// app/api/users/me/active-plan/route.ts
-import { NextResponse } from 'next/server';
+// app/api/users/profile/active-plan/route.ts
+import { NextResponse, NextRequest } from 'next/server';
 import pool from '@/app/lib/db';
-import { headers } from 'next/headers';
 import { format, addDays } from 'date-fns';
+import { verifyAuth } from '@/app/lib/auth';
 
 // POST handler to create a user-specific copy of a workout plan
-export async function POST(req: Request) {
-  const headersList = await headers();
-  const userId = headersList.get('x-user-id');
-
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+export async function POST(req: NextRequest) {
+  const auth = await verifyAuth(req);
+  if (auth.error) return auth.error;
+  const userId = auth.user.userId;
 
   const client = await pool.connect();
 
@@ -144,13 +141,10 @@ function structureActivePlan(rows: any[]) {
 }
 
 // GET handler to read the user-specific plan
-export async function GET() {
-  const headersList = await headers();
-  const userId = headersList.get('x-user-id');
-
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+export async function GET(req: NextRequest) {
+  const auth = await verifyAuth(req);
+  if (auth.error) return auth.error;
+  const userId = auth.user.userId;
 
   const client = await pool.connect();
 

@@ -1,16 +1,20 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/app/lib/db';
 import { isPast, parseISO } from 'date-fns';
+import { verifyAuth } from '@/app/lib/auth';
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   try {
-    // In a real app, you'd get the user_id from the session/token
-    const MOCK_USER_ID = 'user_123';
+    const auth = await verifyAuth(req);
+    if (auth.error) {
+      return auth.error;
+    }
+    const userId = auth.user.userId;
 
     // 1. Find the user's active plan
     const planResult = await query(
       'SELECT id FROM user_plans WHERE user_id = $1 AND is_active = true',
-      [MOCK_USER_ID]
+      [userId]
     );
 
     if (planResult.rows.length === 0) {
@@ -37,7 +41,7 @@ export async function POST() {
       // Check if it's already logged to prevent duplicates
       const existingLog = await query(
         'SELECT id FROM workout_logs WHERE user_id = $1 AND date = $2 AND name = $3',
-        [MOCK_USER_ID, day.date, day.name]
+        [userId, day.date, day.name]
       );
 
       if (existingLog.rows.length > 0) {
@@ -60,7 +64,7 @@ export async function POST() {
       await query(
         `INSERT INTO workout_logs (user_id, date, type, name, duration_min, calories_burned)
          VALUES ($1, $2, $3, $4, $5, $6)`,
-        [MOCK_USER_ID, day.date, type, day.name, duration_min, calories_burned]
+        [userId, day.date, type, day.name, duration_min, calories_burned]
       );
     }
 

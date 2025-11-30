@@ -64,13 +64,22 @@ export default function ProfileSettings() {
     const fetchProfile = async () => {
       setIsLoading(true);
       try {
-        // We assume the user's ID is passed in headers by middleware
-        const response = await fetch('/api/users/me');
+        const token = localStorage.getItem("token");
+        if (!token) {
+          console.error("No token found");
+          setIsLoading(false);
+          return;
+        }
+
+        const response = await fetch('/api/users/profile', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
         if (response.ok) {
           const data = await response.json();
           setProfile(data);
         } else {
-          console.error("Failed to fetch profile");
+          console.error("Failed to fetch profile", response.statusText);
         }
       } catch (error) {
         console.error("Error fetching profile:", error);

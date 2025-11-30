@@ -7,7 +7,7 @@ import { addDays, format, parseISO } from 'date-fns';
 import { Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-// Interface for the data structure returned by the GET /api/users/me/active-plan
+// Interface for the data structure returned by the GET /api/users/profile/active-plan
 interface ActivePlan {
   id: number;
   name: string;
@@ -57,7 +57,7 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion, onPlan
         return;
       }
 
-      const response = await fetch('/api/users/me/active-plan', {
+      const response = await fetch('/api/users/profile/active-plan', {
         headers: { 'Authorization': `Bearer ${token}` },
       });
       
@@ -85,7 +85,7 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion, onPlan
       const token = localStorage.getItem('token');
       if (!token) throw new Error('Authentication token not found.');
 
-      const response = await fetch(`/api/users/me/active-plan/days/${dayId}`, {
+      const response = await fetch(`/api/users/profile/active-plan/days/${dayId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` },
       });

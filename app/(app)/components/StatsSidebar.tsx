@@ -68,7 +68,7 @@ const StatsSidebar = () => {
       try {
         const headers = { 'Authorization': `Bearer ${token}` };
         
-        const userRes = await fetch('/api/users/me', { headers });
+        const userRes = await fetch('/api/users/profile', { headers });
         if (!userRes.ok) throw new Error('Failed to fetch user data');
         const userData = await userRes.json();
         setUserName(userData.full_name || userData.username);

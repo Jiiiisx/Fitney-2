@@ -31,7 +31,7 @@ export default function Recommendations({ planVersion, onAddFlexibility, onTryTe
           return;
         }
 
-        const response = await fetch('/api/users/me/active-plan', {
+        const response = await fetch('/api/users/profile/active-plan', {
           headers: { 'Authorization': `Bearer ${token}` },
         });
 
