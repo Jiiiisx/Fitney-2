@@ -37,17 +37,25 @@ const ProgressRing = ({ radius, stroke, progress, color }: { radius: number; str
     );
 };
 
-const ProgressBar = ({ progress, color }: { progress: number, color: string }) => (
+const bgColorVariants = {
+    orange: 'bg-orange-400',
+    red: 'bg-red-400',
+    green: 'bg-green-400',
+    blue: 'bg-blue-400',
+    gray: 'bg-gray-400'
+};
+
+const ProgressBar = ({ progress, color }: { progress: number, color: keyof typeof bgColorVariants }) => (
     <div className="w-full bg-muted rounded-full h-2.5 mt-3">
-        <div className={`bg-${color}-400 h-2.5 rounded-full`} style={{ width: `${progress}%`, transition: 'width 0.4s ease' }} />
+        <div className={`${bgColorVariants[color] || bgColorVariants.gray} h-2.5 rounded-full`} style={{ width: `${progress}%`, transition: 'width 0.4s ease' }} />
     </div>
 );
 
-const ProgressDots = ({ current, total, color }: { current: number, total: number, color: string }) => (
+const ProgressDots = ({ current, total, color }: { current: number, total: number, color: keyof typeof bgColorVariants }) => (
     <div className="flex items-center space-x-2 mt-3">
         {[...Array(total)].map((_, i) => (
             <div key={i} className="w-full h-2 rounded-full bg-muted">
-                <div className={`h-2 rounded-full ${i < current ? `bg-${color}-400` : 'bg-transparent'}`} />
+                <div className={`h-2 rounded-full ${i < current ? (bgColorVariants[color] || bgColorVariants.gray) : 'bg-transparent'}`} />
             </div>
         ))}
     </div>
@@ -97,18 +105,7 @@ export default function PersonalGoals({ goals, onEdit, onDelete }: PersonalGoals
               </div>
             </div>
             
-            {goal.metric === 'active_minutes' ? (
-                <div className="flex items-center justify-center h-full -mt-4">
-                    <div className="relative">
-                        <ProgressRing radius={40} stroke={6} progress={progressPercentage} color={`#${details.color === 'green' ? '81C784' : 'fb923c'}`} />
-                        <div className="absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center">
-                            <p className="text-xl font-bold">{goal.current_value}</p>
-                            <p className="text-xs text-muted-foreground">{details.unit}</p>
-                        </div>
-                    </div>
-                </div>
-            ) : (
-                <>
+            <>
                     <p className="text-2xl font-bold text-card-foreground">
                         {goal.current_value} / {goal.target_value}{' '}
                         <span className="text-base font-normal text-muted-foreground">{details.unit}</span>
@@ -119,7 +116,6 @@ export default function PersonalGoals({ goals, onEdit, onDelete }: PersonalGoals
                         <ProgressBar progress={progressPercentage} color={details.color} />
                     )}
                 </>
-            )}
           </div>
         );
       })}

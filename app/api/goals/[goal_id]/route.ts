@@ -2,10 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/app/lib/db';
 import { verifyAuth } from '@/app/lib/auth';
 
-import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/app/lib/db';
-import { verifyAuth } from '@/app/lib/auth';
-
 // The context parameter is typed as `any` to work around a Next.js/Turbopack issue
 // where `params` can be a promise, causing type conflicts with the standard signature.
 export async function PUT(request: NextRequest, { params }: any) {
