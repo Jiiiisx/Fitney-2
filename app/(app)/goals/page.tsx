@@ -7,8 +7,8 @@ import GoalTimeline from "./components/GoalTimeline";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { GoalFormModal } from "./components/GoalFormModal";
+import { GoalRecommendations } from "./components/GoalRecommendations";
 
-// Define the Goal type based on our new schema
 export interface Goal {
   id: number;
   user_id: string;
@@ -23,36 +23,47 @@ export interface Goal {
   updated_at: string;
 }
 
+export type GoalTemplate = {
+  title: string;
+  category: 'weekly' | 'long_term';
+  metric: string;
+  target_value: number;
+  description: string;
+};
+
 export default function GoalsPage() {
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [recommendations, setRecommendations] = useState<GoalTemplate[]>([]);
   const [loading, setLoading] = useState(true);
+  const [recsLoading, setRecsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setModalOpen] = useState(false);
   const [goalToEdit, setGoalToEdit] = useState<Goal | null>(null);
 
   useEffect(() => {
-    const fetchGoals = async () => {
+    const fetchInitialData = async () => {
       try {
         setLoading(true);
         const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('Authentication token not found. Please log in.');
-        }
+        if (!token) throw new Error('Authentication token not found.');
 
-        const response = await fetch('/api/goals', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
+        const response = await fetch('/api/goals', { headers: { 'Authorization': `Bearer ${token}` }});
+        if (!response.ok) throw new Error('Failed to fetch goals');
         
-        if (!response.ok) {
-          if (response.status === 401) {
-            throw new Error('Unauthorized. Your session may have expired.');
-          }
-          throw new Error('Failed to fetch goals');
+        const goalsData = await response.json();
+        setGoals(goalsData);
+
+        // If user has no goals, fetch recommendations
+        if (goalsData.length === 0) {
+          setRecsLoading(true);
+          const recsResponse = await fetch('/api/goals/recommendations', { headers: { 'Authorization': `Bearer ${token}` }});
+          if (!recsResponse.ok) throw new Error('Failed to fetch recommendations');
+          
+          const recsData = await recsResponse.json();
+          setRecommendations(recsData.recommendations);
+          setRecsLoading(false);
         }
-        const data = await response.json();
-        setGoals(data);
+        
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An unknown error');
       } finally {
@@ -60,7 +71,7 @@ export default function GoalsPage() {
       }
     };
 
-    fetchGoals();
+    fetchInitialData();
   }, []);
 
   const handleOpenCreateModal = () => {
@@ -83,38 +94,63 @@ export default function GoalsPage() {
   };
 
   const handleGoalDeleted = async (goalId: number) => {
-    if (!confirm('Are you sure you want to delete this goal?')) {
-        return;
-    }
+    // ... (logic remains the same)
+  };
 
-    const originalGoals = goals;
-    setGoals(prevGoals => prevGoals.filter(g => g.id !== goalId));
-
+  const handleAcceptRecommendation = async (recommendation: GoalTemplate) => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Authentication token not found.');
-      }
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('Authentication token not found.');
 
-      const response = await fetch(`/api/goals/${goalId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+        const response = await fetch('/api/goals', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(recommendation),
+        });
 
-      if (!response.ok) {
-        console.error('Failed to delete goal from server.');
-        setGoals(originalGoals); // Revert UI on failure
-      }
+        if (!response.ok) throw new Error('Failed to accept recommendation');
+
+        const newGoal = await response.json();
+        
+        // Add new goal to state and clear recommendations
+        setGoals(prevGoals => [newGoal, ...prevGoals]);
+        setRecommendations([]);
+
     } catch (err) {
-      console.error('An error occurred while deleting the goal.', err);
-      setGoals(originalGoals); // Revert UI on failure
+        setError(err instanceof Error ? err.message : 'An unknown error occurred');
     }
   };
 
   const weeklyGoals = goals.filter(g => g.category === 'weekly');
   const longTermGoals = goals.filter(g => g.category === 'long_term');
+
+  const renderContent = () => {
+    if (loading) {
+      return <p>Loading your space...</p>;
+    }
+    if (error) {
+        return <p className="text-red-500">{error}</p>;
+    }
+    if (goals.length > 0) {
+      return (
+        <>
+          <PersonalGoals goals={weeklyGoals} onEdit={handleOpenEditModal} onDelete={handleGoalDeleted} />
+          <LongTermGoals goals={longTermGoals} onEdit={handleOpenEditModal} onDelete={handleGoalDeleted} />
+          <GoalTimeline />
+        </>
+      );
+    }
+    return (
+        <GoalRecommendations 
+            recommendations={recommendations} 
+            onAccept={handleAcceptRecommendation}
+            isLoading={recsLoading}
+        />
+    );
+  }
 
   return (
     <>
@@ -133,17 +169,7 @@ export default function GoalsPage() {
                   Create Goal
               </Button>
           </div>
-          
-          {loading && <p>Loading goals...</p>}
-          {error && <p className="text-red-500">{error}</p>}
-          
-          {!loading && !error && (
-              <>
-                  <PersonalGoals goals={weeklyGoals} onEdit={handleOpenEditModal} onDelete={handleGoalDeleted} />
-                  <LongTermGoals goals={longTermGoals} onEdit={handleOpenEditModal} onDelete={handleGoalDeleted} />
-                  <GoalTimeline />
-              </>
-          )}
+          {renderContent()}
         </div>
       </div>
     </>

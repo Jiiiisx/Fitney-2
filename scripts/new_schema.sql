@@ -267,3 +267,12 @@ CREATE TABLE IF NOT EXISTS user_streaks (
     longest_streak INT DEFAULT 0,
     last_activity_date DATE
 );
+
+-- User Onboarding Profile
+CREATE TABLE IF NOT EXISTS user_profiles (
+    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    main_goal VARCHAR(50), -- e.g., 'lose_weight', 'gain_muscle', 'maintain_fitness'
+    experience_level VARCHAR(50), -- e.g., 'beginner', 'intermediate', 'advanced'
+    workout_location VARCHAR(50), -- e.g., 'home', 'gym'
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
