@@ -1,17 +1,115 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import PersonalGoals from "./components/PersonalGoals";
 import LongTermGoals from "./components/LongTermGoals";
 import GoalTimeline from "./components/GoalTimeline";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
+import { CreateGoalModal } from "./components/GoalFormModal";
+
+// Define the Goal type based on our new schema
+export interface Goal {
+  id: number;
+  user_id: string;
+  title: string;
+  category: 'weekly' | 'long_term';
+  metric: string;
+  target_value: number;
+  current_value: number;
+  start_date: string;
+  end_date: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
 export default function GoalsPage() {
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isModalOpen, setModalOpen] = useState(false);
+
+  useEffect(() => {
+    const fetchGoals = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/goals');
+        if (!response.ok) {
+          throw new Error('Failed to fetch goals');
+        }
+        const data = await response.json();
+        setGoals(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An unknown error');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGoals();
+  }, []);
+
+  const handleGoalCreated = (newGoal: Goal) => {
+    setGoals(prevGoals => [newGoal, ...prevGoals]);
+  };
+
+  const handleGoalDeleted = async (goalId: number) => {
+    if (!confirm('Are you sure you want to delete this goal?')) {
+        return;
+    }
+
+    // Immediately remove from UI for responsiveness
+    setGoals(prevGoals => prevGoals.filter(g => g.id !== goalId));
+
+    try {
+      const response = await fetch(`/api/goals/${goalId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        // If the API call fails, re-add the goal to the UI and show an error
+        // (This requires a more sophisticated state management, for now, we log an error)
+        console.error('Failed to delete goal from server.');
+        // Potentially, fetch goals again to sync state
+        // fetchGoals();
+      }
+    } catch (err) {
+      console.error('An error occurred while deleting the goal.', err);
+    }
+  };
+
+  const weeklyGoals = goals.filter(g => g.category === 'weekly');
+  const longTermGoals = goals.filter(g => g.category === 'long_term');
+
   return (
-    <div className="h-full">
-      {/* Main Content Area (Scrollable) */}
-      <div className="space-y-8 overflow-y-auto p-8 scrollbar-hide">
-        <h1 className="text-4xl font-bold tracking-tight">Your Goals</h1>
-        <PersonalGoals />
-        <LongTermGoals />
-        <GoalTimeline />
+    <>
+      <CreateGoalModal 
+        open={isModalOpen} 
+        onOpenChange={setModalOpen}
+        onGoalCreated={handleGoalCreated}
+      />
+      <div className="h-full">
+        <div className="space-y-8 overflow-y-auto p-8 scrollbar-hide">
+          <div className="flex items-center justify-between">
+              <h1 className="text-4xl font-bold tracking-tight">Your Goals</h1>
+              <Button onClick={() => setModalOpen(true)}>
+                  <Plus className="w-5 h-5 mr-2" />
+                  Create Goal
+              </Button>
+          </div>
+          
+          {loading && <p>Loading goals...</p>}
+          {error && <p className="text-red-500">{error}</p>}
+          
+          {!loading && !error && (
+              <>
+                  <PersonalGoals goals={weeklyGoals} onEdit={() => {}} onDelete={handleGoalDeleted} />
+                  <LongTermGoals goals={longTermGoals} onEdit={() => {}} onDelete={handleGoalDeleted} />
+                  <GoalTimeline />
+              </>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

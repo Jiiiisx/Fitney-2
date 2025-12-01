@@ -125,16 +125,35 @@ CREATE TABLE IF NOT EXISTS food_logs (
     serving_size_g NUMERIC(10, 2) NOT NULL
 );
 
--- Goal Tracking
-CREATE TABLE IF NOT EXISTS goals (
+-- Goal Tracking (Re-designed for flexibility)
+CREATE TABLE IF NOT EXISTS user_goals (
     id SERIAL PRIMARY KEY,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    type VARCHAR(100) NOT NULL, -- e.g., 'weight_loss', 'strength_gain_bench_press'
-    target_value NUMERIC(10, 2) NOT NULL,
-    current_value NUMERIC(10, 2),
-    start_date DATE,
-    end_date DATE,
-    status VARCHAR(50) DEFAULT 'in_progress' -- 'in_progress', 'completed', 'abandoned'
+    title VARCHAR(255) NOT NULL,
+    
+    -- Goal Category/Type (Personal weekly vs. Long-term)
+    category VARCHAR(50) NOT NULL CHECK (category IN ('weekly', 'long_term')),
+
+    -- Metric to track
+    metric VARCHAR(50) NOT NULL CHECK (metric IN (
+        'workout_frequency', -- count per week
+        'calories_burned',   -- sum per week
+        'active_minutes',    -- sum per week
+        'hydration',         -- count per day/week
+        'distance_run',      -- cumulative km
+        'weight_lifted',     -- cumulative kg
+        'yoga_sessions',     -- cumulative count
+        'challenges_joined'  -- cumulative count
+    )),
+    
+    target_value INTEGER NOT NULL,
+    current_value INTEGER DEFAULT 0,
+    
+    start_date DATE DEFAULT CURRENT_DATE,
+    end_date DATE, -- Can be null for ongoing goals
+
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 --
