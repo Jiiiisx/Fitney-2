@@ -91,8 +91,16 @@ export default function GoalsPage() {
     setGoals(prevGoals => prevGoals.filter(g => g.id !== goalId));
 
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication token not found.');
+      }
+
       const response = await fetch(`/api/goals/${goalId}`, {
         method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       if (!response.ok) {
