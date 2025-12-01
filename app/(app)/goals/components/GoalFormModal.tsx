@@ -78,9 +78,17 @@ export function GoalFormModal({ open, onOpenChange, onSave, goalToEdit }: GoalFo
     const method = isEditMode ? 'PUT' : 'POST';
 
     try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication token not found. Please log in.');
+      }
+
       const response = await fetch(url, {
         method: method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
           title,
           category,

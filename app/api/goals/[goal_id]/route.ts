@@ -2,13 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/app/lib/db';
 import { verifyAuth } from '@/app/lib/auth';
 
-export async function PUT(request: NextRequest, { params }: { params: { goal_id: string } }) {
+import { NextRequest, NextResponse } from 'next/server';
+import pool from '@/app/lib/db';
+import { verifyAuth } from '@/app/lib/auth';
+
+// The context parameter is typed as `any` to work around a Next.js/Turbopack issue
+// where `params` can be a promise, causing type conflicts with the standard signature.
+export async function PUT(request: NextRequest, { params }: any) {
+  const resolvedParams = await params;
+  const goalId = resolvedParams.goal_id;
+
   const { user, error } = await verifyAuth(request);
   if (error) {
     return error;
   }
   const userId = user.userId;
-  const goalId = params.goal_id;
 
   try {
     const body = await request.json();
@@ -32,7 +40,6 @@ export async function PUT(request: NextRequest, { params }: { params: { goal_id:
       
     const values = [...Object.values(updates)];
 
-    
     const result = await pool.query(
       `UPDATE user_goals SET ${setClauses} WHERE id = $1 AND user_id = $2 RETURNING *`,
       [goalId, userId, ...values]
@@ -49,20 +56,21 @@ export async function PUT(request: NextRequest, { params }: { params: { goal_id:
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { goal_id: string } }) {
+export async function DELETE(request: NextRequest, { params }: any) {
+  const resolvedParams = await params;
+  const goalId = resolvedParams.goal_id;
+
   const { user, error } = await verifyAuth(request);
   if (error) {
     return error;
   }
   const userId = user.userId;
-  const goalId = params.goal_id;
 
   if (!goalId) {
     return NextResponse.json({ error: 'Goal ID is required' }, { status: 400 });
   }
 
   try {
-    
     const result = await pool.query(
       'DELETE FROM user_goals WHERE id = $1 AND user_id = $2',
       [goalId, userId]
