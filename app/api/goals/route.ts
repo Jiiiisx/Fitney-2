@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPool } from '@/app/lib/db';
+import pool from '@/app/lib/db';
 import { verifyAuth } from '@/app/lib/auth';
 
 export async function GET(request: NextRequest) {
@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   const userId = user.userId;
 
   try {
-    const pool = getPool();
+    
     const result = await pool.query(
       'SELECT * FROM user_goals WHERE user_id = $1 ORDER BY created_at DESC',
       [userId]
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const pool = getPool();
+    
     const result = await pool.query(
       `INSERT INTO user_goals (user_id, title, category, metric, target_value, end_date)
        VALUES ($1, $2, $3, $4, $5, $6)

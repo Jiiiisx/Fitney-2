@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -21,10 +21,11 @@ import {
 } from "@/components/ui/select";
 import type { Goal } from "../page";
 
-interface CreateGoalModalProps {
+interface GoalFormModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onGoalCreated: (newGoal: Goal) => void;
+  onSave: (savedGoal: Goal) => void;
+  goalToEdit?: Goal | null;
 }
 
 // Pre-defined metrics for user to choose from
@@ -43,7 +44,7 @@ const metrics = {
     ]
 };
 
-export function CreateGoalModal({ open, onOpenChange, onGoalCreated }: CreateGoalModalProps) {
+export function GoalFormModal({ open, onOpenChange, onSave, goalToEdit }: GoalFormModalProps) {
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState<'weekly' | 'long_term'>('weekly');
   const [metric, setMetric] = useState("");
@@ -51,14 +52,34 @@ export function CreateGoalModal({ open, onOpenChange, onGoalCreated }: CreateGoa
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const isEditMode = !!goalToEdit;
+
+  useEffect(() => {
+    if (goalToEdit) {
+      setTitle(goalToEdit.title);
+      setCategory(goalToEdit.category);
+      setMetric(goalToEdit.metric);
+      setTarget(String(goalToEdit.target_value));
+    } else {
+      // Reset form for create mode
+      setTitle('');
+      setCategory('weekly');
+      setMetric('');
+      setTarget('');
+    }
+  }, [goalToEdit, open]); //Rerun when modal is opened
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError(null);
 
+    const url = isEditMode ? `/api/goals/${goalToEdit.id}` : '/api/goals';
+    const method = isEditMode ? 'PUT' : 'POST';
+
     try {
-      const response = await fetch('/api/goals', {
-        method: 'POST',
+      const response = await fetch(url, {
+        method: method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title,
@@ -70,18 +91,12 @@ export function CreateGoalModal({ open, onOpenChange, onGoalCreated }: CreateGoa
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create goal');
+        throw new Error(errorData.error || `Failed to ${isEditMode ? 'update' : 'create'} goal`);
       }
 
-      const newGoal = await response.json();
-      onGoalCreated(newGoal); // Pass the new goal back to the parent
+      const savedGoal = await response.json();
+      onSave(savedGoal); // Pass the saved goal back to the parent
       onOpenChange(false); // Close the modal
-      
-      // Reset form
-      setTitle('');
-      setCategory('weekly');
-      setMetric('');
-      setTarget('');
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
@@ -94,9 +109,9 @@ export function CreateGoalModal({ open, onOpenChange, onGoalCreated }: CreateGoa
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Create a New Goal</DialogTitle>
+          <DialogTitle>{isEditMode ? 'Edit Goal' : 'Create a New Goal'}</DialogTitle>
           <DialogDescription>
-            Define your new goal. Make it specific and measurable.
+            {isEditMode ? 'Update the details of your goal.' : 'Define your new goal. Make it specific and measurable.'}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -112,7 +127,7 @@ export function CreateGoalModal({ open, onOpenChange, onGoalCreated }: CreateGoa
               <Label htmlFor="category" className="text-right">
                 Category
               </Label>
-              <Select onValueChange={(v) => setCategory(v as any)} defaultValue={category}>
+              <Select onValueChange={(v) => setCategory(v as any)} value={category} disabled={isEditMode}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
@@ -127,7 +142,7 @@ export function CreateGoalModal({ open, onOpenChange, onGoalCreated }: CreateGoa
               <Label htmlFor="metric" className="text-right">
                 Metric
               </Label>
-               <Select onValueChange={setMetric} value={metric}>
+               <Select onValueChange={setMetric} value={metric} disabled={isEditMode}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Select a metric" />
                 </SelectTrigger>

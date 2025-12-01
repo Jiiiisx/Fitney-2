@@ -6,7 +6,7 @@ import LongTermGoals from "./components/LongTermGoals";
 import GoalTimeline from "./components/GoalTimeline";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { CreateGoalModal } from "./components/GoalFormModal";
+import { GoalFormModal } from "./components/GoalFormModal";
 
 // Define the Goal type based on our new schema
 export interface Goal {
@@ -28,13 +28,27 @@ export default function GoalsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setModalOpen] = useState(false);
+  const [goalToEdit, setGoalToEdit] = useState<Goal | null>(null);
 
   useEffect(() => {
     const fetchGoals = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/goals');
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('Authentication token not found. Please log in.');
+        }
+
+        const response = await fetch('/api/goals', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
         if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error('Unauthorized. Your session may have expired.');
+          }
           throw new Error('Failed to fetch goals');
         }
         const data = await response.json();
@@ -49,8 +63,23 @@ export default function GoalsPage() {
     fetchGoals();
   }, []);
 
-  const handleGoalCreated = (newGoal: Goal) => {
-    setGoals(prevGoals => [newGoal, ...prevGoals]);
+  const handleOpenCreateModal = () => {
+    setGoalToEdit(null);
+    setModalOpen(true);
+  };
+
+  const handleOpenEditModal = (goal: Goal) => {
+    setGoalToEdit(goal);
+    setModalOpen(true);
+  };
+
+  const handleSaveGoal = (savedGoal: Goal) => {
+    const isEditing = goals.some(g => g.id === savedGoal.id);
+    if (isEditing) {
+      setGoals(goals.map(g => g.id === savedGoal.id ? savedGoal : g));
+    } else {
+      setGoals([savedGoal, ...goals]);
+    }
   };
 
   const handleGoalDeleted = async (goalId: number) => {
@@ -58,7 +87,7 @@ export default function GoalsPage() {
         return;
     }
 
-    // Immediately remove from UI for responsiveness
+    const originalGoals = goals;
     setGoals(prevGoals => prevGoals.filter(g => g.id !== goalId));
 
     try {
@@ -67,14 +96,12 @@ export default function GoalsPage() {
       });
 
       if (!response.ok) {
-        // If the API call fails, re-add the goal to the UI and show an error
-        // (This requires a more sophisticated state management, for now, we log an error)
         console.error('Failed to delete goal from server.');
-        // Potentially, fetch goals again to sync state
-        // fetchGoals();
+        setGoals(originalGoals); // Revert UI on failure
       }
     } catch (err) {
       console.error('An error occurred while deleting the goal.', err);
+      setGoals(originalGoals); // Revert UI on failure
     }
   };
 
@@ -83,16 +110,17 @@ export default function GoalsPage() {
 
   return (
     <>
-      <CreateGoalModal 
+      <GoalFormModal 
         open={isModalOpen} 
         onOpenChange={setModalOpen}
-        onGoalCreated={handleGoalCreated}
+        onSave={handleSaveGoal}
+        goalToEdit={goalToEdit}
       />
       <div className="h-full">
         <div className="space-y-8 overflow-y-auto p-8 scrollbar-hide">
           <div className="flex items-center justify-between">
               <h1 className="text-4xl font-bold tracking-tight">Your Goals</h1>
-              <Button onClick={() => setModalOpen(true)}>
+              <Button onClick={handleOpenCreateModal}>
                   <Plus className="w-5 h-5 mr-2" />
                   Create Goal
               </Button>
@@ -103,8 +131,8 @@ export default function GoalsPage() {
           
           {!loading && !error && (
               <>
-                  <PersonalGoals goals={weeklyGoals} onEdit={() => {}} onDelete={handleGoalDeleted} />
-                  <LongTermGoals goals={longTermGoals} onEdit={() => {}} onDelete={handleGoalDeleted} />
+                  <PersonalGoals goals={weeklyGoals} onEdit={handleOpenEditModal} onDelete={handleGoalDeleted} />
+                  <LongTermGoals goals={longTermGoals} onEdit={handleOpenEditModal} onDelete={handleGoalDeleted} />
                   <GoalTimeline />
               </>
           )}
