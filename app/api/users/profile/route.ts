@@ -12,9 +12,12 @@ export async function GET(req: NextRequest) {
   const userId = auth.user.userId;
 
   try {
-    // Get user's base info
+    // Get user's base info and onboarding status
     const userResult = await query(
-      `SELECT full_name, email, date_of_birth, gender FROM users WHERE id = $1`,
+      `SELECT u.full_name, u.email, u.date_of_birth, u.gender, us.has_completed_onboarding
+       FROM users u
+       LEFT JOIN user_settings us ON u.id = us.user_id
+       WHERE u.id = $1`,
       [userId]
     );
 
@@ -48,6 +51,7 @@ export async function GET(req: NextRequest) {
       gender: userData.gender || '',
       height: measurementData.height_cm || '',
       weight: measurementData.weight_kg || '',
+      hasCompletedOnboarding: userData.has_completed_onboarding || false,
     };
 
     return NextResponse.json(profile);

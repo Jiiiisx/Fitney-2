@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { query } from '@/app/lib/db.js';
+import { query } from '@/app/lib/db';
 import { isBefore, startOfToday, parseISO } from 'date-fns';
 import { verifyAuth } from '@/app/lib/auth';
 

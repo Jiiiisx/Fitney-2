@@ -4,7 +4,7 @@ import { ChevronDown } from "lucide-react";
 
 export default function HistoryFilterControls() {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="flex flex-wrap items-center gap-4">
       <div className="flex items-center gap-2">
         <span className="text-sm font-medium text-gray-600">Filter by:</span>
         <div className="relative">

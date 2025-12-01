@@ -178,7 +178,8 @@ CREATE TABLE IF NOT EXISTS user_settings (
     theme VARCHAR(20) DEFAULT 'system', -- 'light', 'dark', 'system'
     measurement_units VARCHAR(10) DEFAULT 'metric', -- 'metric', 'imperial'
     email_notifications BOOLEAN DEFAULT true,
-    push_notifications BOOLEAN DEFAULT true
+    push_notifications BOOLEAN DEFAULT true,
+    has_completed_onboarding BOOLEAN DEFAULT false
 );
 
 -- Body Measurements

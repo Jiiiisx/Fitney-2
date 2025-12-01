@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import dynamic from 'next/dynamic';
 import { cn } from "../lib/utils";
-import OnboardingModal from "./components/OnboardingModal"; // Import the new component
+
 
 const Header = dynamic(() => import("./components/Header"), { ssr: false });
 
@@ -23,7 +23,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         isFixedLayoutPage ? "h-screen flex flex-col" : "min-h-screen",
       )}
     >
-      <OnboardingModal /> {/* Render the modal here */}
       <Header />
       <main className={cn(isFixedLayoutPage ? "flex-grow overflow-hidden" : "p-8")}>
         {children}

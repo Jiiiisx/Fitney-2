@@ -1,7 +1,7 @@
 // app/api/workouts/log/route.ts
 import { NextResponse, NextRequest } from 'next/server';
-import pool from '@/app/lib/db.js';
-import { verifyAuth } from '@/app/lib/auth.js';
+import pool from '@/app/lib/db';
+import { verifyAuth } from '@/app/lib/auth';
 
 export async function POST(req: NextRequest) {
   const auth = await verifyAuth(req);

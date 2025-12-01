@@ -12,21 +12,13 @@ interface OnboardingData {
   level?: string;
 }
 
-const OnboardingModal = () => {
+interface OnboardingModalProps {
+  onComplete: () => void;
+}
+
+const OnboardingModal = ({ onComplete }: OnboardingModalProps) => {
   const [step, setStep] = useState(1);
   const [data, setData] = useState<OnboardingData>({});
-  const [isVisible, setIsVisible] = useState(true);
-
-  // This effect will run when the component mounts.
-  // In a real app, you'd check if the user has already completed onboarding.
-  useEffect(() => {
-    // For demonstration, we always show it.
-    // In a real app:
-    // const hasCompleted = localStorage.getItem('onboardingCompleted');
-    // if (hasCompleted) {
-    //   setIsVisible(false);
-    // }
-  }, []);
 
   const totalSteps = 4; // 3 questions + 1 welcome screen
 
@@ -38,20 +30,38 @@ const OnboardingModal = () => {
     }, 300);
   };
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
     console.log('Onboarding Complete. Final Data:', data);
-    // Here you would make an API call to save the user's preferences
-    // For example: await fetch('/api/users/profile/onboarding', { method: 'POST', body: JSON.stringify(data) });
     
-    // Hide modal and persist completion status
-    setIsVisible(false);
-    // localStorage.setItem('onboardingCompleted', 'true');
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error("No token found");
+
+      // API call to save user preferences and mark onboarding as complete
+      await fetch('/api/users/profile/complete-onboarding', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(data) // Sending the collected data
+      });
+      
+      // Call the parent function to close the modal and refresh user data
+      onComplete();
+
+    } catch (error) {
+      console.error("Failed to complete onboarding:", error);
+      // Optionally, show an error message to the user
+      // For now, we'll just close the modal
+      onComplete();
+    }
   };
 
   const renderStep = () => {
     switch (step) {
       case 1:
-        return <WelcomeStep key="welcome" onStart={() => setStep(2)} progress={step / totalSteps} />;
+        return <WelcomeStep key="welcome" onStart={() => setStep(2)} progress={(step -1) / totalSteps} />;
       case 2:
         return <QuestionStep
           key="goal"
@@ -62,7 +72,7 @@ const OnboardingModal = () => {
             { value: 'get_fit', label: 'Bugar & Sehat', icon: Heart, description: 'Kombinasi seimbang antara kekuatan dan kardio.' },
           ]}
           onSelect={(value) => handleSelect('goal', value)}
-          progress={step / totalSteps}
+          progress={(step -1) / totalSteps}
         />;
       case 3:
         return <QuestionStep
@@ -73,7 +83,7 @@ const OnboardingModal = () => {
             { value: 'gym', label: 'Di Gym', icon: Building, description: 'Akses penuh ke semua jenis peralatan latihan.' },
           ]}
           onSelect={(value) => handleSelect('location', value)}
-          progress={step / totalSteps}
+          progress={(step -1) / totalSteps}
         />;
       case 4:
         return <QuestionStep
@@ -85,7 +95,7 @@ const OnboardingModal = () => {
             { value: 'advanced', label: 'Sudah Rutin', icon: Mountain, description: 'Berlatih secara konsisten dengan intensitas tinggi.' },
           ]}
           onSelect={(value) => handleSelect('level', value)}
-          progress={step / totalSteps}
+          progress={(step -1) / totalSteps}
         />;
       case 5:
         return <FinishStep key="finish" onFinish={handleFinish} />;
@@ -94,13 +104,9 @@ const OnboardingModal = () => {
     }
   };
 
-  if (!isVisible) {
-    return null;
-  }
-
   return (
-    <div className="fixed inset-0 backdrop-blur-lg z-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl h-[450px] bg-gradient-to-b from-yellow-100 to-gray-50 dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-lg z-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-2xl h-[450px] bg-card rounded-2xl shadow-2xl overflow-hidden">
         <AnimatePresence mode="wait">
           {renderStep()}
         </AnimatePresence>

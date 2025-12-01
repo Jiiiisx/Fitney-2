@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/app/lib/db.js';
+import { query } from '@/app/lib/db';
 import bcrypt from 'bcryptjs';
 import { SignJWT } from 'jose';
 

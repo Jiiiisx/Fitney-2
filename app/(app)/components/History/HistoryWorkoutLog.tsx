@@ -90,10 +90,11 @@ export default function HistoryWorkoutLog() {
 
   if (logs.length === 0) {
     return (
-      <div className="text-center p-8 border-2 border-dashed rounded-2xl">
-        <h3 className="text-lg font-semibold">No Workouts Logged Yet</h3>
-        <p className="text-muted-foreground mt-2">
-          Click the "Log Workout" button to start tracking your progress!
+      <div className="text-center p-16 rounded-2xl bg-card border border-border flex flex-col items-center justify-center">
+        <Dumbbell className="w-16 h-16 text-muted-foreground/50 mb-6" />
+        <h3 className="text-xl font-bold text-foreground">Your Workout Diary is Empty</h3>
+        <p className="text-muted-foreground mt-2 max-w-sm">
+          It looks like you haven't logged any workouts yet. Click the "Log Workout" button to add your first entry and start your journey!
         </p>
       </div>
     );

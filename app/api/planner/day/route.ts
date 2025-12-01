@@ -1,16 +1,14 @@
 // app/api/planner/day/route.ts
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import pool from '@/app/lib/db';
-import { headers } from 'next/headers';
 import { differenceInDays, parseISO } from 'date-fns';
+import { verifyAuth } from '@/app/lib/auth';
 
-export async function POST(req: Request) {
-  const headersList = await headers();
-  const userId = headersList.get('x-user-id');
+export async function POST(req: NextRequest) {
+  const auth = await verifyAuth(req);
+  if (auth.error) return auth.error;
+  const userId = auth.user.userId;
 
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
 
   const client = await pool.connect();
 
