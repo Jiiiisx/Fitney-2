@@ -13,5 +13,4 @@ const customJestConfig = {
   },
 }
 
-// createJestConfig diekspor dengan cara ini untuk memastikan bahwa next/jest dapat memuat konfigurasi Next.js yang bersifat async
 module.exports = createJestConfig(customJestConfig)
