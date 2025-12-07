@@ -1,14 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import PersonalGoals from "./components/PersonalGoals";
-import LongTermGoals from "./components/LongTermGoals";
+import { GoalCard } from "./components/GoalCard"; // Use the new universal card
 import GoalTimeline from "./components/GoalTimeline";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { GoalFormModal } from "./components/GoalFormModal";
 import { GoalRecommendations } from "./components/GoalRecommendations";
+import { Card, CardContent } from "@/components/ui/card";
 
+// Interfaces remain the same
 export interface Goal {
   id: number;
   user_id: string;
@@ -53,7 +54,6 @@ export default function GoalsPage() {
         const goalsData = await response.json();
         setGoals(goalsData);
 
-        // If user has no goals, fetch recommendations
         if (goalsData.length === 0) {
           setRecsLoading(true);
           const recsResponse = await fetch('/api/goals/recommendations', { headers: { 'Authorization': `Bearer ${token}` }});
@@ -74,6 +74,7 @@ export default function GoalsPage() {
     fetchInitialData();
   }, []);
 
+  // Handler functions remain the same
   const handleOpenCreateModal = () => {
     setGoalToEdit(null);
     setModalOpen(true);
@@ -94,31 +95,23 @@ export default function GoalsPage() {
   };
 
   const handleGoalDeleted = async (goalId: number) => {
-    // ... (logic remains the same)
+    setGoals(goals.filter(g => g.id !== goalId));
+    // NOTE: Add API call to delete from DB here
   };
-
+  
   const handleAcceptRecommendation = async (recommendation: GoalTemplate) => {
     try {
         const token = localStorage.getItem('token');
         if (!token) throw new Error('Authentication token not found.');
-
         const response = await fetch('/api/goals', {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify(recommendation),
         });
-
         if (!response.ok) throw new Error('Failed to accept recommendation');
-
         const newGoal = await response.json();
-        
-        // Add new goal to state and clear recommendations
         setGoals(prevGoals => [newGoal, ...prevGoals]);
         setRecommendations([]);
-
     } catch (err) {
         setError(err instanceof Error ? err.message : 'An unknown error occurred');
     }
@@ -127,22 +120,57 @@ export default function GoalsPage() {
   const weeklyGoals = goals.filter(g => g.category === 'weekly');
   const longTermGoals = goals.filter(g => g.category === 'long_term');
 
+  // RENDER FUNCTION: Completely refactored for new layout
   const renderContent = () => {
     if (loading) {
-      return <p>Loading your space...</p>;
+      return <p className="text-center text-muted-foreground">Loading your goals...</p>;
     }
     if (error) {
-        return <p className="text-red-500">{error}</p>;
+        return <p className="text-red-500 text-center">{error}</p>;
     }
     if (goals.length > 0) {
       return (
-        <>
-          <PersonalGoals goals={weeklyGoals} onEdit={handleOpenEditModal} onDelete={handleGoalDeleted} />
-          <LongTermGoals goals={longTermGoals} onEdit={handleOpenEditModal} onDelete={handleGoalDeleted} />
-          <GoalTimeline />
-        </>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content Column */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Weekly Goals Section */}
+            {weeklyGoals.length > 0 && (
+              <section>
+                <h2 className="text-2xl font-bold tracking-tight text-foreground mb-4">
+                  Weekly Goals
+                </h2>
+                <div className={weeklyGoals.length > 1 ? "grid grid-cols-1 md:grid-cols-2 gap-4" : ""}>
+                  {weeklyGoals.map(goal => (
+                    <GoalCard key={goal.id} goal={goal} onEdit={handleOpenEditModal} onDelete={handleGoalDeleted} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Long-Term Goals Section */}
+            {longTermGoals.length > 0 && (
+              <section>
+                <h2 className="text-2xl font-bold tracking-tight text-foreground mb-4">
+                  Long-Term Goals
+                </h2>
+                <div className={longTermGoals.length > 1 ? "grid grid-cols-1 md:grid-cols-2 gap-4" : ""}>
+                  {longTermGoals.map(goal => (
+                    <GoalCard key={goal.id} goal={goal} onEdit={handleOpenEditModal} onDelete={handleGoalDeleted} />
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+
+          {/* Sidebar Column */}
+          <div className="space-y-6">
+            <GoalTimeline />
+            {/* Recommendations can be shown in sidebar as well, if desired */}
+          </div>
+        </div>
       );
     }
+    // Empty state for the entire page
     return (
         <GoalRecommendations 
             recommendations={recommendations} 
@@ -161,9 +189,9 @@ export default function GoalsPage() {
         goalToEdit={goalToEdit}
       />
       <div className="h-full">
-        <div className="space-y-8 overflow-y-auto p-8 scrollbar-hide">
+        <div className="space-y-6 overflow-y-auto p-6 md:p-8 scrollbar-hide">
           <div className="flex items-center justify-between">
-              <h1 className="text-4xl font-bold tracking-tight">Your Goals</h1>
+              <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Your Goals</h1>
               <Button onClick={handleOpenCreateModal}>
                   <Plus className="w-5 h-5 mr-2" />
                   Create Goal
