@@ -29,7 +29,7 @@ export default function PlannerPage() {
           }
         });
         // We can optionally trigger a re-fetch of data here if needed
-        handlePlanChange();
+        // handlePlanChange(); // THIS LINE IS REMOVED TO PREVENT THE INFINITE LOOP
       } catch (error) {
         console.error('Failed to sync history:', error);
       }
