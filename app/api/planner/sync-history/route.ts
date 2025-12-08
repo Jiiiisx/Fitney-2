@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
 
     // Use a more robust date check to only get days strictly before today
     const today = startOfToday();
-    const pastDays = daysResult.rows.filter(day => day.date && isBefore(parseISO(day.date), today));
+    const pastDays = daysResult.rows.filter(day => day.date && isBefore(day.date, today));
 
     if (pastDays.length === 0) {
       return NextResponse.json({ message: 'No past workout days to sync.' });
