@@ -35,7 +35,7 @@ export default function PlannerPage() {
       }
     };
     syncHistory();
-  }, []);
+  }, [planVersion]);
 
   const handleFilterChange = (newFilters: string[]) => {
     setFilters(newFilters);
