@@ -38,9 +38,9 @@ export async function POST(req: NextRequest) {
 
     // 3. For each past day, create an entry in workout_logs
     for (const day of pastDays) {
-      // Check if it's already logged to prevent duplicates, casting the timestamp to a date
+      // Check if it's already logged to prevent duplicates, using the DATE() function for robust comparison
       const existingLog = await query(
-        'SELECT id FROM workout_logs WHERE user_id = $1 AND date::date = $2 AND name = $3',
+        'SELECT id FROM workout_logs WHERE user_id = $1 AND DATE(date) = $2 AND name = $3',
         [userId, day.date, day.name]
       );
 

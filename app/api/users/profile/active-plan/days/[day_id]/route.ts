@@ -1,15 +1,18 @@
+// app/api/users/profile/active-plan/days/[day_id]/route.ts
 import { NextResponse, NextRequest } from 'next/server';
 import pool from '@/app/lib/db';
 import { verifyAuth } from '@/app/lib/auth';
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { day_id: string } }
+  context: { params: Promise<{ day_id: string }> }
 ) {
   const auth = await verifyAuth(req);
   if (auth.error) return auth.error;
   const userId = auth.user.userId;
 
+  // Await the context.params promise to resolve it, then get the day_id
+  const params = await context.params;
   const userPlanDayId = params.day_id;
 
   if (!userPlanDayId || isNaN(Number(userPlanDayId))) {
