@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import PlannerSidebar from "./components/PlannerSidebar";
 import CalendarGrid from "./components/CalendarGrid";
 import UpcomingWorkout from "./components/UpcomingWorkout";
@@ -16,26 +16,7 @@ export default function PlannerPage() {
   const [planVersion, setPlanVersion] = useState(0);
   const [filters, setFilters] = useState<string[]>([]);
 
-  useEffect(() => {
-    const syncHistory = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) return; // Don't run if not logged in
-        
-        await fetch('/api/planner/sync-history', { 
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        // We can optionally trigger a re-fetch of data here if needed
-        // handlePlanChange(); // THIS LINE IS REMOVED TO PREVENT THE INFINITE LOOP
-      } catch (error) {
-        console.error('Failed to sync history:', error);
-      }
-    };
-    syncHistory();
-  }, [planVersion]);
+
 
   const handleFilterChange = (newFilters: string[]) => {
     setFilters(newFilters);

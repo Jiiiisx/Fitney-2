@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import dynamic from 'next/dynamic';
 import { cn } from "../lib/utils";
+import toast, { Toaster } from "react-hot-toast";
 
 
 const Header = dynamic(() => import("./components/Header"), { ssr: false });
@@ -15,6 +17,35 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     pathname === "/settings" ||
     pathname === "/community";
 
+  useEffect(() => {
+    const syncHistory = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const promise = fetch('/api/planner/sync-history', { 
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      toast.promise(promise, {
+        loading: 'Checking for past workouts to sync...',
+        success: (res) => {
+          // We can inspect the response if we want.
+          // For now, let's assume success means it worked or there was nothing to sync.
+          return 'History is up to date!';
+        },
+        error: 'Could not sync history.',
+      });
+    };
+
+    // Delay sync slightly to allow main app to render
+    const timer = setTimeout(() => {
+      syncHistory();
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <div
       className={cn(
@@ -23,6 +54,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         isFixedLayoutPage ? "h-screen flex flex-col" : "min-h-screen",
       )}
     >
+      <Toaster position="top-center" reverseOrder={false} />
       <Header />
       <main className={cn(isFixedLayoutPage ? "flex-grow overflow-hidden" : "p-8")}>
         {children}
