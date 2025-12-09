@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { GoalCard } from "./components/GoalCard"; // Use the new universal card
+import { FeaturedGoalCard } from "./components/FeaturedGoalCard";
+import { NewGoalCard } from "./components/NewGoalCard"; // Use the new universal card
 import GoalTimeline from "./components/GoalTimeline";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -119,6 +120,9 @@ export default function GoalsPage() {
 
   const weeklyGoals = goals.filter(g => g.category === 'weekly');
   const longTermGoals = goals.filter(g => g.category === 'long_term');
+  const featuredGoal = weeklyGoals.length > 0 ? weeklyGoals[0] : null;
+  const otherWeeklyGoals = weeklyGoals.slice(1);
+
 
   // RENDER FUNCTION: Completely refactored for new layout
   const renderContent = () => {
@@ -130,43 +134,22 @@ export default function GoalsPage() {
     }
     if (goals.length > 0) {
       return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content Column */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Weekly Goals Section */}
-            {weeklyGoals.length > 0 && (
-              <section>
-                <h2 className="text-2xl font-bold tracking-tight text-foreground mb-4">
-                  Weekly Goals
-                </h2>
-                <div className={weeklyGoals.length > 1 ? "grid grid-cols-1 md:grid-cols-2 gap-4" : ""}>
-                  {weeklyGoals.map(goal => (
-                    <GoalCard key={goal.id} goal={goal} onEdit={handleOpenEditModal} onDelete={handleGoalDeleted} />
-                  ))}
-                </div>
-              </section>
-            )}
+        <div className="space-y-8">
+            {/* Featured Goal */}
+            {featuredGoal && <FeaturedGoalCard goal={featuredGoal} />}
 
-            {/* Long-Term Goals Section */}
-            {longTermGoals.length > 0 && (
-              <section>
-                <h2 className="text-2xl font-bold tracking-tight text-foreground mb-4">
-                  Long-Term Goals
-                </h2>
-                <div className={longTermGoals.length > 1 ? "grid grid-cols-1 md:grid-cols-2 gap-4" : ""}>
-                  {longTermGoals.map(goal => (
-                    <GoalCard key={goal.id} goal={goal} onEdit={handleOpenEditModal} onDelete={handleGoalDeleted} />
-                  ))}
-                </div>
-              </section>
-            )}
-          </div>
+            {/* Other Goals */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {otherWeeklyGoals.map(goal => (
+                    <NewGoalCard key={goal.id} goal={goal} onEdit={handleOpenEditModal} onDelete={handleGoalDeleted} />
+                ))}
+                {longTermGoals.map(goal => (
+                    <NewGoalCard key={goal.id} goal={goal} onEdit={handleOpenEditModal} onDelete={handleGoalDeleted} />
+                ))}
+            </div>
 
-          {/* Sidebar Column */}
-          <div className="space-y-6">
+            {/* Timeline as a section */}
             <GoalTimeline />
-            {/* Recommendations can be shown in sidebar as well, if desired */}
-          </div>
         </div>
       );
     }
