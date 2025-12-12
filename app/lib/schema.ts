@@ -1,110 +1,311 @@
-import { Description } from '@radix-ui/react-dialog';
-import { uuid, varchar, text, date, timestamp, pgTable, serial, int, boolean, numeric } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  date,
+  integer,
+  numeric,
+  pgEnum,
+  pgTable,
+  primaryKey,
+  serial,
+  text,
+  timestamp,
+  unique,
+  uniqueIndex,
+  uuid,
+  varchar,
+} from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 
+// Enums defined from CHECK constraints or clear value lists in the SQL schema
+export const goalCategoryEnum = pgEnum('goal_category', ['weekly', 'long_term']);
+
+export const goalMetricEnum = pgEnum('goal_metric', [
+  'workout_frequency',
+  'calories_burned',
+  'active_minutes',
+  'hydration',
+  'distance_run',
+  'weight_lifted',
+  'yoga_sessions',
+  'challenges_joined',
+]);
+
+export const userSettingsThemeEnum = pgEnum('user_settings_theme', ['light', 'dark', 'system']);
+export const userSettingsUnitsEnum = pgEnum('user_settings_measurement_units', ['metric', 'imperial']);
+
+// Base User Table
 export const users = pgTable('users', {
-    id: uuid('id').primaryKey(),
-    username: varchar('username').notNull(),
-    email: varchar('email').notNull,
-    full_name: varchar('fullname'),
-    password_hash: text('password_hash').notNull(),
-    date_of_birth: date('date_of_birth'),
-    gender: varchar('gender'),
-    created_at: timestamp('created_at', { withTimezone: true }).defaultNow(),
-  }
-);
+  id: uuid('id').primaryKey(),
+  username: varchar('username', { length: 255 }).notNull().unique(),
+  email: varchar('email', { length: 255 }).notNull().unique(),
+  fullName: varchar('full_name', { length: 255 }),
+  passwordHash: text('password_hash').notNull(),
+  dateOfBirth: date('date_of_birth'),
+  gender: varchar('gender', { length: 50 }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+});
 
+// Exercise and Category Tables
 export const categories = pgTable('categories', {
-    id: serial('id').primaryKey(),
-    name: varchar('name').notNull()
-  }
-);
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull().unique(),
+});
 
 export const exercises = pgTable('exercises', {
-    id: serial('id').primaryKey(),
-    wger_id: int('wger_id').unique(),
-    name: varchar('name').notNull(),
-    description: text('description'),
-    category_id: int('category_id').references(categories),
-    image_url: varchar('image_url'),
-    updated_at: timestamp('updated_at', { withTimezone: true })
-  }
-);
+  id: serial('id').primaryKey(),
+  wgerId: integer('wger_id').unique(),
+  name: varchar('name', { length: 255 }).notNull(),
+  description: text('description'),
+  categoryId: integer('category_id').references(() => categories.id),
+  imageUrl: varchar('image_url', { length: 255 }),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+});
 
-export const workout_programs = pgTable('workout_programs', {
-    id: serial('id').primaryKey(),
-    name: varchar('name').notNull(),
-    description: text('description'),
-    weeks: int('weeks'),
-    created_at: timestamp('created_at', { withTimezone: true })
-  }
-);
+// Workout Program Templates
+export const workoutPrograms = pgTable('workout_programs', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  description: text('description'),
+  weeks: integer('weeks'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+});
 
-export const program_days = pgTable('programs_days', {
-    id: serial('id').primaryKey(),
-    program_id: int('program_id').notNull().references(workout_programs).unique(),
-    day_number: int('day_number').unique(),
-    name: varchar('name'),
-    description: text('description'),
-  }
-);
+export const programDays = pgTable('program_days', {
+  id: serial('id').primaryKey(),
+  programId: integer('program_id').notNull().references(() => workoutPrograms.id, { onDelete: 'cascade' }),
+  dayNumber: integer('day_number').notNull(),
+  name: varchar('name', { length: 255 }),
+  description: text('description'),
+}, (table) => {
+  return {
+    programDayUnique: unique().on(table.programId, table.dayNumber),
+  };
+});
 
-export const program_days_exercises = pgTable('program_day_exercises', {
-    id: serial('id').primaryKey(),
-    program_day_id: int('program_day_id').notNull().references(program_days),
-    exercises_id: int('exercises_id').notNull().references(exercises),
-    sets: int('sets'),
-    reps: varchar('reps'),
-    duration_seconds: int('duration_seconds'),
-    notes: text('notes'),
-    display_order: int('display_order').default(0)
-  }
-);
+export const programDayExercises = pgTable('program_day_exercises', {
+  id: serial('id').primaryKey(),
+  programDayId: integer('program_day_id').notNull().references(() => programDays.id, { onDelete: 'cascade' }),
+  exerciseId: integer('exercise_id').notNull().references(() => exercises.id),
+  sets: integer('sets'),
+  reps: varchar('reps', { length: 50 }),
+  durationSeconds: integer('duration_seconds'),
+  notes: text('notes'),
+  displayOrder: integer('display_order').default(0),
+});
 
-export const user_plans = pgTable('user_plans', {
-    id: serial('user_plans').primaryKey(),
-    user_id: uuid('user_id').notNull().references(users),
-    source_program_id: int('source_program_id').references(workout_programs),
-    start_date: date('start_date').notNull().default(curent_date),
-    is_active: boolean('is_active').default(true),
-    created_at: timestamp('created_at', { withTimezone: true })
-  }
-);
+// User-specific Workout Plans
+export const userPlans = pgTable('user_plans', {
+  id: serial('id').primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  sourceProgramId: integer('source_program_id').references(() => workoutPrograms.id),
+  startDate: date('start_date').notNull().defaultNow(),
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, (table) => {
+  return {
+    userActivePlanIdx: uniqueIndex('user_active_plan_is_active_idx').on(table.userId).where(sql`${table.isActive} = true`),
+  };
+});
 
-export const user_plan_days = pgTable('user_plan_days', {
-    id: serial('id').primaryKey(),
-    user_plan_id: int('user_plan_id').notNull().references(user_plans),
-    day_number: int('day_number').notNull(),
-    date: int('date').notNull(),
-    name: varchar('name'),
-    description: text('description')
-  }
-);
+export const userPlanDays = pgTable('user_plan_days', {
+  id: serial('id').primaryKey(),
+  userPlanId: integer('user_plan_id').notNull().references(() => userPlans.id, { onDelete: 'cascade' }),
+  dayNumber: integer('day_number').notNull(),
+  date: date('date').notNull(),
+  name: varchar('name', { length: 255 }),
+  description: text('description'),
+});
 
-export const user_plan_day_exercises = pgTable('user_plan_day_exercises', {
-    id: serial('id').primaryKey(),
-    user_plan_day_id: int('user_plan_day_id').notNull().references(user_plan_days),
-    exercises_id: int('exercises_id').notNull().references(exercises),
-    sets: int('sets'),
-    reps: varchar('reps'),
-    duration_seconds: int('duration_seconds'),
-    notes: text('notes'),
-    display_order: int('display_order').default(0),
-    is_completed: boolean('is_completed').default(false)
-  }
-);
+export const userPlanDayExercises = pgTable('user_plan_day_exercises', {
+  id: serial('id').primaryKey(),
+  userPlanDayId: integer('user_plan_day_id').notNull().references(() => userPlanDays.id, { onDelete: 'cascade' }),
+  exerciseId: integer('exercise_id').notNull().references(() => exercises.id),
+  sets: integer('sets'),
+  reps: varchar('reps', { length: 50 }),
+  durationSeconds: integer('duration_seconds'),
+  notes: text('notes'),
+  displayOrder: integer('display_order').default(0),
+  isCompleted: boolean('is_completed').default(false),
+});
 
-export const workout_logs = pgTable('workout_logs', {
-    id: serial('id').primaryKey(),
-    user_id: uuid('user_id').notNull().references(users),
-    date: timestamp('date', { withTimezone:true }).notNull(),
-    type: varchar('type').notNull(),
-    name: varchar('name').notNull(),
-    duration_min: int('duration_min'),
-    calories_burned: int('calories_burned'),
-    sets: int('sets'),
-    reps: varchar('reps'),
-    weight_kg: numeric('weight_kg'),
-    distance_km: numeric('distance_km')
-  }
-);
+// Workout History/Logs
+export const workoutLogs = pgTable('workout_logs', {
+  id: serial('id').primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  date: timestamp('date', { withTimezone: true }).notNull(),
+  type: varchar('type', { length: 50 }).notNull(), // 'Strength', 'Cardio', etc.
+  name: varchar('name', { length: 255 }).notNull(),
+  durationMin: integer('duration_min'),
+  caloriesBurned: integer('calories_burned'),
+  sets: integer('sets'),
+  reps: varchar('reps', { length: 50 }),
+  weightKg: numeric('weight_kg', { precision: 10, scale: 2 }),
+  distanceKm: numeric('distance_km', { precision: 10, scale: 2 }),
+});
 
+// Nutrition Tracking
+export const foods = pgTable('foods', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  caloriesPer100g: numeric('calories_per_100g', { precision: 10, scale: 2 }),
+  proteinPer100g: numeric('protein_per_100g', { precision: 10, scale: 2 }),
+  carbsPer100g: numeric('carbs_per_100g', { precision: 10, scale: 2 }),
+  fatPer100g: numeric('fat_per_100g', { precision: 10, scale: 2 }),
+});
+
+export const foodLogs = pgTable('food_logs', {
+  id: serial('id').primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  foodId: integer('food_id').notNull().references(() => foods.id),
+  date: date('date').notNull(),
+  servingSizeG: numeric('serving_size_g', { precision: 10, scale: 2 }).notNull(),
+});
+
+// Goal Tracking
+export const userGoals = pgTable('user_goals', {
+  id: serial('id').primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  title: varchar('title', { length: 255 }).notNull(),
+  category: goalCategoryEnum('category').notNull(),
+  metric: goalMetricEnum('metric').notNull(),
+  targetValue: integer('target_value').notNull(),
+  currentValue: integer('current_value').default(0),
+  startDate: date('start_date').defaultNow(),
+  endDate: date('end_date'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+});
+
+// Social/Community Features
+export const followers = pgTable('followers', {
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  followerId: uuid('follower_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, (table) => {
+  return {
+    pk: primaryKey({ columns: [table.userId, table.followerId] }),
+  };
+});
+
+export const posts = pgTable('posts', {
+  id: serial('id').primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  content: text('content'),
+  imageUrl: varchar('image_url', { length: 255 }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+});
+
+export const postLikes = pgTable('post_likes', {
+  postId: integer('post_id').notNull().references(() => posts.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, (table) => {
+  return {
+    pk: primaryKey({ columns: [table.postId, table.userId] }),
+  };
+});
+
+export const postComments = pgTable('post_comments', {
+  id: serial('id').primaryKey(),
+  postId: integer('post_id').notNull().references(() => posts.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  content: text('content').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+});
+
+// User Settings
+export const userSettings = pgTable('user_settings', {
+  userId: uuid('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  theme: userSettingsThemeEnum('theme').default('system'),
+  measurementUnits: userSettingsUnitsEnum('measurement_units').default('metric'),
+  emailNotifications: boolean('email_notifications').default(true),
+  pushNotifications: boolean('push_notifications').default(true),
+  hasCompletedOnboarding: boolean('has_completed_onboarding').default(false),
+});
+
+// Body Measurements
+export const bodyMeasurements = pgTable('body_measurements', {
+  id: serial('id').primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  date: date('date').notNull().defaultNow(),
+  heightCm: numeric('height_cm', { precision: 10, scale: 1 }),
+  weightKg: numeric('weight_kg', { precision: 10, scale: 2 }),
+  bodyFatPercentage: numeric('body_fat_percentage', { precision: 5, scale: 2 }),
+  waistCm: numeric('waist_cm', { precision: 10, scale: 2 }),
+  chestCm: numeric('chest_cm', { precision: 10, scale: 2 }),
+  hipsCm: numeric('hips_cm', { precision: 10, scale: 2 }),
+}, (table) => {
+  return {
+    userDateUnique: unique().on(table.userId, table.date),
+  };
+});
+
+// Sleep Tracking
+export const sleepLogs = pgTable('sleep_logs', {
+  id: serial('id').primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  date: date('date').notNull(),
+  startTime: timestamp('start_time', { withTimezone: true }).notNull(),
+  endTime: timestamp('end_time', { withTimezone: true }).notNull(),
+  qualityRating: integer('quality_rating'), // CHECK constraint handled by application logic or a raw SQL check
+  notes: text('notes'),
+}, (table) => ({
+    qualityCheck: sql`CHECK (${table.qualityRating} >= 1 AND ${table.qualityRating} <= 5)`
+}));
+
+// Water Intake
+export const waterLogs = pgTable('water_logs', {
+  id: serial('id').primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  date: date('date').notNull(),
+  amountMl: integer('amount_ml').notNull(),
+}, (table) => {
+  return {
+    userDateUnique: unique().on(table.userId, table.date),
+  };
+});
+
+// Notifications
+export const notifications = pgTable('notifications', {
+  id: serial('id').primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  type: varchar('type', { length: 50 }),
+  message: text('message').notNull(),
+  linkUrl: varchar('link_url', { length: 255 }),
+  isRead: boolean('is_read').default(false),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+});
+
+// Gamification/Achievements
+export const achievements = pgTable('achievements', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  description: text('description').notNull(),
+  iconUrl: varchar('icon_url', { length: 255 }),
+});
+
+export const userAchievements = pgTable('user_achievements', {
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  achievementId: integer('achievement_id').notNull().references(() => achievements.id, { onDelete: 'cascade' }),
+  unlockedAt: timestamp('unlocked_at', { withTimezone: true }).defaultNow(),
+}, (table) => {
+  return {
+    pk: primaryKey({ columns: [table.userId, table.achievementId] }),
+  };
+});
+
+export const userStreaks = pgTable('user_streaks', {
+  userId: uuid('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  currentStreak: integer('current_streak').default(0),
+  longestStreak: integer('longest_streak').default(0),
+  lastActivityDate: date('last_activity_date'),
+});
+
+// User Onboarding Profile
+export const userProfiles = pgTable('user_profiles', {
+  userId: uuid('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  mainGoal: varchar('main_goal', { length: 50 }),
+  experienceLevel: varchar('experience_level', { length: 50 }),
+  workoutLocation: varchar('workout_location', { length: 50 }),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+});
