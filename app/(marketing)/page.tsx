@@ -1,4 +1,5 @@
 import Image from "next/image";
+import heroImage from "@/public/assets/hero.png"
 import About from "../(marketing)/About";
 import BenefitSection from "../(marketing)/BenefitSection";
 import Testimonials from "../(marketing)/Testimonials";
@@ -41,7 +42,7 @@ export default function Home() {
             </div>
             <div>
               <Image
-                src="/assets/hero.png"
+                src={heroImage}
                 width={1200}
                 height={1200}
                 alt="Fitness"

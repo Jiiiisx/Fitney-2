@@ -1,4 +1,5 @@
 import Image from "next/image";
+import aboutImage from "@/public/assets/About.png"
 
 export default function Masalah() {
   return (
@@ -40,7 +41,7 @@ export default function Masalah() {
           {/* Right Column (Image) */}
           <div className="w-1/2">
             <Image
-              src="/assets/About.png"
+              src={aboutImage}
               width={800}
               height={800}
               alt="Fitness illustration"

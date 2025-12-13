@@ -1,3 +1,4 @@
+import dynamic from "next/dynamic";
 import StatsSidebar from "../components/StatsSidebar";
 import TodaysPlanBanner from "../components/TodaysPlanBanner";
 import DailyGoals from "../components/DailyGoals";
@@ -6,11 +7,10 @@ import UpgradeBanner from "../components/UpgradeBanner";
 import GamificationStreak from "../components/GamificationStreak";
 import ProgressCharts from "../components/ProgressCharts";
 import WorkoutBreakdown from "../components/WorkoutBreakdown";
-import CompleteProfileBanner from "../components/CompleteProfileBanner"; // Import the new component
+import CompleteProfileBanner from "../components/CompleteProfileBanner";
 import { query } from "@/app/lib/db";
 
 export default async function DashboardPage() {
-  // In a real app, you'd fetch user data and conditionally render the banner
   const isProfileIncomplete = true; 
 
   return (

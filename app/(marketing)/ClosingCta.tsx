@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import ctaImage from "@/public/assets/cta.png"
 import "../components/ShapeDivider/ShapeDivider.css";
 
 export default function ClosingCta() {
@@ -79,7 +80,7 @@ export default function ClosingCta() {
           <div className="mt-16 lg:mt-0 lg:w-1/2">
             <Image
               className="w-full h-auto"
-              src="/assets/cta.png"
+              src={ctaImage}
               alt="Fitness illustration"
               width={800}
               height={800}
