@@ -1,5 +1,6 @@
 import {
   boolean,
+  index,
   date,
   integer,
   numeric,
@@ -141,6 +142,10 @@ export const workoutLogs = pgTable('workout_logs', {
   reps: varchar('reps', { length: 50 }),
   weightKg: numeric('weight_kg', { precision: 10, scale: 2 }),
   distanceKm: numeric('distance_km', { precision: 10, scale: 2 }),
+}, (table) => {
+  return {
+    workoutLogsUserDateIdx: index('workout_logs_user_date_idx').on(table.userId,table.date),
+  };
 });
 
 // Nutrition Tracking

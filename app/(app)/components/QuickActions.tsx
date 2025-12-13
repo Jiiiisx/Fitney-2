@@ -1,12 +1,25 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { Plus, Utensils, GlassWater, Bed } from "lucide-react";
 import ActionModal from "./ActionModal";
-import AddWaterForm from "./forms/AddWaterForm";
-import AddMealForm from "./forms/AddMealForm";
-import LogWorkoutForm from "./forms/LogWorkoutForm";
-import AddSleepForm from "./forms/AddSleepForm";
+import { Skeleton } from "@/components/ui/skeleton";
+
+const FormLoadingSkeleton = () => (
+  <div className="space-y-4 p-2">
+    <Skeleton className="h-8 w-3/4"/>
+    <Skeleton className="h-10 w-full"/>
+    <Skeleton className="h-8 w-3/4"/>
+    <Skeleton className="h-10 w-full"/>
+    <Skeleton className="h-10 w-1/2 ml-auto"/>
+  </div>
+)
+
+const AddWaterForm = dynamic(() => import('./forms/AddWaterForm'), { loading: () => <FormLoadingSkeleton/>});
+const AddMealForm = dynamic(() => import('./forms/AddMealForm'), { loading: () => <FormLoadingSkeleton/>});
+const LogWorkoutForm = dynamic(() => import('./forms/LogWorkoutForm'), { loading: () => <FormLoadingSkeleton/>});
+const AddSleepForm = dynamic(() => import('./forms/AddSleepForm'), { loading: () => <FormLoadingSkeleton/>});
 
 const actions = [
   {

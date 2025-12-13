@@ -1,27 +1,35 @@
 import { Pool } from 'pg';
+import { drizzle, NodePgDatabase } from 'drizzle-orm/node-postgres';
+import * as schema from './schema';
 
-// Enhance the NodeJS global type to include our custom pool property
+type DrizzleDB = NodePgDatabase<typeof schema>;
+
 declare global {
-  var _pool: Pool | undefined;
+  var drizzlePool: Pool | undefined;
+  var drizzleDb: DrizzleDB | undefined;
+}
+
+const connectionString = process.env.POSTGRES_URL;
+
+if (!connectionString) {
+  throw new Error('Variabel lingkungan POSTGRES_URL tidak diatur. Silahkan periksa file .env.local Anda');
 }
 
 let pool: Pool;
+let db: DrizzleDB;
 
 if (process.env.NODE_ENV === 'production') {
-  pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    // Production-specific options can go here
-  });
+  pool = new Pool({ connectionString: connectionString});
+  db = drizzle(pool, { schema });
 } else {
-  // In development, use a global variable to preserve the pool across hot-reloads
-  if (!global._pool) {
-    global._pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-    });
+  if (!global.drizzlePool) {
+    console.log('Membuat koneksi database global baru untuk development...');
+    global.drizzlePool = new Pool({ connectionString: connectionString });
+    global.drizzleDb = drizzle(global.drizzlePool, { schema });
   }
-  pool = global._pool;
+
+  pool = global.drizzlePool as Pool;
+  db = global.drizzleDb as DrizzleDB;
 }
 
-export const query = (text: string, params?: any[]) => pool.query(text, params);
-
-export default pool;
+export { pool, db };
