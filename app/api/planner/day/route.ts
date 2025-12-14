@@ -1,91 +1,89 @@
-// app/api/planner/day/route.ts
-import { NextResponse, NextRequest } from 'next/server';
-import pool from '@/app/lib/db';
-import { differenceInDays, parseISO } from 'date-fns';
+import { NextRequest, NextResponse } from "next/server";
+import { db } from '@/app/lib/db';
+import { userPlans, userPlanDays, userPlanDayExercises } from '@/app/lib/schema';
 import { verifyAuth } from '@/app/lib/auth';
+import { and, eq } from 'drizzle-orm';
+import { differenceInDays, parseISO, format } from "date-fns";
+
+interface ExercisesData {
+  exerciseId: number;
+  sets?: number;
+  reps?: string;
+  durationSeconds?: number;
+}
 
 export async function POST(req: NextRequest) {
   const auth = await verifyAuth(req);
-  if (auth.error) return auth.error;
+  if (auth.error || !auth.user?.userId) {
+    return auth.error || NextResponse.json({ error: 'Unauthorized'}, { status: 401});
+  }
   const userId = auth.user.userId;
 
-
-  const client = await pool.connect();
-
   try {
-    const { name, date, exercises } = await req.json();
+    const { name, date, exercises } = (await req.json()) as {name: string; date: string; exercises: ExercisesData[] };
 
     if (!name || !date) {
       return NextResponse.json({ error: 'Name and date are required' }, { status: 400 });
     }
 
-    await client.query('BEGIN');
+    const dateForDb = format(parseISO(date), 'yyyy-MM-dd');
 
-    // 1. Find or create the user's active plan.
-    let planRes = await client.query(
-      'SELECT id, start_date FROM user_plans WHERE user_id = $1 AND is_active = true',
-      [userId]
-    );
+    const newDay = await db.transaction(async (tx) => {
+      let userPlanId: number;
+      let planStartDate: Date;
 
-    if (planRes.rows.length === 0) {
-      planRes = await client.query(
-        'INSERT INTO user_plans (user_id, start_date, is_active) VALUES ($1, $2, true) RETURNING id, start_date',
-        [userId, date]
-      );
-    }
-    
-    const userPlanId = planRes.rows[0].id;
-    const startDate = new Date(planRes.rows[0].start_date);
+      const planResult = await tx
+        .select({ id: userPlans.id, startDate: userPlans.startDate})
+        .from(userPlans)
+        .where(and(eq(userPlans.userId, userId), eq(userPlans.isActive, true)));
 
-    // 2. Calculate day_number.
-    const workoutDate = parseISO(date);
-    const dayNumber = differenceInDays(workoutDate, startDate) + 1;
+        if(planResult.length === 0) {
+          const newPlan = await tx
+            .insert(userPlans)
+            .values({ userId: userId, startDate: dateForDb, isActive: true})
+            .returning({ id: userPlans.id, startDate: userPlans.startDate});
 
-    // 3. Since adding a detailed workout, we assume it replaces any simple "Rest Day" on that date.
-    await client.query(
-      'DELETE FROM user_plan_days WHERE user_plan_id = $1 AND date = $2 AND name = $3',
-      [userPlanId, date, 'Rest Day']
-    );
-    
-    // 4. Insert the new workout day "header".
-    const description = `Custom workout: ${name}`;
-    const insertDayRes = await client.query(
-      'INSERT INTO user_plan_days (user_plan_id, day_number, date, name, description) VALUES ($1, $2, $3, $4, $5) RETURNING id',
-      [userPlanId, dayNumber, date, name, description]
-    );
-    const userPlanDayId = insertDayRes.rows[0].id;
+            userPlanId = newPlan[0].id;
+            planStartDate = parseISO(newPlan[0].startDate);
+        } else {
+          userPlanId = planResult[0].id;
+          planStartDate = parseISO(planResult[0].startDate);
+        }
 
-    // 5. If there are exercises, insert them into the user_plan_day_exercises table
-    if (exercises && exercises.length > 0) {
-      for (const [index, exercise] of exercises.entries()) {
-        // The exercise ID is now sent directly from the frontend.
-        if (!exercise.id) continue;
+        const dayNumber = differenceInDays(parseISO(date), planStartDate);
 
-        await client.query(
-          `INSERT INTO user_plan_day_exercises 
-            (user_plan_day_id, exercise_id, sets, reps, duration_seconds, display_order) 
-           VALUES ($1, $2, $3, $4, $5, $6)`,
-          [
-            userPlanDayId,
-            exercise.id,
-            exercise.type === 'Strength' ? parseInt(exercise.sets, 10) || null : null,
-            exercise.type === 'Strength' ? exercise.reps : null,
-            exercise.type === 'Cardio' ? parseInt(exercise.duration, 10) * 60 || null : null,
-            index,
-          ]
-        );
-      }
-    }
+        const newPlanDay = await tx
+          .insert(userPlanDays)
+          .values({
+            userPlanId: userPlanId,
+            dayNumber: dayNumber,
+            date: dateForDb,
+            name: name,
+          })
+          .returning({ id: userPlanDays.id});
 
-    await client.query('COMMIT');
+        const newPlanDayId = newPlanDay[0].id;
 
-    return NextResponse.json({ success: true }, { status: 201 });
+        if (exercises && exercises.length > 0) {
+          const exercisesToInsert = exercises.map((ex, index) => ({
+            userPlanDayId: newPlanDayId,
+            exerciseId: ex.exerciseId,
+            sets: ex.sets,
+            reps: ex.reps,
+            durationSeconds: ex.durationSeconds,
+            displayOrder: index,
+          }));
 
+          await tx.insert(userPlanDayExercises).values(exercisesToInsert);
+        }
+
+        return { newPlanDayId };
+    });
+
+    return NextResponse.json({ message: 'Day created succesfully', newPlanDayId: newDay.newPlanDayId}, { status: 201 });
   } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('Error adding custom workout day:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
-  } finally {
-    client.release();
+    console.error('API_POST_PLANNER_DAY_ERROR', error);
+    return NextResponse.json({ error: 'A plan for this day already exists'}, {status: 409});
+    return NextResponse.json({ error: 'Internal Server Error'}, {status: 500});
   }
 }

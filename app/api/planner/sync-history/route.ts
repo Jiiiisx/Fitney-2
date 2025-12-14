@@ -1,77 +1,87 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { query } from '@/app/lib/db';
-import { isBefore, startOfToday, parseISO } from 'date-fns';
+import { db } from '@/app/lib/db';
+import { userPlans, userPlanDays, workoutLogs } from '@/app/lib/schema';
+import { and, eq, sql } from 'drizzle-orm';
+import { isBefore, startOfToday, format } from 'date-fns';
 import { verifyAuth } from '@/app/lib/auth';
 
 export async function POST(req: NextRequest) {
   try {
     const auth = await verifyAuth(req);
-    if (auth.error) {
-      return auth.error;
+    if (auth.error || !auth.user) {
+      return auth.error || NextResponse.json({ error: 'Unauthorized'}, {status: 401});
     }
     const userId = auth.user.userId;
 
-    // 1. Find the user's active plan
-    const planResult = await query(
-      'SELECT id FROM user_plans WHERE user_id = $1 AND is_active = true',
-      [userId]
-    );
+    const planResult = await db
+      .select({ id: userPlans.id })
+      .from(userPlans)
+      .where(and(eq(userPlans.userId, userId), eq(userPlans.isActive, true)));
 
-    if (planResult.rows.length === 0) {
-      return NextResponse.json({ message: 'No active plan to sync.' });
-    }
-    const userPlanId = planResult.rows[0].id;
+      if (planResult.length === 0) {
+        return NextResponse.json({ message: 'No active plan sync.'});
+      }
+      const userPlanId = planResult[0].id;
 
-    // 2. Find all past, unsynced days for that plan
-    const daysResult = await query(
-      'SELECT id, date, name FROM user_plan_days WHERE user_plan_id = $1',
-      [userPlanId]
-    );
-
-    // Use a more robust date check to only get days strictly before today
+    const daysResult = await db
+      .select({ id: userPlanDays.id, date: userPlanDays.date, name: userPlanDays.name })
+      .from(userPlanDays)
+      .where(eq(userPlanDays.userPlanId, userPlanId));
+    
     const today = startOfToday();
-    const pastDays = daysResult.rows.filter(day => day.date && isBefore(day.date, today));
+    const pastDays = daysResult.filter(day => day.date && isBefore(new Date(day.date), today));
 
     if (pastDays.length === 0) {
-      return NextResponse.json({ message: 'No past workout days to sync.' });
+      return NextResponse.json({ message: 'No past workout days to sync.'});
     }
-
-    // 3. For each past day, create an entry in workout_logs
+    
+    let syncedCount = 0;
     for (const day of pastDays) {
-      // Check if it's already logged to prevent duplicates, using the DATE() function for robust comparison
-      const existingLog = await query(
-        'SELECT id FROM workout_logs WHERE user_id = $1 AND DATE(date) = $2 AND name = $3',
-        [userId, day.date, day.name]
-      );
-
-      if (existingLog.rows.length > 0) {
-        continue; // Skip if already logged
+      if (!day.date || !day.name) {
+        continue;
       }
 
-      let type = 'Strength'; // Default
-      if (day.name.toLowerCase().includes('rest')) {
+      const existingLog = await db
+        .select({ id: workoutLogs.id })
+        .from(workoutLogs)
+        .where(
+          and(
+            eq(workoutLogs.userId, userId),
+            eq(sql`DATE(${workoutLogs.date})`, format(new Date(day.date), 'yyyy-MM-dd')),
+            eq(workoutLogs.name, day.name)
+          )
+        )
+
+      if (existingLog.length > 0) {
+        continue;
+      }
+
+      let type = 'Strenght';
+      if (day.name?.toLowerCase().includes('rest')) {
         type = 'Rest Day';
-      } else if (day.name.toLowerCase().includes('cardio')) {
-        type = 'Cardio';
-      } else if (day.name.toLowerCase().includes('flexibility')) {
-        type = 'Flexibility';
+      } else if (day.name?.toLowerCase().includes('cardio')) {
+        type = 'cardio';
+      } else if (day.name?.toLowerCase().includes('flexibility')) {
+        type = 'flexibility';
       }
-      
-      // Mock duration and calories for now
-      const duration_min = day.name.toLowerCase().includes('rest') ? 0 : Math.floor(Math.random() * (75 - 45 + 1)) + 45;
-      const calories_burned = day.name.toLowerCase().includes('rest') ? 0 : Math.floor(duration_min * 5.5);
 
-      await query(
-        `INSERT INTO workout_logs (user_id, date, type, name, duration_min, calories_burned)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-        [userId, day.date, type, day.name, duration_min, calories_burned]
-      );
+      const duration_min = day.name?.toLowerCase().includes('Rest') ? 0 : Math.floor(Math.random() * (75 - 45 + 1)) + 45;
+      const calories_burned = day.name?.toLowerCase().includes('rest') ? 0 : Math.floor(duration_min * 5.5);
+
+      await db.insert(workoutLogs).values({
+        userId: userId,
+        date: new Date(day.date),
+        type: type,
+        name: day.name,
+        durationMin: duration_min,
+        caloriesBurned: calories_burned,
+      });
+      syncedCount++;
     }
 
-    return NextResponse.json({ message: `Synced ${pastDays.length} day(s) to history.` });
-
+    return NextResponse.json({ message: 'Synced ${syncedCount} day(s) to history.'});
   } catch (error) {
-    console.error('Error syncing planner to history:', error);
+    console.error('Error Syncing planner to history:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -1,52 +1,53 @@
-// app/api/planner/day/[day_id]/route.ts
-import { NextResponse } from 'next/server';
-import pool from '@/app/lib/db';
-import { headers } from 'next/headers';
+import { NextRequest, NextResponse } from "next/server";
+import { db } from '@/app/lib/db';
+import { userPlans, userPlanDays } from '@/app/lib/schema';
+import { verifyAuth } from "@/app/lib/auth";
+import { and, eq, inArray } from 'drizzle-orm';
 
 export async function DELETE(
-  req: Request,
-  { params }: { params: { day_id: string } }
+  req: NextRequest, { params }: { params: { day_id: string } }
 ) {
-  const headersList = await headers();
-  const userId = headersList.get('x-user-id');
-  const userPlanDayId = params.day_id;
-
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const auth = await verifyAuth(req);
+  if (auth.error || !auth.user?.userId) {
+    return auth.error || NextResponse.json({ error: 'Unauthorized' }, {status: 401});
   }
 
-  if (!userPlanDayId || isNaN(Number(userPlanDayId))) {
-    return NextResponse.json({ error: 'Valid Day ID is required' }, { status: 400 });
-  }
+  const userId = auth.user.userId;
+  const dayId = params.day_id;
 
-  const client = await pool.connect();
+  const dayIdAsNumber = parseInt(dayId, 10);
+  if (isNaN(dayIdAsNumber)) {
+    return NextResponse.json({ error: 'Valid Day ID is required'}, {status: 400});
+  }
 
   try {
-    // To ensure a user can only delete days from their own plan, we do a sub-query.
-    const deleteQuery = `
-      DELETE FROM user_plan_days
-      WHERE id = $1 
-      AND user_plan_id IN (
-        SELECT id FROM user_plans 
-        WHERE user_id = $2 AND is_active = true
-      )
-      RETURNING id;
-    `;
-    
-    const result = await client.query(deleteQuery, [userPlanDayId, userId]);
+    const activeUserPlanQuery = db
+      .select({ id: userPlans.id })
+      .from(userPlans)
+      .where(
+        and(
+          eq(userPlans.userId, userId),
+          eq(userPlans.isActive, true)
+        )
+      );
 
-    if (result.rowCount === 0) {
-      // This can happen if the day doesn't exist or doesn't belong to the user.
-      // For the client, it's simply not found.
-      return NextResponse.json({ error: 'Day not found or you do not have permission to delete it.' }, { status: 404 });
-    }
+      const deleteDays = await db
+        .delete(userPlanDays)
+        .where(
+          and(
+            eq(userPlanDays.id, dayIdAsNumber),
+            inArray(userPlanDays.userPlanId, activeUserPlanQuery)
+          )
+        )
+        .returning({ id: userPlanDays.id });
 
-    return NextResponse.json({ success: true, deletedDayId: result.rows[0].id }, { status: 200 });
+      if (deleteDays.length === 0) {
+        return NextResponse.json({ error: 'day not found or you do no have permission to delete it.'}, {status: 404});
+      }
 
+      return NextResponse.json({ succes: true, deleteDaysId: deleteDays[0].id }, { status: 200 });
   } catch (error) {
     console.error('Error deleting plan day:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
-  } finally {
-    client.release();
+    return NextResponse.json({ error: 'Internal Server Error'}, { status: 500 });
   }
 }
