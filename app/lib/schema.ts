@@ -44,6 +44,8 @@ export const users = pgTable('users', {
   dateOfBirth: date('date_of_birth'),
   gender: varchar('gender', { length: 50 }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  level: integer('level').default(1).notNull(),
+  xp: integer('xp').default(0).notNull(),
 });
 
 // Exercise and Category Tables

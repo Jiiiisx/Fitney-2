@@ -14,7 +14,8 @@
     "db:all": "ts-node scripts/run-full-db-setup.ts",
     "db:check": "ts-node -r dotenv/config -r tsconfig-paths/register scripts/check-db.ts",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "drizzle:generate": "drizzle-kit generate:pg"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
