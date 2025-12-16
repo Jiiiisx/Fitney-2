@@ -314,3 +314,141 @@ export const userProfiles = pgTable('user_profiles', {
   workoutLocation: varchar('workout_location', { length: 50 }),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 });
+
+import { relations } from 'drizzle-orm';
+
+export const usersRelations = relations(users, ({ one, many }) => ({
+	userProfile: one(userProfiles, { fields: [users.id], references: [userProfiles.userId] }),
+	userSettings: one(userSettings, { fields: [users.id], references: [userSettings.userId] }),
+	userStreak: one(userStreaks, { fields: [users.id], references: [userStreaks.userId] }),
+	posts: many(posts),
+	userPlans: many(userPlans),
+	workoutLogs: many(workoutLogs),
+	foodLogs: many(foodLogs),
+	userGoals: many(userGoals),
+	bodyMeasurements: many(bodyMeasurements),
+	sleepLogs: many(sleepLogs),
+	waterLogs: many(waterLogs),
+	notifications: many(notifications),
+	userAchievements: many(userAchievements),
+	followers: many(followers, { relationName: 'followers' }),
+	following: many(followers, { relationName: 'following' }),
+	postLikes: many(postLikes),
+	postComments: many(postComments),
+}));
+
+export const userProfilesRelations = relations(userProfiles, ({ one }) => ({
+	user: one(users, { fields: [userProfiles.userId], references: [users.id] }),
+}));
+
+export const userSettingsRelations = relations(userSettings, ({ one }) => ({
+	user: one(users, { fields: [userSettings.userId], references: [users.id] }),
+}));
+
+export const userStreaksRelations = relations(userStreaks, ({ one }) => ({
+	user: one(users, { fields: [userStreaks.userId], references: [users.id] }),
+}));
+
+export const categoriesRelations = relations(categories, ({ many }) => ({
+	exercises: many(exercises),
+}));
+
+export const exercisesRelations = relations(exercises, ({ one, many }) => ({
+	category: one(categories, { fields: [exercises.categoryId], references: [categories.id] }),
+	programDayExercises: many(programDayExercises),
+	userPlanDayExercises: many(userPlanDayExercises),
+}));
+
+export const workoutProgramsRelations = relations(workoutPrograms, ({ many }) => ({
+	programDays: many(programDays),
+	userPlans: many(userPlans),
+}));
+
+export const programDaysRelations = relations(programDays, ({ one, many }) => ({
+	program: one(workoutPrograms, { fields: [programDays.programId], references: [workoutPrograms.id] }),
+	programDayExercises: many(programDayExercises),
+}));
+
+export const programDayExercisesRelations = relations(programDayExercises, ({ one }) => ({
+	programDay: one(programDays, { fields: [programDayExercises.programDayId], references: [programDays.id] }),
+	exercise: one(exercises, { fields: [programDayExercises.exerciseId], references: [exercises.id] }),
+}));
+
+export const userPlansRelations = relations(userPlans, ({ one, many }) => ({
+	user: one(users, { fields: [userPlans.userId], references: [users.id] }),
+	sourceProgram: one(workoutPrograms, { fields: [userPlans.sourceProgramId], references: [workoutPrograms.id] }),
+	userPlanDays: many(userPlanDays),
+}));
+
+export const userPlanDaysRelations = relations(userPlanDays, ({ one, many }) => ({
+	userPlan: one(userPlans, { fields: [userPlanDays.userPlanId], references: [userPlans.id] }),
+	userPlanDayExercises: many(userPlanDayExercises),
+}));
+
+export const userPlanDayExercisesRelations = relations(userPlanDayExercises, ({ one }) => ({
+	userPlanDay: one(userPlanDays, { fields: [userPlanDayExercises.userPlanDayId], references: [userPlanDays.id] }),
+	exercise: one(exercises, { fields: [userPlanDayExercises.exerciseId], references: [exercises.id] }),
+}));
+
+export const workoutLogsRelations = relations(workoutLogs, ({ one }) => ({
+	user: one(users, { fields: [workoutLogs.userId], references: [users.id] }),
+}));
+
+export const foodsRelations = relations(foods, ({ many }) => ({
+	foodLogs: many(foodLogs),
+}));
+
+export const foodLogsRelations = relations(foodLogs, ({ one }) => ({
+	user: one(users, { fields: [foodLogs.userId], references: [users.id] }),
+	food: one(foods, { fields: [foodLogs.foodId], references: [foods.id] }),
+}));
+
+export const userGoalsRelations = relations(userGoals, ({ one }) => ({
+	user: one(users, { fields: [userGoals.userId], references: [users.id] }),
+}));
+
+export const followersRelations = relations(followers, ({ one }) => ({
+	user: one(users, { fields: [followers.userId], references: [users.id], relationName: 'followers' }),
+	follower: one(users, { fields: [followers.followerId], references: [users.id], relationName: 'following' }),
+}));
+
+export const postsRelations = relations(posts, ({ one, many }) => ({
+	user: one(users, { fields: [posts.userId], references: [users.id] }),
+	likes: many(postLikes),
+	comments: many(postComments),
+}));
+
+export const postLikesRelations = relations(postLikes, ({ one }) => ({
+	post: one(posts, { fields: [postLikes.postId], references: [posts.id] }),
+	user: one(users, { fields: [postLikes.userId], references: [users.id] }),
+}));
+
+export const postCommentsRelations = relations(postComments, ({ one }) => ({
+	post: one(posts, { fields: [postComments.postId], references: [posts.id] }),
+	user: one(users, { fields: [postComments.userId], references: [users.id] }),
+}));
+
+export const bodyMeasurementsRelations = relations(bodyMeasurements, ({ one }) => ({
+	user: one(users, { fields: [bodyMeasurements.userId], references: [users.id] }),
+}));
+
+export const sleepLogsRelations = relations(sleepLogs, ({ one }) => ({
+	user: one(users, { fields: [sleepLogs.userId], references: [users.id] }),
+}));
+
+export const waterLogsRelations = relations(waterLogs, ({ one }) => ({
+	user: one(users, { fields: [waterLogs.userId], references: [users.id] }),
+}));
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+	user: one(users, { fields: [notifications.userId], references: [users.id] }),
+}));
+
+export const achievementsRelations = relations(achievements, ({ many }) => ({
+	userAchievements: many(userAchievements),
+}));
+
+export const userAchievementsRelations = relations(userAchievements, ({ one }) => ({
+	user: one(users, { fields: [userAchievements.userId], references: [users.id] }),
+	achievement: one(achievements, { fields: [userAchievements.achievementId], references: [achievements.id] }),
+}));

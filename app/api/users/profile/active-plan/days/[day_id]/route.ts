@@ -1,61 +1,60 @@
-// app/api/users/profile/active-plan/days/[day_id]/route.ts
-import { NextResponse, NextRequest } from 'next/server';
-import pool from '@/app/lib/db';
-import { verifyAuth } from '@/app/lib/auth';
+import { NextResponse, NextRequest } from "next/server";
+import { db } from '@/app/lib/db';
+import { verifyAuth } from "@/app/lib/auth";
+import { userPlanDays, userPlans } from "@/app/lib/schema";
+import { and, eq, inArray } from 'drizzle-orm';
 
 export async function DELETE(
   req: NextRequest,
-  context: { params: Promise<{ day_id: string }> }
+  context: { params: { day_id: string } }
 ) {
   const auth = await verifyAuth(req);
-  if (auth.error) return auth.error;
+  if (auth.error) {
+    return auth.error;
+  }
   const userId = auth.user.userId;
 
-  // Await the context.params promise to resolve it, then get the day_id
-  const params = await context.params;
-  const userPlanDayId = params.day_id;
+  const dayId = context.params.day_id;
+  const parsedDayId = parseInt(dayId, 10);
 
-  if (!userPlanDayId || isNaN(Number(userPlanDayId))) {
-    return NextResponse.json({ error: 'Valid Day ID is required' }, { status: 400 });
+  if (isNaN(parsedDayId)) {
+    return NextResponse.json (
+      { error: 'Valid Day ID us required'}, {status: 400}
+    );
   }
 
-  const client = await pool.connect();
-
   try {
-    await client.query('BEGIN');
+    const userOwnedPlansQuery = db 
+      .select({ id: userPlans.id })
+      .from(userPlans)
+      .where(eq(userPlans.userId, userId));
 
-    // First, delete associated exercises due to foreign key constraints
-    await client.query(
-      'DELETE FROM user_plan_day_exercises WHERE user_plan_day_id = $1',
-      [userPlanDayId]
-    );
-
-    // Now, delete the day itself
-    const deleteQuery = `
-      DELETE FROM user_plan_days
-      WHERE id = $1 
-      AND user_plan_id IN (
-        SELECT id FROM user_plans 
-        WHERE user_id = $2
+    const deletedDay = await db
+      .delete(userPlanDays)
+      .where(
+        and(
+          eq(userPlanDays.id, parsedDayId),
+          inArray(userPlanDays.userPlanId, userOwnedPlansQuery)
+        )
       )
-      RETURNING id;
-    `;
-    
-    const result = await client.query(deleteQuery, [userPlanDayId, userId]);
+      .returning({ id: userPlanDays.id });
 
-    if (result.rowCount === 0) {
-      await client.query('ROLLBACK');
-      return NextResponse.json({ error: 'Day not found or you do not have permission to delete it.' }, { status: 404 });
+    if (deletedDay.length === 0) {
+      return NextResponse.json(
+        { error: 'Day not founf or you do not have permission to delete it.' },
+        { status: 404 }
+      );
     }
 
-    await client.query('COMMIT');
-    return NextResponse.json({ success: true, deletedDayId: result.rows[0].id }, { status: 200 });
-
+    return NextResponse.json(
+      { succes: true, deletedDayId: deletedDay[0].id },
+      { status: 200 }
+    );
   } catch (error) {
-    await client.query('ROLLBACK');
     console.error('Error deleting plan day:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
-  } finally {
-    client.release();
+    return NextResponse.json(
+      { error: ' Internal server error'},
+      { status: 500 }
+    );
   }
 }
