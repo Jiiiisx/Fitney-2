@@ -1,22 +1,27 @@
-import { NextResponse } from 'next/server';
-import { query } from '@/app/lib/db';
+import { NextResponse } from "next/server";
+import { db } from "@/app/lib/db";
+import { workoutLogs } from "@/app/lib/schema";
+import { desc } from "drizzle-orm";
 
 export async function GET() {
   try {
-    const { rows } = await query('SELECT * FROM workout_logs ORDER BY date DESC');
-    
-    const formattedHistory = rows.map(row => ({
-      id: row.id,
-      date: new Date(row.date).toISOString().split('T')[0], // Format to YYYY-MM-DD
-      name: row.name,
-      type: row.type,
-      duration: row.duration_min,
-      calories: row.calories_burned, // Assuming the column is named calories_burned
+    const historyData = await db
+      .select()
+      .from(workoutLogs)
+      .orderBy(desc(workoutLogs.date));
+
+    const formattedHistory = historyData.map(log => ({
+      id: log.id,
+      date: new Date(log.date).toISOString().split('T')[0],
+      name: log.name,
+      type: log.type,
+      duration: log.durationMin,
+      calories: log.caloriesBurned,
     }));
 
     return NextResponse.json(formattedHistory);
 
-  } catch (error) {
+  } catch(error) {
     console.error("Error fetching workout history from DB:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
