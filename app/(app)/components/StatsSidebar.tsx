@@ -6,7 +6,8 @@ import { useEffect, useState } from "react";
 
 const DynamicQuickActions = dynamic(() => import('./QuickActions'), { ssr: false });
 
-const CircularProgress = ({ percentage }: { percentage: number }) => {
+// Modified to accept and display a level
+const CircularProgress = ({ percentage, level }: { percentage: number; level: number }) => {
   const radius = 50;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (percentage / 100) * circumference;
@@ -37,11 +38,10 @@ const CircularProgress = ({ percentage }: { percentage: number }) => {
           transform="rotate(-90 60 60)"
         />
       </svg>
-      <div className="absolute flex items-center justify-center w-24 h-24 bg-muted rounded-full">
-        <User className="w-12 h-12 text-muted-foreground" />
-      </div>
-      <div className="absolute top-0 right-0 bg-foreground text-background text-xs font-bold px-2 py-1 rounded-full">
-        {percentage}%
+      {/* Display Level in the center */}
+      <div className="absolute flex flex-col items-center">
+        <span className="text-xs text-muted-foreground">Level</span>
+        <span className="text-4xl font-bold text-foreground">{level}</span>
       </div>
     </div>
   );
@@ -49,7 +49,9 @@ const CircularProgress = ({ percentage }: { percentage: number }) => {
 
 const StatsSidebar = () => {
   const [userName, setUserName] = useState("User");
-  const [stats, setStats] = useState({ consistencyChange: 0, goalProgress: 0 });
+  const [stats, setStats] = useState({ consistencyChange: 0 });
+  // State for the new gamification feature
+  const [gamificationStats, setGamificationStats] = useState({ level: 1, progressPercentage: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -68,15 +70,24 @@ const StatsSidebar = () => {
       try {
         const headers = { 'Authorization': `Bearer ${token}` };
         
-        const userRes = await fetch('/api/users/profile', { headers });
+        // Fetch all data in parallel
+        const [userRes, statsRes, gamificationRes] = await Promise.all([
+          fetch('/api/users/profile', { headers }),
+          fetch('/api/stats/sidebar', { headers }),
+          fetch('/api/users/gamification-stats', { headers })
+        ]);
+
         if (!userRes.ok) throw new Error('Failed to fetch user data');
         const userData = await userRes.json();
         setUserName(userData.full_name || userData.username);
 
-        const statsRes = await fetch('/api/stats/sidebar', { headers });
         if (!statsRes.ok) throw new Error('Failed to fetch stats');
         const statsData = await statsRes.json();
         setStats(statsData);
+
+        if (!gamificationRes.ok) throw new Error('Failed to fetch gamification stats');
+        const gamificationData = await gamificationRes.json();
+        setGamificationStats(gamificationData);
 
       } catch (err: any) {
         setError(err.message);
@@ -112,7 +123,11 @@ const StatsSidebar = () => {
       </div>
 
       <div className="flex flex-col items-center text-center">
-        <CircularProgress percentage={stats.goalProgress} />
+        {/* Use new gamification data here */}
+        <CircularProgress 
+          percentage={gamificationStats.progressPercentage} 
+          level={gamificationStats.level}
+        />
         <h3 className="mt-4 text-xl font-bold text-foreground">
           Good Morning, {userName}! 🔥
         </h3>

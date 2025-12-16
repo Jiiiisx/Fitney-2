@@ -59,6 +59,7 @@ const Header = () => {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [level, setLevel] = useState(1); // State for user level
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   const fetchUser = useCallback(async () => {
@@ -77,9 +78,24 @@ const Header = () => {
     }
   }, []);
 
+  // Fetch gamification stats
+  const fetchLevel = useCallback(async () => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      const res = await fetch('/api/users/gamification-stats', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const gamificationData = await res.json();
+        setLevel(gamificationData.level);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     fetchUser();
-  }, [fetchUser]);
+    fetchLevel();
+  }, [fetchUser, fetchLevel]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -88,7 +104,6 @@ const Header = () => {
 
   const handleOnboardingComplete = useCallback(() => {
     setShowOnboarding(false);
-    // Re-fetch user to get the latest onboarding status
     fetchUser();
   }, [fetchUser]);
 
@@ -162,9 +177,14 @@ const Header = () => {
             
             <Popover>
               <PopoverTrigger asChild>
-                <button className="rounded-full focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
-                  <Avatar user={user} />
-                </button>
+                <div className="relative">
+                  <button className="rounded-full focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                    <Avatar user={user} />
+                  </button>
+                  <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full border-2 border-card">
+                    {level}
+                  </span>
+                </div>
               </PopoverTrigger>
               <PopoverContent className="w-56" align="end">
                 <div className="p-4 border-b">

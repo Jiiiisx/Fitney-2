@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import dynamic from 'next/dynamic';
 import SettingsSidebar from "./components/SettingsSidebar";
-// import ProfileSettings from "./components/ProfileSettings";
 import AppearanceSettings from "./components/AppearanceSettings";
 import NotificationSettings from "./components/NotificationSettings";
+import { Progress } from "@/components/ui/progress"; // Import Progress component
 
 const ProfileSettings = dynamic(() => import('./components/ProfileSettings'), { ssr: false });
 
@@ -14,6 +14,29 @@ type SettingsTab = "profile" | "appearance" | "notifications";
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>("notifications");
+  // State for gamification stats
+  const [gamificationStats, setGamificationStats] = useState({
+    level: 1,
+    xp: 0,
+    xpForNextLevel: 100,
+    progressPercentage: 0,
+  });
+
+  // Fetch gamification stats
+  useEffect(() => {
+    async function fetchStats() {
+      try {
+        const response = await fetch('/api/users/gamification-stats');
+        if (response.ok) {
+          const data = await response.json();
+          setGamificationStats(data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch gamification stats', error);
+      }
+    }
+    fetchStats();
+  }, []);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -60,6 +83,23 @@ export default function SettingsPage() {
         {/* Main Content */}
         <main className="w-full lg:w-3/4 bg-background overflow-y-auto">
           <div className="p-12">
+            {/* Gamification Stats Section */}
+            <div className="mb-8 p-6 border rounded-lg bg-muted/20">
+              <h2 className="text-2xl font-semibold mb-4 text-foreground">Your Level</h2>
+              <div className="space-y-3">
+                <p className="text-lg text-muted-foreground">
+                  <strong>Level:</strong> <span className="text-foreground font-bold">{gamificationStats.level}</span>
+                </p>
+                <div>
+                  <div className="flex justify-between mb-1 text-sm">
+                    <span className="text-muted-foreground">Progress to Next Level</span>
+                    <span className="font-mono text-foreground">{gamificationStats.xp} / {gamificationStats.xpForNextLevel} XP</span>
+                  </div>
+                  <Progress value={gamificationStats.progressPercentage} />
+                </div>
+              </div>
+            </div>
+
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeTab}
