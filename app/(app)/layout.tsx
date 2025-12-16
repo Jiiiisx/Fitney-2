@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import dynamic from 'next/dynamic';
 import { cn } from "../lib/utils";
 import toast, { Toaster } from "react-hot-toast";
+import { ThemeProvider } from "@/app/providers";
 
 
 const Header = dynamic(() => import("./components/Header"), { ssr: false });
@@ -47,23 +48,25 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div
-      className={cn(
-        "font-poppins",
-        "bg-gradient-to-b from-yellow-100 to-gray-50 dark:bg-none dark:bg-black",
-        isFixedLayoutPage ? "h-screen flex flex-col" : "min-h-screen",
-      )}
-    >
-      <Toaster position="top-center" reverseOrder={false} />
-      <Header />
-      <main className={cn({
-        "p-8": !isFixedLayoutPage,
-        "flex-grow": isFixedLayoutPage,
-        "overflow-y-auto": pathname === "/history",
-        "overflow-hidden": isFixedLayoutPage && pathname !== "/history",
-      })}>
-        {children}
-      </main>
-    </div>
+    <ThemeProvider>
+      <div
+        className={cn(
+          "font-poppins",
+          "bg-gradient-to-b from-yellow-100 to-gray-50 dark:bg-none dark:bg-black",
+          isFixedLayoutPage ? "h-screen flex flex-col" : "min-h-screen",
+        )}
+      >
+        <Toaster position="top-center" reverseOrder={false} />
+        <Header />
+        <main className={cn({
+          "p-8": !isFixedLayoutPage,
+          "flex-grow": isFixedLayoutPage,
+          "overflow-y-auto": pathname === "/history",
+          "overflow-hidden": isFixedLayoutPage && pathname !== "/history",
+        })}>
+          {children}
+        </main>
+      </div>
+    </ThemeProvider>
   );
 }
