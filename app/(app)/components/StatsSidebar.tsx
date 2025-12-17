@@ -1,12 +1,10 @@
 "use client";
 
-import { User } from "lucide-react";
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from "react";
 
 const DynamicQuickActions = dynamic(() => import('./QuickActions'), { ssr: false });
 
-// Modified to accept and display a level
 const CircularProgress = ({ percentage, level }: { percentage: number; level: number }) => {
   const radius = 50;
   const circumference = 2 * Math.PI * radius;
@@ -15,15 +13,7 @@ const CircularProgress = ({ percentage, level }: { percentage: number; level: nu
   return (
     <div className="relative flex items-center justify-center w-32 h-32">
       <svg className="absolute w-full h-full" viewBox="0 0 120 120">
-        <circle
-          className="text-border"
-          strokeWidth="10"
-          stroke="currentColor"
-          fill="transparent"
-          r={radius}
-          cx="60"
-          cy="60"
-        />
+        <circle className="text-border" strokeWidth="10" stroke="currentColor" fill="transparent" r={radius} cx="60" cy="60" />
         <circle
           className="text-primary"
           strokeWidth="10"
@@ -38,7 +28,6 @@ const CircularProgress = ({ percentage, level }: { percentage: number; level: nu
           transform="rotate(-90 60 60)"
         />
       </svg>
-      {/* Display Level in the center */}
       <div className="absolute flex flex-col items-center">
         <span className="text-xs text-muted-foreground">Level</span>
         <span className="text-4xl font-bold text-foreground">{level}</span>
@@ -49,9 +38,11 @@ const CircularProgress = ({ percentage, level }: { percentage: number; level: nu
 
 const StatsSidebar = () => {
   const [userName, setUserName] = useState("User");
-  const [stats, setStats] = useState({ consistencyChange: 0 });
-  // State for the new gamification feature
-  const [gamificationStats, setGamificationStats] = useState({ level: 1, progressPercentage: 0 });
+  const [stats, setStats] = useState({
+    level: 1,
+    progressPercentage: 0,
+    consistencyChange: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -70,24 +61,18 @@ const StatsSidebar = () => {
       try {
         const headers = { 'Authorization': `Bearer ${token}` };
         
-        // Fetch all data in parallel
-        const [userRes, statsRes, gamificationRes] = await Promise.all([
+        const [userRes, statsRes] = await Promise.all([
           fetch('/api/users/profile', { headers }),
-          fetch('/api/stats/sidebar', { headers }),
-          fetch('/api/users/gamification-stats', { headers })
+          fetch('/api/stats/sidebar', { headers })
         ]);
 
         if (!userRes.ok) throw new Error('Failed to fetch user data');
         const userData = await userRes.json();
         setUserName(userData.full_name || userData.username);
 
-        if (!statsRes.ok) throw new Error('Failed to fetch stats');
+        if (!statsRes.ok) throw new Error(`Failed to fetch stats: ${statsRes.statusText}`);
         const statsData = await statsRes.json();
         setStats(statsData);
-
-        if (!gamificationRes.ok) throw new Error('Failed to fetch gamification stats');
-        const gamificationData = await gamificationRes.json();
-        setGamificationStats(gamificationData);
 
       } catch (err: any) {
         setError(err.message);
@@ -123,10 +108,9 @@ const StatsSidebar = () => {
       </div>
 
       <div className="flex flex-col items-center text-center">
-        {/* Use new gamification data here */}
         <CircularProgress 
-          percentage={gamificationStats.progressPercentage} 
-          level={gamificationStats.level}
+          percentage={stats.progressPercentage} 
+          level={stats.level}
         />
         <h3 className="mt-4 text-xl font-bold text-foreground">
           Good Morning, {userName}! 🔥
