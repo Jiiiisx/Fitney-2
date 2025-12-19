@@ -21,9 +21,9 @@ export default function CompleteProfileBanner() {
 
         if (res.ok) {
           const data = await res.json();
-          const isProfileIncomplete = !data.height || !data.weight || !data.dob || !data.gender;
 
-          const needsOnBoarding = !data.hasCompletedOnBoarding;
+          const isProfileIncomplete = !data.height || !data.weight || !data.dob || !data.gender;
+          const needsOnBoarding = !data.hasCompletedOnboarding;
 
           if (isProfileIncomplete || needsOnBoarding) {
             setIsVisible(true);

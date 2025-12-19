@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
     const measurementResult = await db
       .select({
         height: bodyMeasurements.heightCm,
-        Weight: bodyMeasurements.weightKg,
+        weight: bodyMeasurements.weightKg,
       })
       .from(bodyMeasurements)
       .where(eq(bodyMeasurements.userId, userId))
@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
       dob: formattedDob || '',
       gender: userData.gender || '',
       height: measurementData.height || '',
-      weight: measurementData.Weight || '',
+      weight: measurementData.weight || '',
       hasCompletedOnboarding: userData.hasCompletedOnboarding || false,
     };
 
@@ -115,6 +115,20 @@ export async function PUT(req: NextRequest) {
           weightKg: weight ? String(weight) : null,
         });
       }
+
+      await db.insert(userSettings)
+        .values({
+          userId: userId,
+          hasCompletedOnboarding: true,
+          theme: 'system',
+          measurementUnits: 'metric',
+          emailNotifications: true,
+          pushNotifications: true
+        })
+        .onConflictDoUpdate({
+          target: userSettings.userId,
+          set: { hasCompletedOnboarding: true }
+        })
 
       return NextResponse.json({ message: "Profile updated succesfully"});
 

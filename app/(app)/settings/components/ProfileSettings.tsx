@@ -130,8 +130,6 @@ export default function ProfileSettings() {
         throw new Error("Failed to update profile");
       }
 
-      const updatedData = await res.json();
-      setProfile(updatedData);
       toast.success("Profile updated succesfully!");
     } catch (error) {
       console.error("Error updating profile:", error);
