@@ -2,7 +2,7 @@ import { NextResponse, NextRequest } from 'next/server';
 import { db } from '@/app/lib/db';
 import { users, userSettings, bodyMeasurements } from '@/app/lib/schema';
 
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, sql, and } from 'drizzle-orm';
 import { format } from 'date-fns';
 import { verifyAuth } from '@/app/lib/auth';
 import { Weight } from 'lucide-react';
@@ -83,7 +83,7 @@ export async function PUT(req: NextRequest) {
     await db.update(users)
       .set({
         fullName: fullName,
-        dateOfBirth: dob ? new Date(dob) : null,
+        dateOfBirth: dob ? dob : null,
         gender: gender,
       })
       .where(eq(users.id, userId));
@@ -93,7 +93,10 @@ export async function PUT(req: NextRequest) {
       const existingMeasurement = await db.select()
         .from(bodyMeasurements)
         .where(
-          sql`${bodyMeasurements.userId} = ${userId} AND ${bodyMeasurements.date} = ${todayStr}`
+          and(
+            eq(bodyMeasurements.userId, userId),
+            eq(bodyMeasurements.date, todayStr)
+          )
         )
         .limit(1);
 
