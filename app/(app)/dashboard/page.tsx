@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import StatsSidebar from "../components/StatsSidebar";
 import TodaysPlanBanner from "../components/TodaysPlanBanner";
@@ -8,20 +11,44 @@ import GamificationStreak from "../components/GamificationStreak";
 import ProgressCharts from "../components/ProgressCharts";
 import WorkoutBreakdown from "../components/WorkoutBreakdown";
 import CompleteProfileBanner from "../components/CompleteProfileBanner";
-import { db } from "@/app/lib/db";
-import { users, bodyMeasurements } from "@/app/lib/schema";
-import { eq, desc } from "drizzle-orm";
-import { getUserFromToken } from "@/app/lib/auth";
-import { headers } from "next/headers";
+import toast from "react-hot-toast";
 
-async function checkProfileCompleteness() {
-  const headersList = await headers();
-  const token = headersList.get("authorization")?.split(" ")[1];
-
-  return true;
+interface DashboardData {
+  today: {
+    duration: number;
+    calories: number;
+    workouts: number;
+  };
+  weekly: any[];
+  recent: any[];
 }
 
 export default function DashboardPage() {
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch("/api/stats/dashboard", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (res.ok) {
+          const result = await res.json();
+          setData(result);
+        }
+      } catch (error) {
+        console.error("Failed to fetch dashboard data", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
   return (
     <div className="h-full">
       <div className="grid grid-cols-1 lg:grid-cols-3 h-full">
@@ -29,11 +56,14 @@ export default function DashboardPage() {
         <div className="lg:col-span-2 space-y-8 overflow-y-auto p-8 scrollbar-hide">
           <CompleteProfileBanner/>
 
-          <TodaysPlanBanner/>
+          <TodaysPlanBanner stats={data?.today} isLoading={loading} />
           <GamificationStreak/>
-          <DailyGoals/>
-          <RecentActivityList/>
-          <ProgressCharts/>
+          <DailyGoals stats={data?.today} />
+          
+          <RecentActivityList workouts={data?.recent} isLoading={loading} />
+          
+          <ProgressCharts weeklyData={data?.weekly} isLoading={loading} />
+          
           <WorkoutBreakdown/>
           <UpgradeBanner/>
         </div>

@@ -1,169 +1,270 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, useEffect } from "react";
+import { Search, Dumbbell, Clock, Calendar as CalendarIcon, Check, ChevronLeft, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import toast from "react-hot-toast";
 
-type WorkoutType = "strength" | "cardio" | "";
-
-// We might want to pass a function to be called on successful submission
-interface LogWorkoutFormProps {
-  onSuccess?: () => void;
+interface Exercise {
+  id: number;
+  name: string;
+  category: string;
 }
 
-export default function LogWorkoutForm({ onSuccess }: LogWorkoutFormProps) {
-  const [workoutType, setWorkoutType] = useState<WorkoutType>("");
-  
-  // State for form fields
-  const [name, setName] = useState("");
-  const [sets, setSets] = useState("");
-  const [reps, setReps] = useState("");
-  const [weight, setWeight] = useState("");
-  const [duration, setDuration] = useState("");
-  const [distance, setDistance] = useState("");
+interface LogWorkoutFormProps {
+  onSuccess?: () => void;
+  onCancel?: () => void;
+}
 
-  // State for submission
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+export default function LogWorkoutForm({ onSuccess, onCancel }: LogWorkoutFormProps) {
+  // --- STATE ---
+  const [step, setStep] = useState<"search" | "details">("search");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<Exercise[]>([]);
+  const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const resetForm = () => {
-    setWorkoutType("");
-    setName("");
-    setSets("");
-    setReps("");
-    setWeight("");
-    setDuration("");
-    setDistance("");
-    setError(null);
+  // Form Data
+  const [formData, setFormData] = useState({
+    sets: "3",
+    reps: "10",
+    weight: "0",
+    duration: "0",
+    date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+  });
+
+  // --- SEARCH LOGIC ---
+  useEffect(() => {
+    const searchExercises = async () => {
+      if (searchQuery.length < 2) {
+        setSearchResults([]);
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/exercises/search?q=${encodeURIComponent(searchQuery)}`);
+        if (res.ok) {
+          const data = await res.json();
+          setSearchResults(data);
+        }
+      } catch (error) {
+        console.error("Search failed", error);
+      }
+    };
+
+    // Debounce search (wait 300ms after typing stops)
+    const timeoutId = setTimeout(() => {
+      searchExercises();
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
+
+  // --- HANDLERS ---
+  const handleSelectExercise = (exercise: Exercise) => {
+    setSelectedExercise(exercise);
+    setStep("details");
+    setSearchQuery(""); // Reset search for next time
   };
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setError(null);
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
-    let body = {};
-    if (workoutType === 'strength') {
-      body = { type: 'strength', name, sets: Number(sets), reps: Number(reps), weight: Number(weight) };
-    } else if (workoutType === 'cardio') {
-      body = { type: 'cardio', name, duration: Number(duration), distance: Number(distance) };
-    }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
 
     try {
-      const response = await fetch('/api/workouts/log', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("Please login first");
+        return;
+      }
+
+      const payload = {
+        exerciseId: selectedExercise?.id,
+        name: selectedExercise?.name, // Backup name
+        type: "Strength", // Todo: Detect from category
+        sets: Number(formData.sets),
+        reps: formData.reps,
+        weight: Number(formData.weight),
+        duration: Number(formData.duration),
+        date: formData.date
+      };
+
+      const res = await fetch("/api/workouts/log", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to log workout');
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to log workout");
       }
 
-      // Success
-      console.log('Workout logged successfully!');
-      resetForm();
-      if (onSuccess) {
-        onSuccess(); // e.g., close the modal
+      // Success!
+      toast.success(
+        <div className="flex flex-col">
+          <span className="font-bold">Workout Logged!</span>
+          <span className="text-sm flex items-center gap-1">
+            <Flame size={14} className="text-orange-500" /> 
+            You gained {data.xpGained} XP!
+          </span>
+        </div>
+      );
+
+      if (data.leveledUp) {
+        toast("LEVEL UP! 🎉", { icon: "⭐" });
       }
 
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      if (onSuccess) onSuccess();
+
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to save workout");
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
-  return (
-    <>
-      <DialogHeader>
-        <DialogTitle className="text-center text-2xl">Log a Workout</DialogTitle>
-        <DialogDescription className="text-center">
-          What did you accomplish? Select a type to begin.
-        </DialogDescription>
-      </DialogHeader>
-      <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-        <div className="space-y-2">
-          <Label htmlFor="workout-type">Workout Type</Label>
-          <Select 
-            onValueChange={(value: WorkoutType) => setWorkoutType(value)} 
-            value={workoutType}
-            disabled={isSubmitting}
-          >
-            <SelectTrigger id="workout-type">
-              <SelectValue placeholder="Select a type..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="strength">Strength Training</SelectItem>
-              <SelectItem value="cardio">Cardio</SelectItem>
-            </SelectContent>
-          </Select>
+  // --- RENDER: STEP 1 (SEARCH) ---
+  if (step === "search") {
+    return (
+      <div className="space-y-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Input 
+            placeholder="Search exercises (e.g. Push Up, Bench Press)..." 
+            className="pl-9"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            autoFocus
+          />
         </div>
 
-        {/* Conditional Fields for Strength */}
-        {workoutType === "strength" && (
-          <div className="space-y-4 p-4 bg-gray-50 rounded-lg border">
-            <div className="space-y-2">
-                <Label htmlFor="exercise-name">Exercise Name</Label>
-                <Input id="exercise-name" placeholder="e.g., Bench Press" value={name} onChange={e => setName(e.target.value)} required disabled={isSubmitting} />
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="sets">Sets</Label>
-                <Input id="sets" type="number" placeholder="3" value={sets} onChange={e => setSets(e.target.value)} required disabled={isSubmitting} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="reps">Reps</Label>
-                <Input id="reps" type="number" placeholder="10" value={reps} onChange={e => setReps(e.target.value)} required disabled={isSubmitting} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="weight">Weight (kg)</Label>
-                <Input id="weight" type="number" placeholder="60" value={weight} onChange={e => setWeight(e.target.value)} required disabled={isSubmitting} />
-              </div>
-            </div>
-          </div>
-        )}
+        <div className="max-h-[300px] overflow-y-auto space-y-2">
+          {searchResults.length === 0 && searchQuery.length > 1 && (
+             <p className="text-center text-sm text-muted-foreground py-4">No exercises found.</p>
+          )}
 
-        {/* Conditional Fields for Cardio */}
-        {workoutType === "cardio" && (
-          <div className="space-y-4 p-4 bg-gray-50 rounded-lg border">
-            <div className="space-y-2">
-                <Label htmlFor="cardio-activity">Activity</Label>
-                <Input id="cardio-activity" placeholder="e.g., Running" value={name} onChange={e => setName(e.target.value)} required disabled={isSubmitting} />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="duration">Duration (min)</Label>
-                <Input id="duration" type="number" placeholder="30" value={duration} onChange={e => setDuration(e.target.value)} required disabled={isSubmitting} />
+          {searchResults.map((ex) => (
+            <button
+              key={ex.id}
+              onClick={() => handleSelectExercise(ex)}
+              className="w-full text-left p-3 rounded-lg hover:bg-accent transition-colors border flex items-center justify-between group"
+            >
+              <div>
+                <p className="font-medium text-foreground">{ex.name}</p>
+                <p className="text-xs text-muted-foreground">{ex.category || "General"}</p>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="distance">Distance (km)</Label>
-                <Input id="distance" type="number" placeholder="5" value={distance} onChange={e => setDistance(e.target.value)} required disabled={isSubmitting} />
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {error && <p className="text-sm text-red-500">{error}</p>}
+              <ChevronLeft className="h-4 w-4 text-muted-foreground rotate-180 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </button>
+          ))}
 
-        <Button type="submit" className="w-full bg-gray-800 text-white hover:bg-gray-900" disabled={!workoutType || isSubmitting}>
-          {isSubmitting ? 'Logging...' : 'Log Workout'}
+          {/* Fallback Manual Entry (Optional) */}
+          {searchQuery.length > 2 && (
+             <button 
+                onClick={() => handleSelectExercise({ id: 0, name: searchQuery, category: "Custom" })}
+                className="w-full text-left p-3 text-sm text-blue-500 hover:underline"
+             >
+                Can't find it? Add "{searchQuery}" manually
+             </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // --- RENDER: STEP 2 (DETAILS) ---
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="flex items-center gap-2 mb-4">
+        <Button 
+            type="button" 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setStep("search")}
+            className="h-8 w-8"
+        >
+            <ChevronLeft size={18} />
         </Button>
-      </form>
-    </>
+        <div>
+            <h3 className="font-semibold text-lg leading-tight">{selectedExercise?.name}</h3>
+            <p className="text-xs text-muted-foreground">Enter details</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+            <Label htmlFor="sets">Sets</Label>
+            <div className="relative">
+                <Dumbbell className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input 
+                    id="sets" name="sets" type="number" 
+                    className="pl-9" 
+                    value={formData.sets} onChange={handleInputChange} 
+                />
+            </div>
+        </div>
+        <div className="space-y-2">
+            <Label htmlFor="reps">Reps</Label>
+            <Input 
+                id="reps" name="reps" placeholder="e.g. 10 or 8-12"
+                value={formData.reps} onChange={handleInputChange} 
+            />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+            <Label htmlFor="weight">Weight (kg)</Label>
+            <Input 
+                id="weight" name="weight" type="number" step="0.5"
+                value={formData.weight} onChange={handleInputChange} 
+            />
+        </div>
+        <div className="space-y-2">
+            <Label htmlFor="duration">Duration (mins)</Label>
+            <div className="relative">
+                <Clock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input 
+                    id="duration" name="duration" type="number" 
+                    className="pl-9" 
+                    value={formData.duration} onChange={handleInputChange} 
+                />
+            </div>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+         <Label htmlFor="date">Date</Label>
+         <div className="relative">
+            <CalendarIcon className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input 
+                id="date" name="date" type="date"
+                className="pl-9"
+                value={formData.date} onChange={handleInputChange}
+            />
+         </div>
+      </div>
+
+      <div className="pt-4 flex gap-3">
+        <Button type="button" variant="outline" className="flex-1" onClick={onCancel}>
+            Cancel
+        </Button>
+        <Button type="submit" className="flex-1" disabled={isLoading}>
+            {isLoading ? "Saving..." : "Log Workout"}
+        </Button>
+      </div>
+    </form>
   );
 }

@@ -1,106 +1,99 @@
-// app/(app)/components/RecentActivityList.tsx
-import { query } from "@/app/lib/db";
-import { Dumbbell, Zap, Heart, Award } from "lucide-react";
+import { Dumbbell, Zap, Heart, Award, Calendar } from "lucide-react";
 import React from "react";
+import { format } from "date-fns";
 
-type RecentWorkout = {
-  log_id: number;
-  exercise_name: string;
-  details: string;
-  created_at: Date;
-  type: "strength" | "cardio" | "flexibility"; // Add workout type
-  is_pr: boolean; // Add personal record flag
+type WorkoutLog = {
+  id: number;
+  name: string;
+  type: string;
+  date: string; // API sends ISO string
+  sets?: number;
+  reps?: string;
+  weightKg?: string;
+  durationMin?: number;
+  distanceKm?: string;
 };
 
-// This function would need to be updated in a real scenario to fetch the new 'type' and 'is_pr' fields.
-async function getRecentWorkouts(
-  userId: number,
-  limit: number = 3,
-): Promise<RecentWorkout[]> {
-  // For now, we return a richer hardcoded list to demonstrate the UI.
-  return [
-    {
-      log_id: 1,
-      exercise_name: "Bench Press",
-      details: "3 sets x 5 reps @ 80 kg",
-      created_at: new Date(),
-      type: "strength",
-      is_pr: true,
-    },
-    {
-      log_id: 2,
-      exercise_name: "Treadmill Run",
-      details: "5 km in 25 min",
-      created_at: new Date(Date.now() - 2 * 60 * 60 * 1000),
-      type: "cardio",
-      is_pr: false,
-    },
-    {
-      log_id: 3,
-      exercise_name: "Yoga Flow",
-      details: "30 min session",
-      created_at: new Date(Date.now() - 5 * 60 * 60 * 1000),
-      type: "flexibility",
-      is_pr: false,
-    },
-  ];
+interface RecentActivityListProps {
+  workouts?: WorkoutLog[];
+  isLoading?: boolean;
 }
 
-const workoutIcons = {
-  strength: <Dumbbell className="w-5 h-5 text-white" />,
-  cardio: <Zap className="w-5 h-5 text-white" />,
-  flexibility: <Heart className="w-5 h-5 text-white" />,
+const workoutIcons: Record<string, React.ReactNode> = {
+  Strength: <Dumbbell className="w-5 h-5 text-white" />,
+  Cardio: <Zap className="w-5 h-5 text-white" />,
+  Weightlifting: <Dumbbell className="w-5 h-5 text-white" />,
+  Flexibility: <Heart className="w-5 h-5 text-white" />,
 };
 
-const workoutColors = {
-  strength: "bg-blue-500",
-  cardio: "bg-yellow-500",
-  flexibility: "bg-pink-500",
+const workoutColors: Record<string, string> = {
+  Strength: "bg-blue-500",
+  Cardio: "bg-yellow-500",
+  Weightlifting: "bg-indigo-500",
+  Flexibility: "bg-pink-500",
 };
 
-const ActivityCard = ({ workout }: { workout: RecentWorkout }) => (
-  <div className="bg-card/60 dark:bg-card/90 backdrop-blur-sm border border-border rounded-2xl p-4 flex flex-col justify-between">
-    <div>
-      <div className="flex items-center justify-between mb-2">
-        <div className={`p-2 rounded-lg ${workoutColors[workout.type]}`}>
-          {workoutIcons[workout.type]}
-        </div>
-        {workout.is_pr && (
-          <div className="flex items-center text-xs font-bold bg-primary text-primary-foreground px-2 py-1 rounded-full">
-            <Award className="w-4 h-4 mr-1" />
-            New PR!
+const ActivityCard = ({ workout }: { workout: WorkoutLog }) => {
+  const type = workout.type || "Strength";
+  const icon = workoutIcons[type] || <Dumbbell className="w-5 h-5 text-white" />;
+  const color = workoutColors[type] || "bg-gray-500";
+
+  // Generate detail string
+  let details = "";
+  if (type === "Strength" || type === "Weightlifting") {
+    details = `${workout.sets || 0} sets x ${workout.reps || 0} reps`;
+    if (workout.weightKg) details += ` @ ${workout.weightKg}kg`;
+  } else {
+    if (workout.distanceKm) details += `${workout.distanceKm} km`;
+    if (workout.durationMin) details += `${details ? ' in ' : ''}${workout.durationMin} mins`;
+  }
+
+  return (
+    <div className="bg-card/60 dark:bg-card/90 backdrop-blur-sm border border-border rounded-2xl p-4 flex flex-col justify-between">
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <div className={`p-2 rounded-lg ${color}`}>
+            {icon}
           </div>
-        )}
+        </div>
+        <h4 className="font-bold text-foreground truncate">{workout.name}</h4>
+        <p className="text-sm text-muted-foreground">{details || "No details"}</p>
       </div>
-      <h4 className="font-bold text-foreground">{workout.exercise_name}</h4>
-      <p className="text-sm text-secondary">{workout.details}</p>
+      <p className="text-xs text-muted-foreground/70 mt-3 text-right">
+        {format(new Date(workout.date), "MMM d, h:mm a")}
+      </p>
     </div>
-    <p className="text-xs text-secondary/70 mt-3 text-right">
-      {workout.created_at.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      })}
-    </p>
-  </div>
-);
+  );
+};
 
-export default async function RecentActivityList() {
-  const userId = 1; // Hardcoded user ID
-  const recentWorkouts = await getRecentWorkouts(userId);
+export default function RecentActivityList({ workouts, isLoading }: RecentActivityListProps) {
+  if (isLoading) {
+    return (
+      <div className="bg-card/50 dark:bg-card/80 backdrop-blur-sm border border-border rounded-2xl p-6 animate-pulse">
+        <div className="h-8 w-1/3 bg-muted rounded mb-4"></div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="h-32 bg-muted rounded-2xl"></div>
+          <div className="h-32 bg-muted rounded-2xl"></div>
+          <div className="h-32 bg-muted rounded-2xl"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-card/50 dark:bg-card/80 backdrop-blur-sm border border-border rounded-2xl p-6">
       <h2 className="text-2xl font-bold text-foreground mb-4">Recent Entries</h2>
-      {recentWorkouts.length > 0 ? (
+      {workouts && workouts.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {recentWorkouts.map((workout) => (
-            <ActivityCard key={workout.log_id} workout={workout} />
+          {workouts.map((workout) => (
+            <ActivityCard key={workout.id} workout={workout} />
           ))}
         </div>
       ) : (
-        <p className="text-center text-secondary py-4">
-          No recent activities found.
-        </p>
+        <div className="text-center py-8">
+            <p className="text-muted-foreground mb-2">No recent activities found.</p>
+            <p className="text-sm text-muted-foreground/50">Start logging your workouts to see them here!</p>
+        </div>
       )}
     </div>
   );

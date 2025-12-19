@@ -1,8 +1,13 @@
 // scripts/seed-all-exercises.ts
 import dotenv from 'dotenv';
-dotenv.config({ path: '.env.local' });
+import path from 'path';
 
-import pool from '@/app/lib/db.js';
+// Load environment variables explicitly from .env.local
+dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+// Also load .env as fallback
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+
+// import pool from '../app/lib/db'; // <-- REMOVE STATIC IMPORT
 
 // --- Type Definitions ---
 interface Translation {
@@ -13,8 +18,8 @@ interface Translation {
 }
 interface WgerExercise {
   id: number;
-  name: string; // This will be overwritten by the translation
-  description: string; // This will be overwritten by the translation
+  name: string; 
+  description: string; 
   category: { name: string };
   translations: Translation[];
 }
@@ -29,6 +34,10 @@ function cleanHtml(html: string): string {
 }
 
 async function fetchAndProcessAllExercises() {
+  // --- DYNAMIC IMPORT HERE ---
+  // This ensures environment variables are loaded BEFORE db.ts is executed
+  const { pool } = await import('../app/lib/db'); 
+  
   const client = await pool.connect();
   console.log('Starting to fetch and process all exercises...');
 

@@ -20,8 +20,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No file received" }, { status: 400 });
     }
 
-    const validTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-    if (!validTypes.includes(file.type)) {
+    // Relaxed validation: Allow any image type
+    if (!file.type.startsWith("image/")) {
       return NextResponse.json({ error: "Invalid file type. Only images allowed." }, { status: 400 });
     }
 

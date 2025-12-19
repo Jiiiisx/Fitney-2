@@ -1,84 +1,105 @@
-import { NextResponse, NextRequest } from "next/server";
-import { users } from "@/app/lib/schema";
-import { db } from "@/app/lib/db";
-import { workoutLogs } from "@/app/lib/schema";
+import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/app/lib/auth";
+import { db } from "@/app/lib/db";
+import { workoutLogs, users, exercises } from "@/app/lib/schema";
 import { eq } from "drizzle-orm";
 
 const calculateXpForNextLevel = (level: number) => {
-  return Math.floor(100* Math.pow(level, 1.5));
-}
+  return Math.floor(100 * Math.pow(level, 1.5));
+};
 
 export async function POST(req: NextRequest) {
-  const auth = await verifyAuth(req);
-  if (auth.error) {
-    return auth.error;
-  }
-  const userId = auth.user.userId;
-
   try {
+    // 1. Auth Check
+    const auth = await verifyAuth(req);
+    if (auth.error) return auth.error;
+    const userId = auth.user.userId;
+
+    // 2. Parse Body
     const body = await req.json();
-    const { type, name, sets, reps, weight, duration, distance } = body;
+    const { 
+      exerciseId, 
+      name, 
+      type = "Strength", 
+      sets, 
+      reps, 
+      weight, 
+      duration, 
+      distance, 
+      date 
+    } = body;
 
-    if (!type || !name) {
-      return NextResponse.json({ error: 'Workout type and name are required' }, { status: 400 });
+    // 3. Cari Nama Latihan
+    let workoutName = name || "Unknown Workout";
+    if (exerciseId) {
+      const exerciseData = await db.select().from(exercises).where(eq(exercises.id, exerciseId)).limit(1);
+      if (exerciseData.length > 0) {
+        workoutName = exerciseData[0].name;
+      }
     }
 
-
+    // 4. Hitung XP
     let awardedXp = 0;
-    const baseDurationXp = (duration || 0) * 2;
+    const baseDurationXp = (Number(duration) || 0) * 2;
 
-    if (type === 'Strength') {
-      const volumeXp = (sets || 1) * (reps || 1) * (weight || 0) * 0.1;
-      awardedXp = baseDurationXp + Math.floor(volumeXp);
-    } else if (type === 'Cardio') {
-      const distanceXp = (distance || 0) * 10;
-      awardedXp = baseDurationXp + Math.floor(distanceXp);
+    if (type === "Strength" || type === "Weightlifting") {
+        const repVal = parseInt(String(reps)) || 0;
+        const volXp = (Number(sets) || 1) * repVal * (Number(weight) || 0) * 0.05;
+        awardedXp = Math.floor(baseDurationXp + volXp);
     } else {
-      awardedXp = baseDurationXp;
+        const distXp = (Number(distance) || 0) * 10;
+        awardedXp = Math.floor(baseDurationXp + distXp);
     }
 
-    const currentUserArr = await db.select().from(users).where(eq(users.id, userId));
-    if (currentUserArr.length === 0) {
-      return NextResponse.json({ error: 'User not found'}, {status: 404});
-    }
-    const currentUser = currentUserArr[0];
+    if (awardedXp < 10) awardedXp = 10;
 
-    let newXp = currentUser.xp + awardedXp;
-    let newLevel = currentUser.level;
+    // 5. Update User Level & XP
+    const currentUser = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    
+    if (currentUser.length === 0) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    let newLevel = currentUser[0].level;
+    let newXp = currentUser[0].xp + awardedXp;
     let xpToNext = calculateXpForNextLevel(newLevel);
 
+    let leveledUp = false;
     while (newXp >= xpToNext) {
-      newXp -= xpToNext;
-      newLevel++;
-      xpToNext = calculateXpForNextLevel(newLevel);
+        newXp -= xpToNext;
+        newLevel++;
+        xpToNext = calculateXpForNextLevel(newLevel);
+        leveledUp = true;
     }
 
     await db.update(users)
-      .set({ level: newLevel, xp: newXp })
-      .where(eq(users.id, userId));
+        .set({ level: newLevel, xp: newXp })
+        .where(eq(users.id, userId));
 
-    const newLog = await db.insert(workoutLogs).values({
-      userId: userId,
-      type: type,
-      name: name,
-      sets: sets || null,
-      reps: reps || null,
-      weightKg: weight || null,
-      durationMin: duration || null,
-      distanceKm: distance || null,
-      date: new Date(),
-    })
-    .returning();
+    // 6. Simpan Log
+    await db.insert(workoutLogs).values({
+        userId: userId,
+        date: date ? new Date(date) : new Date(),
+        type: type,
+        name: workoutName,
+        sets: Number(sets) || null,
+        reps: String(reps) || null,
+        weightKg: weight ? String(weight) : null,
+        durationMin: Number(duration) || null,
+        distanceKm: distance ? String(distance) : null,
+        caloriesBurned: Math.floor(Number(duration) * 5) || 0
+    });
 
-    if (newLog.length === 0) {
-      return NextResponse.json({ error: 'Failed to log workout'}, { status: 500 });
-    }
+    return NextResponse.json({ 
+        success: true, 
+        message: "Workout logged!", 
+        xpGained: awardedXp,
+        leveledUp: leveledUp,
+        newLevel: newLevel
+    });
 
-    return NextResponse.json(newLog[0], {status: 201});
-
-  } catch ( error ) {
-    console.error('Error logging workout:', error);
-    return NextResponse.json({ error: 'Internal server error'}, {status: 500})
+  } catch (error) {
+    console.error("LOG_WORKOUT_ERROR", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

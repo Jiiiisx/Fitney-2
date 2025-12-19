@@ -3,21 +3,32 @@
 import {
   Dialog,
   DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import LogWorkoutForm from "./LogWorkoutForm";
 
 interface LogWorkoutModalProps {
-  open: boolean;
+  isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function LogWorkoutModal({ open, onOpenChange }: LogWorkoutModalProps) {
-  // This component acts as a wrapper to control the Dialog state
-  // and renders the actual form inside.
+export default function LogWorkoutModal({ isOpen, onOpenChange }: LogWorkoutModalProps) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px] bg-white rounded-2xl shadow-2xl border-neutral-200/70">
-        <LogWorkoutForm onSuccess={() => onOpenChange(false)} />
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Log Workout</DialogTitle>
+          <DialogDescription>
+            Record your physical activity to track your progress and gain XP.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <LogWorkoutForm 
+          onSuccess={() => onOpenChange(false)} 
+          onCancel={() => onOpenChange(false)} 
+        />
       </DialogContent>
     </Dialog>
   );

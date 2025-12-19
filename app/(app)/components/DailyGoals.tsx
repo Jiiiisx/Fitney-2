@@ -1,66 +1,88 @@
-// app/(app)/components/DailyGoals.tsx
-import { Flame, GlassWater, Timer } from "lucide-react";
+"use client";
 
-const goals = [
-  {
-    icon: <Flame className="w-6 h-6 text-red-500" />,
-    title: "Calories",
-    current: 1250,
-    target: 2500,
-    unit: "kcal",
-    color: "bg-red-500",
-  },
-  {
-    icon: <GlassWater className="w-6 h-6 text-sky-500" />,
-    title: "Water Intake",
-    current: 4,
-    target: 8,
-    unit: "glasses",
-    color: "bg-sky-500",
-  },
-  {
-    icon: <Timer className="w-6 h-6 text-green-500" />,
-    title: "Active Time",
-    current: 45,
-    target: 60,
-    unit: "min",
-    color: "bg-green-500",
-  },
-];
+import { Card, CardContent } from "@/components/ui/card";
+import { CircularProgress } from "./CircularProgress";
+import { Footprints, Flame, Timer, Droplets } from "lucide-react";
 
-const DailyGoalCard = ({ goal }: { goal: (typeof goals)[0] }) => {
-  const progressPercentage = (goal.current / goal.target) * 100;
+interface DailyGoalsProps {
+  stats?: {
+    duration: number;
+    calories: number;
+    workouts: number;
+  };
+}
+
+export default function DailyGoals({ stats }: DailyGoalsProps) {
+  // Defaults if no data
+  const calories = stats?.calories || 0;
+  const duration = stats?.duration || 0;
+  
+  // Hardcoded targets for now (Fase 4 will make these dynamic)
+  const targetCalories = 500; 
+  const targetDuration = 60; 
+
+  const calPercentage = Math.min(100, (calories / targetCalories) * 100);
+  const durPercentage = Math.min(100, (duration / targetDuration) * 100);
+
+  const items = [
+    {
+      label: "Calories",
+      value: `${calories}`,
+      target: `/ ${targetCalories} kcal`,
+      percentage: calPercentage,
+      icon: Flame,
+      color: "#f97316", // orange-500
+    },
+    {
+      label: "Duration",
+      value: `${duration}`,
+      target: `/ ${targetDuration} min`,
+      percentage: durPercentage,
+      icon: Timer,
+      color: "#3b82f6", // blue-500
+    },
+    {
+      label: "Steps",
+      value: "2,400",
+      target: "/ 10,000",
+      percentage: 24,
+      icon: Footprints,
+      color: "#10b981", // emerald-500
+    },
+    {
+      label: "Water",
+      value: "1.2",
+      target: "/ 2.5 L",
+      percentage: 48,
+      icon: Droplets,
+      color: "#06b6d4", // cyan-500
+    },
+  ];
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          {goal.icon}
-          <h3 className="font-bold text-foreground">{goal.title}</h3>
-        </div>
-        <p className="text-sm font-semibold text-foreground">
-          <span className="font-bold">{goal.current}</span> / {goal.target}{" "}
-          {goal.unit}
-        </p>
-      </div>
-      <div className="w-full bg-muted rounded-full h-2.5 mt-4">
-        <div
-          className={`${goal.color} h-2.5 rounded-full`}
-          style={{ width: `${progressPercentage}%` }}
-        ></div>
-      </div>
-    </div>
-  );
-};
-
-const DailyGoals = () => {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {goals.map((goal) => (
-        <DailyGoalCard key={goal.title} goal={goal} />
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {items.map((item, index) => (
+        <Card key={index} className="bg-card/50 dark:bg-card/80 backdrop-blur-sm border-none shadow-sm hover:shadow-md transition-all">
+          <CardContent className="p-4 flex flex-col items-center justify-center text-center space-y-3">
+            <div className="relative">
+              <CircularProgress
+                size={70}
+                strokeWidth={6}
+                percentage={item.percentage}
+                color={item.color}
+              />
+              <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
+                <item.icon size={20} style={{ color: item.color }} />
+              </div>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-foreground">{item.value}</p>
+              <p className="text-xs text-muted-foreground font-medium">{item.target}</p>
+            </div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{item.label}</p>
+          </CardContent>
+        </Card>
       ))}
     </div>
   );
-};
-
-export default DailyGoals;
+}

@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 interface UserProfile {
   fullName: string;
   email: string;
-  profile_picture_url?: string;
+  imageUrl?: string;
   hasCompletedOnboarding: boolean;
 }
 
@@ -30,10 +30,10 @@ const Avatar = ({ user }: { user: UserProfile | null }) => {
     );
   }
 
-  if (user.profile_picture_url) {
+  if (user.imageUrl) {
     return (
       <img
-        src={user.profile_picture_url}
+        src={user.imageUrl}
         alt={user.fullName}
         className="w-12 h-12 rounded-full object-cover"
       />
