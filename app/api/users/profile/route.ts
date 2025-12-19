@@ -24,6 +24,7 @@ export async function GET(req: NextRequest) {
         dateOfBirth: users.dateOfBirth,
         gender: users.gender,
         hasCompletedOnboarding: userSettings.hasCompletedOnboarding,
+        imageUrl: users.imageUrl,
       })
       .from(users)
       .leftJoin(userSettings, eq(users.id, userSettings.userId))
@@ -59,6 +60,7 @@ export async function GET(req: NextRequest) {
       height: measurementData.height || '',
       weight: measurementData.weight || '',
       hasCompletedOnboarding: userData.hasCompletedOnboarding || false,
+      imageUrl: userData.imageUrl || '',
     };
 
     return NextResponse.json(profile);

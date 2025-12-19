@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,6 +51,7 @@ const InputWithIcon = ({ icon, ...props }: { icon: React.ReactNode } & React.Com
 
 
 export default function ProfileSettings() {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [profile, setProfile] = useState({
     fullName: "",
     email: "",
@@ -58,6 +59,7 @@ export default function ProfileSettings() {
     gender: "",
     height: "",
     weight: "",
+    imageUrl: "",
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -139,6 +141,45 @@ export default function ProfileSettings() {
     }
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if(!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("Please upload an image file");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    setIsLoading(true);
+
+    try {
+      const token = localStorage.getItem("token");
+
+      const res = await fetch("/api/users/profile/photo", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Upload failed");
+
+      const data = await res.json();
+
+      setProfile((prev) => ({ ...prev, imageUrl: data.imageUrl }));
+      toast.success("Photo updated!");
+    } catch (error) {
+      console.error("Error uploading photo:", error);
+      alert("Failed to upload photo");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   return (
     <div className="space-y-10">
       {/* Personal Information Card */}
@@ -149,13 +190,28 @@ export default function ProfileSettings() {
         isLoading={isLoading}
       >
         <div className="flex items-center gap-6">
+          <input 
+              type="file" 
+              ref={fileInputRef} 
+              className="hidden" 
+              accept="image/*"
+              onChange={handleImageUpload}
+              aria-label="Upload profile picture"
+          />
           <img
-            src="/assets/Testimonial/michael-b.jpg" // Placeholder image
+            src={profile.imageUrl || "/assets/Testimonial/michael-b.jpg"}
             alt="Your avatar"
-            className="w-20 h-20 rounded-full border-2 p-1"
+            className="w-20 h-20 rounded-full border-2 p-1 object-cover"
           />
           <div className="flex gap-2">
-            <Button variant="outline" disabled={isLoading}>Change</Button>
+            <Button 
+                variant="outline" 
+                disabled={isLoading}
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+            >
+                Change
+            </Button>
             <Button variant="ghost" className="text-destructive hover:bg-destructive/10 hover:text-destructive" disabled={isLoading}>Remove</Button>
           </div>
         </div>
