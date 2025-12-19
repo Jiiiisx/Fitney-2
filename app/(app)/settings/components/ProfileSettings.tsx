@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import toast from "react-hot-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Mail, User, Lock, Calendar, Weight, Ruler, PersonStanding, Loader } from "lucide-react";
 
@@ -101,9 +102,43 @@ export default function ProfileSettings() {
     setProfile(prev => ({ ...prev, [id]: value }));
   };
   
-  const handleUpdateProfile = () => {
-    console.log("Updating profile with:", profile);
-    // API call to save profile data would go here
+  const handleUpdateProfile = async () => {
+    setIsLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("You are not looged in!");
+        return;
+      }
+
+      const res = await fetch("/api/users/profile", {
+        method: "PUT",
+        headers: {
+          "Content-type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          fullName: profile.fullName,
+          dob: profile.dob,
+          gender: profile.gender,
+          height: Number(profile.height),
+          weight: Number(profile.weight),
+        }),
+      });
+
+      if(!res.ok) {
+        throw new Error("Failed to update profile");
+      }
+
+      const updatedData = await res.json();
+      setProfile(updatedData);
+      toast.success("Profile updated succesfully!");
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast.error("Something went wrong.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

@@ -68,3 +68,55 @@ export async function GET(req: NextRequest) {
     return new NextResponse(JSON.stringify({ message: 'Internal Server Error'}), {status: 500})
   }
 }
+
+export async function PUT(req: NextRequest) {
+  try {
+    const auth = await verifyAuth(req);
+    if (auth.error) {
+      return auth.error;
+    }
+    const userId = auth.user.userId;
+
+    const body = await req.json();
+    const { fullName, dob, gender, height, weight } = body;
+
+    await db.update(users)
+      .set({
+        fullName: fullName,
+        dateOfBirth: dob ? new Date(dob) : null,
+        gender: gender,
+      })
+      .where(eq(users.id, userId));
+
+      const today = new Date();
+      const todayStr = format(today, 'yyyy-MM-dd');
+      const existingMeasurement = await db.select()
+        .from(bodyMeasurements)
+        .where(
+          sql`${bodyMeasurements.userId} = ${userId} AND ${bodyMeasurements.date} = ${todayStr}`
+        )
+        .limit(1);
+
+      if (existingMeasurement.length > 0) {
+        await db.update(bodyMeasurements)
+        .set({
+          heightCm: height ? String(height) : null,
+          weightKg: weight ? String(weight) : null,
+        })
+        .where(eq(bodyMeasurements.id, existingMeasurement[0].id));
+      } else {
+        await db.insert(bodyMeasurements).values({
+          userId: userId,
+          date: todayStr,
+          heightCm: height ? String(height) : null,
+          weightKg: weight ? String(weight) : null,
+        });
+      }
+
+      return NextResponse.json({ message: "Profile updated succesfully"});
+
+  } catch (error) {
+    console.error("API_PUT_USER_PROFILE_ERROR", error);
+    return new NextResponse(JSON.stringify({ message: "Internal Server Error"}), { status: 500 });
+  }
+}

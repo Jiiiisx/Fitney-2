@@ -61,7 +61,7 @@ export default function CompleteProfileBanner() {
 
         <Link href='/settings'>
           <Button
-            variant='Secondary'
+            variant='secondary'
             className='whitespace-nowrap bg-white text-blue-700 hover:bg-blue-50 font-semibold shadow-sm'
           >
             Lengkapi Sekarang
