@@ -68,7 +68,7 @@ const StatsSidebar = () => {
 
         if (!userRes.ok) throw new Error('Failed to fetch user data');
         const userData = await userRes.json();
-        setUserName(userData.full_name || userData.username);
+        setUserName(userData.full_name || userData.username || "User");
 
         if (!statsRes.ok) throw new Error(`Failed to fetch stats: ${statsRes.statusText}`);
         const statsData = await statsRes.json();

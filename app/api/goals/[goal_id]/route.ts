@@ -54,3 +54,59 @@ export async function PUT(request: NextRequest, { params }: any) {
     return NextResponse.json({ error: 'Internal Server Error'}, {status: 500});
   }
 }
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: {goal_id: string}}
+) {
+  try {
+    const auth = await verifyAuth(req);
+    if (auth.error) return auth.error;
+
+    const goalId = parseInt(params.goal_id);
+    if (isNaN(goalId)) {
+      return NextResponse.json({ error: 'Invalid goal ID '}, { status: 400 });
+    }
+
+    const deletedGoal = await db
+      .delete(userGoals)
+      .where(and(eq(userGoals.id, goalId), eq(userGoals.userId, auth.user.userId)))
+      .returning();
+
+    if (deletedGoal.length === 0) {
+      return NextResponse.json({ error: 'Goal not found or unauthorized' }, { status: 404 });
+    }
+
+    return NextResponse.json({ message: 'Goal deleted succesfully'});
+  } catch (error) {
+    return NextResponse.json({ error: 'Internal server error'}, {status: 500})
+  }
+}
+
+export async function GET(
+  req: NextRequest,
+  { params }: { params: {goal_id: string}}
+) {
+  try { 
+    const auth = await verifyAuth(req);
+    if (auth.error) return auth.error;
+
+    const goalId = parseInt(params.goal_id);
+    if (isNaN(goalId)) {
+      return NextResponse.json({ error: 'Invalid goal ID'}, { status: 400 });
+    }
+
+    const goal = await db.query.userGoals.findFirst({
+      where: and(eq(userGoals.id, goalId), eq(userGoals.userId, auth.user.userId))
+    });
+
+    if (!goal) {
+      return NextResponse.json({ error: 'Goal not found' }, { status: 404 });
+    }
+
+    return NextResponse.json(goal);
+  } catch ( error ) {
+    console.error('Error fetching goal:', error);
+    return NextResponse.json({ error: 'Internal server error'}, { status: 500 })
+  }
+}

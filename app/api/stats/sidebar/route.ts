@@ -16,7 +16,7 @@ export async function GET(req: Request) {
     }
 
     const user = await getUserFromToken(token);
-    if (!user || !user.id) {
+    if (!user || !user.userId) {
       return NextResponse.json({ error: 'Invalid token or user not found'}, { status: 401 });
     }
 

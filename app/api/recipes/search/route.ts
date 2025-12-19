@@ -1,7 +1,11 @@
 // app/api/recipes/search/route.ts
-import { NextResponse } from 'next/server';
+import { verifyAuth } from '@/app/lib/auth';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
+  const auth = await verifyAuth(req);
+  if (auth.error) return auth.error;
+
   const apiKey = process.env.SPOONACULAR_API_KEY;
 
   if (!apiKey) {

@@ -12,7 +12,7 @@ declare global {
 const connectionString = process.env.POSTGRES_URL;
 
 if (!connectionString) {
-  throw new Error('Variabel lingkungan POSTGRES_URL tidak diatur. Silahkan periksa file .env.local Anda');
+  throw new Error('Variabel lingkungan POSTGRES_URL tidak diatur. Silakan periksa file .env.local Anda');
 }
 
 let pool: Pool;

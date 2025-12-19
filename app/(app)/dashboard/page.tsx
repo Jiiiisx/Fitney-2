@@ -8,24 +8,34 @@ import GamificationStreak from "../components/GamificationStreak";
 import ProgressCharts from "../components/ProgressCharts";
 import WorkoutBreakdown from "../components/WorkoutBreakdown";
 import CompleteProfileBanner from "../components/CompleteProfileBanner";
-import { query } from "@/app/lib/db";
+import { db } from "@/app/lib/db";
+import { users, bodyMeasurements } from "@/app/lib/schema";
+import { eq, desc } from "drizzle-orm";
+import { getUserFromToken } from "@/app/lib/auth";
+import { headers } from "next/headers";
 
-export default async function DashboardPage() {
-  const isProfileIncomplete = true; 
+async function checkProfileCompleteness() {
+  const headersList = await headers();
+  const token = headersList.get("authorization")?.split(" ")[1];
 
+  return true;
+}
+
+export default function DashboardPage() {
   return (
     <div className="h-full">
       <div className="grid grid-cols-1 lg:grid-cols-3 h-full">
         {/* Main Content Area (Scrollable) */}
         <div className="lg:col-span-2 space-y-8 overflow-y-auto p-8 scrollbar-hide">
-          {isProfileIncomplete && <CompleteProfileBanner />}
-          <TodaysPlanBanner />
-          <GamificationStreak />
-          <DailyGoals />
-          <RecentActivityList />
-          <ProgressCharts />
-          <WorkoutBreakdown />
-          <UpgradeBanner />
+          <CompleteProfileBanner/>
+
+          <TodaysPlanBanner/>
+          <GamificationStreak/>
+          <DailyGoals/>
+          <RecentActivityList/>
+          <ProgressCharts/>
+          <WorkoutBreakdown/>
+          <UpgradeBanner/>
         </div>
 
         {/* Stats Sidebar (Scrollable) */}

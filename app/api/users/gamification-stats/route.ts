@@ -33,7 +33,8 @@ export async function GET(req: NextRequest) {
       level: user.level,
       xp: user.xp,
       xpForNextLevel: xpForNextLevel,
-      progressPercetage: progressPercetage,
+      progressPercentage: progressPercetage,
+      streak: 0,
     });
 
   } catch ( error ) {

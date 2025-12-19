@@ -11,6 +11,67 @@ import { verifyAuth } from '@/app/lib/auth';
 import { and, eq, asc, inArray } from 'drizzle-orm';
 import { format, addDays } from 'date-fns';
 
+export async function GET(req: NextRequest) {
+  try {
+    const auth = await verifyAuth(req);
+    if (auth.error) return auth.error;
+    const userId = auth.user.userId;
+
+    const activePlan = await db.query.userPlans.findFirst({
+      where: and(eq(userPlans.userId, userId), eq(userPlans.isActive, true)),
+      columns: {
+        id: true,
+        sourceProgramId: true,
+        startDate: true,
+      },
+    });
+
+    if (!activePlan) {
+      return NextResponse.json({ message: 'No active plan found' }, { status: 404});
+    }
+
+    const scheduleDays = await db.query.userPlanDays.findMany({
+      where: eq(userPlanDays.userPlanId, activePlan.id),
+      orderBy: [asc(userPlanDays.date)],
+      with: {
+        userPlanDayExercises: {
+          orderBy: [asc(userPlanDayExercises.displayOrder)],
+          with: {
+            exercise: {
+              columns: {name: true}
+            }
+          }
+        }
+      }
+    });
+
+    const formattedSchedule = scheduleDays.map(day => ({
+      id: day.id,
+      day_number: day.dayNumber,
+      name: day.name,
+      description: day.description,
+      date: day.date,
+      exercises: day.userPlanDayExercises.map(ex => ({
+        name: ex.exercise.name,
+        sets: ex.sets,
+        reps: ex.reps,
+        duration_seconds: ex.durationSeconds,
+      }))
+    }));
+
+    return NextResponse.json({
+      id: activePlan.id,
+      name: "Active Plan",
+      start_date: activePlan.startDate,
+      schedule: formattedSchedule
+    });
+
+  } catch (error) {
+    console.error('API_GET_ACTIVE_PLAN_ERROR', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
 export async function POST(req: NextRequest) {
   const auth = await verifyAuth(req);
   if (auth.error) return verifyAuth(req);

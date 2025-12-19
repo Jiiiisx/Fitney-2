@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   try {
     const auth = await verifyAuth(req);
     if (auth.error || !verifyAuth) {
-      return auth.error || NextResponse.json({ error: 'Unthorized'}, { status: 401});
+      return auth.error || NextResponse.json({ error: 'Unauthorized'}, { status: 401});
     }
     const userId = auth.user.userId;
 
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
       .where(eq(users.id, userId));
 
     if (userResult.length === 0) {
-      return new NextResponse(JSON.stringify({ massage: 'User not found' }), {status: 404});
+      return new NextResponse(JSON.stringify({ message: 'User not found' }), {status: 404});
     }
 
     const userData = userResult[0];

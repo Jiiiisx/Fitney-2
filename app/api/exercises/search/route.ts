@@ -2,8 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/app/lib/db";
 import { exercises } from "@/app/lib/schema";
 import { ilike, sql } from 'drizzle-orm';
+import { verifyAuth } from "@/app/lib/auth";
 
 export async function GET(req: NextRequest) {
+  const auth = await verifyAuth(req);
+  if (auth.error) return auth.error;
+
   try {
     const { searchParams } = new URL(req.url);
     const query = searchParams.get('q');

@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
         continue;
       }
 
-      let type = 'Strenght';
+      let type = 'Strength';
       if (day.name?.toLowerCase().includes('rest')) {
         type = 'Rest Day';
       } else if (day.name?.toLowerCase().includes('cardio')) {
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
       syncedCount++;
     }
 
-    return NextResponse.json({ message: 'Synced ${syncedCount} day(s) to history.'});
+    return NextResponse.json({ message: `Synced ${syncedCount} day(s) to history.`});
   } catch (error) {
     console.error('Error Syncing planner to history:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
