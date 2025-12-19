@@ -40,6 +40,7 @@ export const users = pgTable('users', {
   username: varchar('username', { length: 255 }).notNull().unique(),
   email: varchar('email', { length: 255 }).notNull().unique(),
   fullName: varchar('full_name', { length: 255 }),
+  imageUrl: varchar('image_url', { length: 225 }),
   passwordHash: text('password_hash').notNull(),
   dateOfBirth: date('date_of_birth'),
   gender: varchar('gender', { length: 50 }),
