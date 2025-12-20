@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { CircularProgress } from "./CircularProgress";
+import CircularProgress from "./CircularProgress";
 import { Footprints, Flame, Timer, Droplets } from "lucide-react";
 
 interface DailyGoalsProps {
@@ -17,7 +17,7 @@ export default function DailyGoals({ stats }: DailyGoalsProps) {
   const calories = stats?.calories || 0;
   const duration = stats?.duration || 0;
   
-  // Hardcoded targets for now (Fase 4 will make these dynamic)
+  // Hardcoded targets for now
   const targetCalories = 500; 
   const targetDuration = 60; 
 
@@ -31,7 +31,8 @@ export default function DailyGoals({ stats }: DailyGoalsProps) {
       target: `/ ${targetCalories} kcal`,
       percentage: calPercentage,
       icon: Flame,
-      color: "#f97316", // orange-500
+      color: "text-orange-500", // Tailwind class
+      stroke: "#f97316"
     },
     {
       label: "Duration",
@@ -39,7 +40,8 @@ export default function DailyGoals({ stats }: DailyGoalsProps) {
       target: `/ ${targetDuration} min`,
       percentage: durPercentage,
       icon: Timer,
-      color: "#3b82f6", // blue-500
+      color: "text-blue-500",
+      stroke: "#3b82f6"
     },
     {
       label: "Steps",
@@ -47,7 +49,8 @@ export default function DailyGoals({ stats }: DailyGoalsProps) {
       target: "/ 10,000",
       percentage: 24,
       icon: Footprints,
-      color: "#10b981", // emerald-500
+      color: "text-emerald-500",
+      stroke: "#10b981"
     },
     {
       label: "Water",
@@ -55,7 +58,8 @@ export default function DailyGoals({ stats }: DailyGoalsProps) {
       target: "/ 2.5 L",
       percentage: 48,
       icon: Droplets,
-      color: "#06b6d4", // cyan-500
+      color: "text-cyan-500",
+      stroke: "#06b6d4"
     },
   ];
 
@@ -66,20 +70,20 @@ export default function DailyGoals({ stats }: DailyGoalsProps) {
           <CardContent className="p-4 flex flex-col items-center justify-center text-center space-y-3">
             <div className="relative">
               <CircularProgress
-                size={70}
-                strokeWidth={6}
+                size={80} // Sedikit lebih besar
+                strokeWidth={8}
                 percentage={item.percentage}
-                color={item.color}
+                color={item.stroke}
               />
-              <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
-                <item.icon size={20} style={{ color: item.color }} />
+              <div className={`absolute inset-0 flex items-center justify-center ${item.color}`}>
+                <item.icon size={24} />
               </div>
             </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">{item.value}</p>
+            <div className="space-y-1">
+              <p className="text-2xl font-bold text-foreground leading-none">{item.value}</p>
               <p className="text-xs text-muted-foreground font-medium">{item.target}</p>
             </div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{item.label}</p>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{item.label}</p>
           </CardContent>
         </Card>
       ))}
