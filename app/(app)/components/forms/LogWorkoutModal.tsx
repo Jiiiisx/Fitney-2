@@ -14,7 +14,7 @@ interface LogWorkoutModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export default function LogWorkoutModal({ isOpen, onOpenChange }: LogWorkoutModalProps) {
+export function LogWorkoutModal({ isOpen, onOpenChange }: LogWorkoutModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">

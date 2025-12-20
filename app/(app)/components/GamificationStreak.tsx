@@ -1,13 +1,31 @@
-// app/(app)/components/GamificationStreak.tsx
+import React from "react";
 import { Flame } from "lucide-react";
 
-const GamificationStreak = () => {
+interface GamificationStreakProps {
+  streak?: number;
+  isLoading?: boolean;
+}
+
+const GamificationStreak = ({ streak = 0, isLoading = false}: GamificationStreakProps) => {
+  if(isLoading) {
+    return (
+      <div className="w-full bg-orange-100 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl p-4 flex items-center gap-3 animate-pulse">
+        <div className="h-6 w-6 bg-orange-200 rounded-full"></div>
+        <div className="h-4 w-1/2 bg-orange-200 rounded"></div>
+      </div>
+    );
+  }
+
+  let message = "Start your streak today";
+  if (streak > 0) message = `You've maintaned a ${streak}-day workout streak! Keep it up.`;
+  if (streak >= 7) message = `Wow ${streak} days in a row. You're unstoppable!`;
+
   return (
-    <div className="bg-amber-100/80 dark:bg-card border border-amber-200/80 dark:border-border rounded-2xl p-4 text-center">
-      <p className="font-semibold text-amber-800 dark:text-amber-300 flex items-center justify-center">
-        <Flame className="w-5 h-5 mr-2" />
-        You've maintained a 5-day workout streak! Keep it up.
-      </p>
+    <div className="w-full bg-orange-50 dark:bg-orange-950/30 border border-orange-100 dark:border-orange-900 rounded-xl p-4 flex items-center justify-center gap-3 shadow-sm">
+      <Flame className={`w-5 h-5 ${streak > 0 ? "text-orange-500 fill-orange-500" : "text-gray-400"}`}/>
+      <span className="text-sm font-medium text-orange-900 dark:text-orange-100">
+        {message}
+      </span>
     </div>
   );
 };

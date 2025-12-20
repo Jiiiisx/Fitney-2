@@ -15,19 +15,19 @@ Ini adalah fitur terpenting. User harus bisa mencatat latihan.
 - [x] **2.2. Frontend: Komponen Log Workout**
 - [x] **2.3. Integrasi Modal**
 
-## 🟡 Fase 3: Dashboard Real-time
+## 🟢 Fase 3: Dashboard Real-time - COMPLETED
 Mengubah tampilan Dashboard agar membaca data asli database, bukan dummy.
 
-- [ ] **3.1. API Dashboard Stats**
-    - [ ] Buat file: `app/api/stats/dashboard/route.ts`.
-    - [ ] Query 1: Hitung total `workout_logs` minggu ini.
-    - [ ] Query 2: Hitung total durasi/kalori minggu ini.
-    - [ ] Query 3: Ambil 3 aktivitas terakhir untuk "Recent Activity".
+- [x] **3.1. API Dashboard Stats**
+    - [x] Buat file: `app/api/stats/dashboard/route.ts`.
+    - [x] Query 1: Hitung total `workout_logs` minggu ini.
+    - [x] Query 2: Hitung total durasi/kalori minggu ini.
+    - [x] Query 3: Ambil 3 aktivitas terakhir untuk "Recent Activity".
 - [ ] **3.2. Komponen Dashboard**
-    - [ ] Edit: `app/(app)/dashboard/page.tsx` atau komponen-komponen anaknya.
-    - [ ] `WeeklyChart.tsx`: Fetch data log 7 hari terakhir -> Render grafik batang.
-    - [ ] `RecentActivityList.tsx`: Map data dari API 3.1 ke list item.
-    - [ ] `DailyGoals.tsx`: Bandingkan stats hari ini dengan target di `user_goals`.
+    - [x] Edit: `app/(app)/dashboard/page.tsx` atau komponen-komponen anaknya.
+    - [x] `WeeklyChart.tsx`: Fetch data log 7 hari terakhir -> Render grafik batang.
+    - [x] `RecentActivityList.tsx`: Map data dari API 3.1 ke list item.
+    - [x] `DailyGoals.tsx`: Bandingkan stats hari ini dengan target di `user_goals`.
 
 ## 🔵 Fase 4: Nutrition (Pencatatan Makanan)
 

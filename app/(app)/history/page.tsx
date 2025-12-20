@@ -16,17 +16,17 @@ export default function HistoryPage() {
 
   return (
     <>
-      <LogWorkoutModal open={isLogModalOpen} onOpenChange={setLogModalOpen} />
+      <LogWorkoutModal isOpen={isLogModalOpen} onOpenChange={setLogModalOpen} />
       <div className="space-y-8 p-8">
         <h1 className="text-3xl font-bold text-foreground">Workout Diary</h1>
-
+ 
         {/* Toolbar for controls */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-gray-600">Filter by:</span>
               <div className="relative">
-                <select className="appearance-none rounded-lg border border-gray-300 bg-white py-2 pl-3 pr-8 text-sm font-medium text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400">
+                <select aria-label="Filter by type" className="appereance-none rounded-lg border border-input bg-background py-2 pl-3 pr-8 text-sm font-medium text-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring">
                   <option>All Types</option>
                   <option>Strength</option>
                   <option>Cardio</option>
@@ -35,11 +35,11 @@ export default function HistoryPage() {
                 <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-4 w-4 text-gray-500" />
               </div>
               <div className="relative">
-                <select className="appearance-none rounded-lg border border-gray-300 bg-white py-2 pl-3 pr-8 text-sm font-medium text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400">
+                <select aria-label="Filter by duration" className="appereance-none rounded-lg border border-input bg-background py-2 pl-3 pr-8 text-sm font-medium text-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring">
                   <option>All Durations</option>
-                  <option>Short (&lt;15min)</option>
+                  <option>Short {"(<15min)"}</option>
                   <option>Medium (15-45min)</option>
-                  <option>Long (&gt;45min)</option>
+                  <option>Long {">(45min)"}</option>
                 </select>
                 <ChevronDown className="pointer-events-none absolute right-2.5 top-2.5 h-4 w-4 text-gray-500" />
               </div>
@@ -47,7 +47,7 @@ export default function HistoryPage() {
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-gray-600">Sort by:</span>
               <div className="relative">
-                <select className="appearance-none rounded-lg border border-gray-300 bg-white py-2 pl-3 pr-8 text-sm font-medium text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400">
+                <select aria-label="Sort by" className="appereance-none rounded-lg border border-input bg-background py-2 pl-3 pr-8 text-sm font-medium text-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring">
                   <option>Newest</option>
                   <option>Calories</option>
                   <option>Duration</option>
