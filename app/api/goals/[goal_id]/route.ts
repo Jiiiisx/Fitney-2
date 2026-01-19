@@ -4,7 +4,10 @@ import { userGoals } from "@/app/lib/schema";
 import { verifyAuth } from "@/app/lib/auth";
 import { and, eq } from 'drizzle-orm';
 
-export async function PUT(request: NextRequest, { params }: any) {
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ goal_id: string }> }
+) {
   const resolvedParams = await params;
   const goalId = parseInt(resolvedParams.goal_id, 10);
 
@@ -57,13 +60,14 @@ export async function PUT(request: NextRequest, { params }: any) {
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: {goal_id: string}}
+  { params }: { params: Promise<{ goal_id: string }> }
 ) {
   try {
     const auth = await verifyAuth(req);
     if (auth.error) return auth.error;
 
-    const goalId = parseInt(params.goal_id);
+    const resolvedParams = await params;
+    const goalId = parseInt(resolvedParams.goal_id);
     if (isNaN(goalId)) {
       return NextResponse.json({ error: 'Invalid goal ID '}, { status: 400 });
     }
@@ -85,13 +89,14 @@ export async function DELETE(
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: {goal_id: string}}
+  { params }: { params: Promise<{ goal_id: string }> }
 ) {
   try { 
     const auth = await verifyAuth(req);
     if (auth.error) return auth.error;
 
-    const goalId = parseInt(params.goal_id);
+    const resolvedParams = await params;
+    const goalId = parseInt(resolvedParams.goal_id);
     if (isNaN(goalId)) {
       return NextResponse.json({ error: 'Invalid goal ID'}, { status: 400 });
     }

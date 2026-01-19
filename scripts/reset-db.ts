@@ -2,7 +2,7 @@
 import dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
 
-import pool from '@/app/lib/db.js';
+import { pool } from '../app/lib/db';
 
 async function resetDatabase() {
   const client = await pool.connect();

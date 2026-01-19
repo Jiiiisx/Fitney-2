@@ -5,15 +5,16 @@ import { verifyAuth } from "@/app/lib/auth";
 import { and, eq, inArray } from 'drizzle-orm';
 
 export async function DELETE(
-  req: NextRequest, { params }: { params: { day_id: string } }
+  req: NextRequest, { params }: { params: Promise<{ day_id: string }> }
 ) {
   const auth = await verifyAuth(req);
   if (auth.error || !auth.user?.userId) {
     return auth.error || NextResponse.json({ error: 'Unauthorized' }, {status: 401});
   }
 
+  const resolvedParams = await params;
   const userId = auth.user.userId;
-  const dayId = params.day_id;
+  const dayId = resolvedParams.day_id;
 
   const dayIdAsNumber = parseInt(dayId, 10);
   if (isNaN(dayIdAsNumber)) {

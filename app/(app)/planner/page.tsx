@@ -48,7 +48,7 @@ export default function PlannerPage() {
         onOpenChange={setTemplatesModalOpen}
         onPlanStarted={handlePlanChange}
       />
-      <div className="bg-background min-h-screen p-4 sm:p-6 lg:p-8">
+      <div className="bg-transparent min-h-screen p-4 sm:p-6 lg:p-8">
         <header className="mb-8">
           <h1 className="text-3xl font-bold text-foreground">
             Workout Planner
@@ -105,10 +105,24 @@ export default function PlannerPage() {
                 </div>
 
                 {/* 3. WEEKLY SUMMARY */}
+                {/* Remove wrapper styling, let the component handle it or wrap in plain card if needed. 
+                    WeeklySummary component uses bg-card internally so wrapping it in another bg-card is redundant if not careful.
+                    Let's check WeeklySummary again. It has bg-card. 
+                    So we can just render it directly OR wrap it cleanly.
+                    For consistency with previous refactor, I wrapped it. 
+                    Let's wrap it in a div but rely on internal card OR put bg-card on wrapper.
+                    Actually, WeeklySummary has `bg-card` inside.
+                    Let's just use a fragment or transparent div? 
+                    Wait, if I wrap it in `bg-card` and it has `bg-card`, it's double card.
+                    I'll revert to render directly IF WeeklySummary is a card.
+                    Earlier I saw: return <div className="bg-card..."> in WeeklySummary.tsx.
+                    So I will NOT add bg-card wrapper here.
+                */}
                 <WeeklySummary planVersion={planVersion} />
 
                 {/* 4. GOALS & SUGGESTIONS */}
                 <div className="grid lg:grid-cols-2 gap-8">
+                    {/* GoalTracker and Recommendations have bg-card internally too. */}
                     <GoalTracker planVersion={planVersion} />
                     <Recommendations 
                         planVersion={planVersion}

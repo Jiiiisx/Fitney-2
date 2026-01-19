@@ -85,7 +85,7 @@ export default function WorkoutCard({ workout, onDelete }: WorkoutCardProps) {
             className="overflow-hidden"
           >
             <ul className="space-y-1 text-xs text-muted-foreground">
-              {workout.exercises.map((ex, index) => (
+              {workout.exercises?.map((ex, index) => (
                 <li key={index} className="pl-2 border-l-2 border-border">
                   {ex}
                 </li>
@@ -95,16 +95,15 @@ export default function WorkoutCard({ workout, onDelete }: WorkoutCardProps) {
         )}
       </AnimatePresence>
 
-      <div className="flex items-center text-xs text-secondary-foreground space-x-2 mt-3">
-        <div className={`flex items-center px-2 py-1 rounded-full text-xs font-semibold ${config.bg} ${config.color}`}>
+      <div className="flex items-center justify-between mt-3 w-full">
+        <div className={`flex items-center px-2 py-1 rounded-full text-[10px] font-semibold ${config.bg} ${config.color}`}>
           {config.icon}
           <span className="ml-1.5">{workout.type}</span>
         </div>
         {workout.duration > 0 && (
-          <>
-            <span className="text-muted-foreground">•</span>
-            <span>{workout.duration} min</span>
-          </>
+          <span className="text-[10px] font-medium text-muted-foreground flex items-center gap-1">
+             {workout.duration} min
+          </span>
         )}
       </div>
     </div>

@@ -121,7 +121,7 @@ export function AddWorkoutForm({ open, onOpenChange, onPlanChange }: AddWorkoutF
 
   const handleExerciseChange = (index: number, field: keyof ExerciseInput, value: any) => {
     const newExercises = [...exercises];
-    newExercises[index][field] = value;
+    (newExercises[index] as any)[field] = value;
     setExercises(newExercises);
   };
 

@@ -6,7 +6,7 @@ import { and, eq, inArray } from 'drizzle-orm';
 
 export async function DELETE(
   req: NextRequest,
-  context: { params: { day_id: string } }
+  context: { params: Promise<{ day_id: string }> }
 ) {
   const auth = await verifyAuth(req);
   if (auth.error) {
@@ -14,8 +14,8 @@ export async function DELETE(
   }
   const userId = auth.user.userId;
 
-  const dayId = context.params.day_id;
-  const parsedDayId = parseInt(dayId, 10);
+  const { day_id } = await context.params;
+  const parsedDayId = parseInt(day_id, 10);
 
   if (isNaN(parsedDayId)) {
     return NextResponse.json (

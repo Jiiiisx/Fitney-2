@@ -65,7 +65,7 @@ export default function GoalTracker({ planVersion }: GoalTrackerProps) {
             // A simple placeholder for running distance.
             // In a real app, you'd get this from workout data.
             const runningDistanceProgress = thisWeekSchedule
-              .filter(s => s.name.toLowerCase().includes('run'))
+              .filter((s: any) => s.name.toLowerCase().includes('run'))
               .reduce((total: number, s: any) => total + 5, 0); // Assuming each run is 5km
 
             // Update progress for fetched goals

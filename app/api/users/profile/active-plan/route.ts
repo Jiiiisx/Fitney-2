@@ -74,7 +74,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const auth = await verifyAuth(req);
-  if (auth.error) return verifyAuth(req);
+  if (auth.error) return auth.error;
   const userId = auth.user.userId;
 
   let programId: number;
