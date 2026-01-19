@@ -8,6 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
 import { Pencil, Plus, Droplets, Flame, Utensils } from 'lucide-react';
+import AddFoodModal from './AddFoodModal'; // Import Modal
 
 interface UserData {
   tdee: number;
@@ -37,6 +38,7 @@ export default function NutritionResults({ userData, onEdit }: NutritionResultsP
   const [foodLogs, setFoodLogs] = useState<any[]>([]);
   const [waterIntake, setWaterIntake] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [isAddFoodOpen, setIsAddFoodOpen] = useState(false); // State untuk Modal
 
   // --- State for Recipe Finder ---
   const [searchQuery, setSearchQuery] = useState('');
@@ -77,7 +79,6 @@ export default function NutritionResults({ userData, onEdit }: NutritionResultsP
   // --- Handlers ---
   const handleAddWater = async (amount: number) => {
     const newAmount = waterIntake + amount;
-    // Optimistic Update
     setWaterIntake(newAmount);
     
     try {
@@ -92,7 +93,7 @@ export default function NutritionResults({ userData, onEdit }: NutritionResultsP
         });
     } catch (err) {
         console.error("Failed to update water", err);
-        setWaterIntake(waterIntake); // Revert on error
+        setWaterIntake(waterIntake);
     }
   };
 
@@ -121,11 +122,6 @@ export default function NutritionResults({ userData, onEdit }: NutritionResultsP
     } finally {
       setIsSearching(false);
     }
-  };
-
-  const handleAddFoodClick = () => {
-      alert("Fitur 'Add Food Modal' akan segera dibuat! :)");
-      // Nanti di sini kita buka Modal
   };
 
   // Calculations
@@ -187,7 +183,7 @@ export default function NutritionResults({ userData, onEdit }: NutritionResultsP
                     <Utensils className="w-5 h-5 text-muted-foreground" />
                     Today's Meals
                 </CardTitle>
-                <Button size="sm" onClick={handleAddFoodClick}>
+                <Button size="sm" onClick={() => setIsAddFoodOpen(true)}>
                     <Plus className="w-4 h-4 mr-1" /> Add Food
                 </Button>
             </CardHeader>
@@ -292,6 +288,13 @@ export default function NutritionResults({ userData, onEdit }: NutritionResultsP
 
         </CardContent>
       </Card>
+
+      {/* MODAL COMPONENT */}
+      <AddFoodModal 
+        isOpen={isAddFoodOpen} 
+        onClose={() => setIsAddFoodOpen(false)} 
+        onFoodAdded={refreshData} 
+      />
     </div>
   );
 }

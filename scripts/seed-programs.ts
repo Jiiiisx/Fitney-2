@@ -1,10 +1,8 @@
-// scripts/seed-programs.ts
-import dotenv from 'dotenv';
+import * as dotenv from 'dotenv';
+// 1. Load environment variables FIRST
 dotenv.config({ path: '.env.local' });
 
-import pool from '@/app/lib/db.js';
-
-// --- Type Definitions for our Seeder Data ---
+// Types
 interface ExerciseData {
   wger_id: number;
   sets?: number;
@@ -25,7 +23,6 @@ interface ProgramData {
   weeks: number;
   days: DayData[];
 }
-// --- End of Type Definitions ---
 
 const programs: ProgramData[] = [
   {
@@ -38,10 +35,10 @@ const programs: ProgramData[] = [
         name: 'Full Body A',
         description: 'A mix of upper and lower body exercises.',
         exercises: [
-          { wger_id: 981, sets: 3, reps: '8-12' }, // Replacement for Barbell Squat
-          { wger_id: 57, sets: 3, reps: '8-12' },   // Replacement for Bench Press
-          { wger_id: 31, sets: 3, reps: '8-12' },  // Replacement for Bent-over Row
-          { wger_id: 56, sets: 3, duration_seconds: 60 }, // Replacement for Plank
+          { wger_id: 981, sets: 3, reps: '8-12' },
+          { wger_id: 57, sets: 3, reps: '8-12' },
+          { wger_id: 31, sets: 3, reps: '8-12' },
+          { wger_id: 56, sets: 3, duration_seconds: 60 },
         ],
       },
       { day_number: 2, name: 'Rest Day', description: 'A day to recover and rebuild.' },
@@ -50,10 +47,10 @@ const programs: ProgramData[] = [
         name: 'Full Body B',
         description: 'A second mix of full body exercises.',
         exercises: [
-          { wger_id: 981, sets: 3, reps: '10-15' }, // Replacement for Dumbbell Lunge
-          { wger_id: 57, sets: 3, reps: 'To Failure' }, // Replacement for Push-ups
-          { wger_id: 31, sets: 3, reps: 'To Failure' }, // Replacement for Pull-ups
-          { wger_id: 56, sets: 3, reps: '15-20' }, // Replacement for Leg Raises
+          { wger_id: 981, sets: 3, reps: '10-15' },
+          { wger_id: 57, sets: 3, reps: 'To Failure' },
+          { wger_id: 31, sets: 3, reps: 'To Failure' },
+          { wger_id: 56, sets: 3, reps: '15-20' },
         ],
       },
       { day_number: 4, name: 'Rest Day', description: 'A day to recover and rebuild.' },
@@ -62,10 +59,10 @@ const programs: ProgramData[] = [
         name: 'Full Body C',
         description: 'A final mix of full body exercises for the week.',
         exercises: [
-          { wger_id: 981, sets: 3, reps: '5-8' },    // Replacement for Deadlift
-          { wger_id: 31, sets: 3, reps: '8-12' },     // Replacement for Overhead Press
-          { wger_id: 805, sets: 3, reps: '10-15' },  // Replacement for Dumbbell Bicep Curl
-          { wger_id: 805, sets: 3, reps: '10-15' },    // Replacement for Triceps Dip
+          { wger_id: 981, sets: 3, reps: '5-8' },
+          { wger_id: 31, sets: 3, reps: '8-12' },
+          { wger_id: 805, sets: 3, reps: '10-15' },
+          { wger_id: 805, sets: 3, reps: '10-15' },
         ],
       },
       { day_number: 6, name: 'Rest Day', description: 'A day to recover and rebuild.' },
@@ -77,11 +74,11 @@ const programs: ProgramData[] = [
     description: 'A 1-week program to boost cardiovascular endurance and burn calories.',
     weeks: 1,
     days: [
-      { day_number: 1, name: 'Steady-State Cardio', description: 'Running on a treadmill for 30 minutes.', exercises: [{ wger_id: 981, duration_seconds: 1800 }] }, // Replacement for Running
-      { day_number: 2, name: 'HIIT Session', description: 'High-intensity interval training with burpees.', exercises: [{ wger_id: 57, reps: '8 rounds' }] }, // Replacement for Burpees
+      { day_number: 1, name: 'Steady-State Cardio', description: 'Running on a treadmill for 30 minutes.', exercises: [{ wger_id: 981, duration_seconds: 1800 }] },
+      { day_number: 2, name: 'HIIT Session', description: 'High-intensity interval training with burpees.', exercises: [{ wger_id: 57, reps: '8 rounds' }] },
       { day_number: 3, name: 'Rest Day', description: 'A day to recover and rebuild.' },
-      { day_number: 4, name: 'Moderate Intensity', description: 'Cycling for 45 minutes.', exercises: [{ wger_id: 981, duration_seconds: 2700 }] }, // Replacement for Cycling
-      { day_number: 5, name: 'Active Recovery', description: 'A light walk for 30 minutes.', exercises: [{ wger_id: 57, duration_seconds: 1800 }] }, // Replacement for Walking
+      { day_number: 4, name: 'Moderate Intensity', description: 'Cycling for 45 minutes.', exercises: [{ wger_id: 981, duration_seconds: 2700 }] },
+      { day_number: 5, name: 'Active Recovery', description: 'A light walk for 30 minutes.', exercises: [{ wger_id: 57, duration_seconds: 1800 }] },
       { day_number: 6, name: 'Rest Day', description: 'A day to recover and rebuild.' },
       { day_number: 7, name: 'Rest Day', description: 'A day to recover and rebuild.' },
     ],
@@ -89,59 +86,70 @@ const programs: ProgramData[] = [
 ];
 
 async function seedPrograms() {
-  const client = await pool.connect();
-  console.log('Starting to seed workout programs...');
+  // 2. Dynamic Import
+  const { db } = await import('../app/lib/db');
+  const { workoutPrograms, programDays, programDayExercises, exercises } = await import('../app/lib/schema');
+  const { eq } = await import('drizzle-orm');
+
+  console.log('🌱 Starting to seed workout programs...');
 
   try {
-    const countRes = await client.query('SELECT COUNT(*) FROM exercises');
-    console.log(`Verification: Found ${countRes.rows[0].count} rows in exercises table.`);
-
-    await client.query('BEGIN');
-
-    for (const programData of programs) {
-      // Insert the program
-      const programRes = await client.query(
-        'INSERT INTO workout_programs (name, description, weeks) VALUES ($1, $2, $3) RETURNING id',
-        [programData.name, programData.description, programData.weeks]
-      );
-      const programId = programRes.rows[0].id;
-      console.log(`Inserted program: ${programData.name}`);
-
-      for (const dayData of programData.days) {
-        // Insert the day
-        const dayRes = await client.query(
-          'INSERT INTO program_days (program_id, day_number, name, description) VALUES ($1, $2, $3, $4) RETURNING id',
-          [programId, dayData.day_number, dayData.name, dayData.description || null]
-        );
-        const dayId = dayRes.rows[0].id;
-
-        if (dayData.exercises) {
-          for (const exData of dayData.exercises) {
-            // Find the exercise_id from the wger_id
-            const exRes = await client.query('SELECT id FROM exercises WHERE wger_id = $1', [exData.wger_id]);
-            if (exRes.rows.length === 0) {
-              console.warn(`Exercise with wger_id ${exData.wger_id} not found. Skipping.`);
-              continue;
-            }
-            const exerciseId = exRes.rows[0].id;
-
-            // Insert the exercise for the day
-            await client.query(
-              'INSERT INTO program_day_exercises (program_day_id, exercise_id, sets, reps, duration_seconds) VALUES ($1, $2, $3, $4, $5)',
-              [dayId, exerciseId, exData.sets || null, exData.reps || null, exData.duration_seconds || null]
-            );
-          }
-        }
-      }
+    // Check if exercises exist (simple check)
+    const exerciseCount = await db.select().from(exercises).limit(1);
+    if (exerciseCount.length === 0) {
+        console.warn("⚠️ Warning: No exercises found in DB. Program exercises might fail to link. Run 'npm run db:seed-exercises' first.");
     }
 
-    await client.query('COMMIT');
-    console.log('Successfully seeded all workout programs.');
+    await db.transaction(async (tx) => {
+      for (const programData of programs) {
+        // Insert Program
+        const [newProgram] = await tx.insert(workoutPrograms).values({
+            name: programData.name,
+            description: programData.description,
+            weeks: programData.weeks,
+        }).returning();
+        
+        console.log(`Created Program: ${newProgram.name} (ID: ${newProgram.id})`);
+
+        for (const dayData of programData.days) {
+            // Insert Day
+            const [newDay] = await tx.insert(programDays).values({
+                programId: newProgram.id,
+                dayNumber: dayData.day_number,
+                name: dayData.name,
+                description: dayData.description,
+            }).returning();
+
+            if (dayData.exercises && dayData.exercises.length > 0) {
+                for (const exData of dayData.exercises) {
+                    // Find Exercise ID by wger_id
+                    const foundExercise = await tx.query.exercises.findFirst({
+                        where: eq(exercises.wgerId, exData.wger_id),
+                        columns: { id: true }
+                    });
+
+                    if (foundExercise) {
+                        await tx.insert(programDayExercises).values({
+                            programDayId: newDay.id,
+                            exerciseId: foundExercise.id,
+                            sets: exData.sets,
+                            reps: exData.reps,
+                            durationSeconds: exData.duration_seconds,
+                        });
+                    } else {
+                        console.warn(`   ⚠️ Exercise with wger_id ${exData.wger_id} not found. Skipping.`);
+                    }
+                }
+            }
+        }
+      }
+    });
+
+    console.log('✅ Successfully seeded all workout programs.');
+    process.exit(0);
   } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('Error seeding programs:', error);
-  } finally {
-    client.release();
+    console.error('❌ Error seeding programs:', error);
+    process.exit(1);
   }
 }
 

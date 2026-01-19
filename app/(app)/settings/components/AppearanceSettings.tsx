@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
-import { Sun, Moon, Laptop } from "lucide-react";
+import { Sun, Moon, Laptop, Ruler, Weight } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -11,16 +11,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { toast } from "react-hot-toast";
 
-// Re-using the SettingsCard structure from ProfileSettings.
-// In a real app, this would be a shared component.
 const SettingsCard = ({
   title,
   description,
   children,
 }: {
   title: string;
-  description:string;
+  description: string;
   children: React.ReactNode;
 }) => (
   <div className="bg-card border rounded-xl">
@@ -35,17 +34,76 @@ const SettingsCard = ({
 export default function AppearanceSettings() {
   const { theme, setTheme } = useTheme();
   const [fontSize, setFontSize] = useState("text-size-md");
+  const [units, setUnits] = useState("metric");
+  const [loading, setLoading] = useState(true);
 
-  // Effect to set initial font size from localStorage
+  // Fetch initial settings from DB
   useEffect(() => {
-    const savedSize = localStorage.getItem("font-size") || "text-size-md";
-    handleFontSizeChange(savedSize);
-  }, []);
+    async function fetchSettings() {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
 
-  const handleFontSizeChange = (size: string) => {
+        const res = await fetch("/api/users/settings", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          // Sync DB settings with local state
+          if (data.theme) setTheme(data.theme);
+          if (data.measurementUnits) setUnits(data.measurementUnits);
+        }
+      } catch (error) {
+        console.error("Failed to fetch settings", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    // Load local font size preference
+    const savedSize = localStorage.getItem("font-size") || "text-size-md";
+    handleFontSizeChange(savedSize, false); // Don't save to DB, just apply class
+
+    fetchSettings();
+  }, [setTheme]);
+
+  const updateSettings = async (updates: any) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      await fetch("/api/users/settings", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(updates)
+      });
+    } catch (error) {
+      console.error("Failed to update settings", error);
+      toast.error("Failed to save settings");
+    }
+  };
+
+  const handleThemeChange = (newTheme: string) => {
+    setTheme(newTheme);
+    updateSettings({ theme: newTheme });
+  };
+
+  const handleUnitChange = (newUnit: string) => {
+    setUnits(newUnit);
+    updateSettings({ measurementUnits: newUnit });
+    toast.success(`Units updated to ${newUnit === 'metric' ? 'Metric (kg/cm)' : 'Imperial (lbs/ft)'}`);
+  };
+
+  const handleFontSizeChange = (size: string, saveToLocal = true) => {
     document.documentElement.classList.remove("text-size-sm", "text-size-md", "text-size-lg");
     document.documentElement.classList.add(size);
-    localStorage.setItem("font-size", size);
+    if (saveToLocal) {
+        localStorage.setItem("font-size", size);
+    }
     setFontSize(size);
   };
 
@@ -54,6 +112,10 @@ export default function AppearanceSettings() {
     { name: "dark", label: "Dark", icon: Moon },
     { name: "system", label: "System", icon: Laptop },
   ];
+
+  if (loading) {
+      return <div className="p-8 text-center text-muted-foreground">Loading settings...</div>;
+  }
 
   return (
     <div className="space-y-10">
@@ -65,7 +127,7 @@ export default function AppearanceSettings() {
           {themes.map((t) => (
             <button
               key={t.name}
-              onClick={() => setTheme(t.name)}
+              onClick={() => handleThemeChange(t.name)}
               className={`p-4 rounded-lg border-2 transition-colors flex flex-col items-center justify-center gap-2 ${
                 theme === t.name
                   ? "border-primary bg-primary/10"
@@ -80,12 +142,55 @@ export default function AppearanceSettings() {
       </SettingsCard>
 
       <SettingsCard
+        title="Measurement Units"
+        description="Choose your preferred system of measurement for weight and height."
+      >
+        <div className="grid grid-cols-2 gap-4">
+            <button
+              onClick={() => handleUnitChange("metric")}
+              className={`p-4 rounded-lg border-2 transition-colors flex flex-col items-center justify-center gap-2 ${
+                units === "metric"
+                  ? "border-primary bg-primary/10"
+                  : "border-border bg-muted/50 hover:border-muted-foreground"
+              }`}
+            >
+              <div className="flex gap-2">
+                 <Weight className="w-5 h-5" />
+                 <Ruler className="w-5 h-5" />
+              </div>
+              <div className="text-center">
+                  <span className="block font-semibold text-sm text-foreground">Metric</span>
+                  <span className="text-xs text-muted-foreground">kg, cm, ml</span>
+              </div>
+            </button>
+
+            <button
+              onClick={() => handleUnitChange("imperial")}
+              className={`p-4 rounded-lg border-2 transition-colors flex flex-col items-center justify-center gap-2 ${
+                units === "imperial"
+                  ? "border-primary bg-primary/10"
+                  : "border-border bg-muted/50 hover:border-muted-foreground"
+              }`}
+            >
+               <div className="flex gap-2">
+                 <Weight className="w-5 h-5" />
+                 <Ruler className="w-5 h-5" />
+              </div>
+              <div className="text-center">
+                  <span className="block font-semibold text-sm text-foreground">Imperial</span>
+                  <span className="text-xs text-muted-foreground">lbs, ft/in, oz</span>
+              </div>
+            </button>
+        </div>
+      </SettingsCard>
+
+      <SettingsCard
         title="Font Size"
         description="Adjust the text size for better readability across the application."
       >
         <div className="max-w-xs">
           <Label htmlFor="font-size-select" className="sr-only">Font Size</Label>
-          <Select value={fontSize} onValueChange={handleFontSizeChange}>
+          <Select value={fontSize} onValueChange={(val) => handleFontSizeChange(val, true)}>
             <SelectTrigger id="font-size-select">
               <SelectValue placeholder="Select font size" />
             </SelectTrigger>
