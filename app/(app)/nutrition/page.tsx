@@ -25,7 +25,7 @@ export default function NutritionPage() {
     }
   }, []);
 
-  const handleWizardComplete = (wizardData: any) => {
+  const handleWizardComplete = (wizardData: any) => { 
     const tdee = calculateTDEE({
       ...wizardData,
       age: parseInt(wizardData.age, 10),
