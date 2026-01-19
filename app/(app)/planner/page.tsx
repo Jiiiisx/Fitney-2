@@ -9,6 +9,8 @@ import GoalTracker from "./components/GoalTracker";
 import Recommendations from "./components/Recommendations";
 import { AddWorkoutForm } from "../components/forms/AddWorkoutForm";
 import { WorkoutTemplates } from "./components/WorkoutTemplates";
+import MiniCalendar from "./components/MiniCalendar";
+import { Zap } from "lucide-react";
 
 export default function PlannerPage() {
   const [isAddWorkoutModalOpen, setAddWorkoutModalOpen] = useState(false);
@@ -56,41 +58,65 @@ export default function PlannerPage() {
           </p>
         </header>
 
-        <div className="bg-card rounded-2xl p-6 lg:p-8">
-          <div className="grid lg:grid-cols-4 gap-8">
-            <aside className="lg:col-span-1">
-              <PlannerSidebar
-                onAddWorkoutClick={handleAddWorkoutClick}
-                onTemplatesClick={handleTemplatesClick}
-                onFilterChange={handleFilterChange}
-                selectedFilters={filters}
-              />
+        <div className="grid lg:grid-cols-12 gap-8 items-start">
+            {/* LEFT SIDEBAR - STICKY */}
+            <aside className="lg:col-span-3 lg:sticky lg:top-8 space-y-8">
+                <div className="bg-card rounded-3xl p-6 shadow-sm border">
+                    <PlannerSidebar
+                        onAddWorkoutClick={handleAddWorkoutClick}
+                        onTemplatesClick={handleTemplatesClick}
+                        onFilterChange={handleFilterChange}
+                        selectedFilters={filters}
+                    />
+                </div>
+                
+                {/* Mini Calendar Widget */}
+                <div className="bg-card rounded-3xl p-2 shadow-sm border">
+                    <MiniCalendar />
+                </div>
+
+                {/* Daily Tip Widget */}
+                <div className="bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-950/20 dark:to-orange-950/20 rounded-3xl p-6 shadow-sm border border-yellow-100 dark:border-yellow-900/50">
+                    <h3 className="font-bold text-yellow-700 dark:text-yellow-500 mb-2 flex items-center gap-2">
+                        <Zap className="w-4 h-4 fill-yellow-500 text-yellow-500" /> 
+                        Daily Tip
+                    </h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                        "Consistency is key. Even a 15-minute workout is better than skipping it entirely."
+                    </p>
+                </div>
             </aside>
-            <main className="lg:col-span-3">
-              <CalendarGrid 
-                planVersion={planVersion}
-                onChooseProgramClick={handleTemplatesClick} 
-                onPlanChange={handlePlanChange}
-                filters={filters}
-              />
+
+            {/* MAIN CONTENT */}
+            <main className="lg:col-span-9 space-y-8">
+                {/* 1. CALENDAR GRID */}
+                <div className="bg-card rounded-3xl p-6 lg:p-8 shadow-sm border min-h-[500px]">
+                    <CalendarGrid 
+                        planVersion={planVersion}
+                        onChooseProgramClick={handleTemplatesClick} 
+                        onPlanChange={handlePlanChange}
+                        filters={filters}
+                    />
+                </div>
+
+                {/* 2. UPCOMING WORKOUT */}
+                <div className="bg-card rounded-3xl p-6 shadow-sm border">
+                    <UpcomingWorkout planVersion={planVersion} />
+                </div>
+
+                {/* 3. WEEKLY SUMMARY */}
+                <WeeklySummary planVersion={planVersion} />
+
+                {/* 4. GOALS & SUGGESTIONS */}
+                <div className="grid lg:grid-cols-2 gap-8">
+                    <GoalTracker planVersion={planVersion} />
+                    <Recommendations 
+                        planVersion={planVersion}
+                        onAddFlexibility={handleAddWorkoutClick}
+                        onTryTemplate={handleTemplatesClick}
+                    />
+                </div>
             </main>
-          </div>
-          <footer className="mt-8">
-            <UpcomingWorkout planVersion={planVersion} />
-          </footer>
-        </div>
-
-        <div className="mt-8">
-          <WeeklySummary planVersion={planVersion} />
-        </div>
-
-        <div className="mt-8 grid lg:grid-cols-2 gap-8">
-          <GoalTracker planVersion={planVersion} />
-          <Recommendations 
-            planVersion={planVersion}
-            onAddFlexibility={handleAddWorkoutClick}
-            onTryTemplate={handleTemplatesClick}
-          />
         </div>
       </div>
     </>

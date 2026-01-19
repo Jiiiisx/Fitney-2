@@ -160,6 +160,8 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion, onPlan
     return weekDays.map((dayDate, index) => {
       const dayOfWeekName = format(dayDate, 'EEEE');
       const dateString = format(dayDate, 'yyyy-MM-dd');
+      const displayDate = format(dayDate, 'd MMM');
+      const isToday = format(new Date(), 'yyyy-MM-dd') === dateString;
       
       const allEventsForDay = plan.schedule.filter(day => 
         day.date && format(parseISO(day.date), 'yyyy-MM-dd') === dateString
@@ -197,20 +199,28 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion, onPlan
         : workoutsForDay;
 
       return (
-        <div key={index} className="xl:flex xl:flex-col xl:flex-1">
-          <h3 className="font-semibold text-sm text-center text-secondary-foreground mb-3">
-            {dayOfWeekName}
-            <span className="block text-xs">{format(dayDate, 'd MMM')}</span>
-          </h3>
-          <div className="space-y-3 xl:flex-grow h-full max-h-[400px] overflow-y-auto scrollbar-hide">
+        <div key={index} className="xl:flex xl:flex-col xl:flex-1 min-w-[140px]">
+          {/* Day Header */}
+          <div className={`text-center mb-4 pb-2 border-b-2 ${isToday ? 'border-primary' : 'border-transparent'}`}>
+            <h3 className={`font-bold text-sm ${isToday ? 'text-primary' : 'text-foreground'}`}>
+              {dayOfWeekName}
+            </h3>
+            <span className={`text-xs font-medium ${isToday ? 'text-primary/80' : 'text-muted-foreground'}`}>
+              {displayDate}
+            </span>
+          </div>
+
+          {/* Workouts Container */}
+          <div className="space-y-3 xl:flex-grow h-full min-h-[200px] rounded-xl bg-muted/20 p-2">
             {filteredWorkouts.length > 0 ? (
               filteredWorkouts.map((workout, idx) => (
                 <WorkoutCard key={idx} workout={workout} onDelete={handleDelete} />
               ))
             ) : (
-              <div className="h-24 rounded-lg bg-muted/40 flex items-center justify-center">
-                <Button variant="ghost" size="sm" onClick={() => handleSetRestDay(dayDate)}>
-                  Set as Rest Day
+              <div className="h-full flex flex-col items-center justify-center text-center p-2 opacity-0 hover:opacity-100 transition-opacity group">
+                 <p className="text-xs text-muted-foreground mb-2">No workout</p>
+                 <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => handleSetRestDay(dayDate)}>
+                  Set Rest
                 </Button>
               </div>
             )}
@@ -222,11 +232,17 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion, onPlan
 
   return (
     <div className="h-full">
-      <h2 className="text-lg font-semibold mb-4 text-foreground">
-        This Week's Plan
-      </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:flex gap-4">
-        {renderContent()}
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-bold text-foreground">
+            This Week's Plan
+        </h2>
+      </div>
+      
+      {/* Scrollable Container for Mobile/Tablet */}
+      <div className="overflow-x-auto pb-4 -mx-4 px-4 lg:mx-0 lg:px-0 scrollbar-hide">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:flex xl:flex-row gap-6 min-w-[800px] xl:min-w-0">
+            {renderContent()}
+        </div>
       </div>
     </div>
   );
