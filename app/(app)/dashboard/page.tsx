@@ -21,6 +21,7 @@ interface DashboardData {
     calories: number;
     workouts: number;
   };
+  todaysPlan: any; // Tambahkan ini
   weekly: { name: string; value: number }[]; // Spesifikasikan bentuk array weekly
   recent: any[];
   streak: number;
@@ -68,6 +69,7 @@ export default function DashboardPage() {
 
   // Siapkan data default aman agar tidak error saat null
   const safeStats = data?.today || { duration: 0, calories: 0, workouts: 0 };
+  const safeTodaysPlan = data?.todaysPlan || null;
   const safeWeekly = data?.weekly || [];
   const safeRecent = data?.recent || [];
   const safeStreak = data?.streak || 0;
@@ -81,7 +83,7 @@ export default function DashboardPage() {
         <div className="lg:col-span-2 space-y-8 overflow-y-auto p-8 scrollbar-hide">
           <CompleteProfileBanner/>
 
-          <TodaysPlanBanner stats={safeStats} isLoading={loading} />
+          <TodaysPlanBanner stats={safeStats} plan={safeTodaysPlan} isLoading={loading} />
           
           <GamificationStreak streak={safeStreak} isLoading={loading}/>
           

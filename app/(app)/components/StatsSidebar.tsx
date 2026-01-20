@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from 'next/dynamic';
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 
 const DynamicQuickActions = dynamic(() => import('./QuickActions'), { ssr: false });
 
@@ -36,6 +36,28 @@ const CircularProgress = ({ percentage, level }: { percentage: number; level: nu
   );
 };
 
+// Helper untuk mendapatkan sapaan berdasarkan waktu
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good Morning";
+  if (hour < 18) return "Good Afternoon";
+  return "Good Evening";
+};
+
+// Helper untuk mendapatkan pesan motivasi acak
+const getRandomQuote = () => {
+  const quotes = [
+    "Continue your journey to achieve your target!",
+    "Small steps every day add up to big results.",
+    "Your only limit is your mind.",
+    "Don't stop until you're proud.",
+    "Sweat now, shine later!",
+    "Consistency is the key to success.",
+    "Make today count!"
+  ];
+  return quotes[Math.floor(Math.random() * quotes.length)];
+};
+
 const StatsSidebar = () => {
   const [userName, setUserName] = useState("User");
   const [stats, setStats] = useState({
@@ -45,6 +67,10 @@ const StatsSidebar = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Gunakan useMemo agar quote tidak berubah setiap kali re-render
+  const motivationalQuote = useMemo(() => getRandomQuote(), []);
+  const greeting = getGreeting();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -53,7 +79,8 @@ const StatsSidebar = () => {
       const token = localStorage.getItem("token");
 
       if (!token) {
-        setError("Authentication token not found.");
+        // Jika tidak ada token, jangan set error yang mengganggu UI, cukup loading false
+        // setError("Authentication token not found.");
         setLoading(false);
         return;
       }
@@ -61,21 +88,25 @@ const StatsSidebar = () => {
       try {
         const headers = { 'Authorization': `Bearer ${token}` };
         
-        const [userRes, statsRes] = await Promise.all([
-          fetch('/api/users/profile', { headers }),
-          fetch('/api/stats/sidebar', { headers })
-        ]);
+        // Fetch user profile untuk nama
+        const userRes = await fetch('/api/users/profile', { headers });
+        if (userRes.ok) {
+            const userData = await userRes.json();
+            // Ambil nama depan saja agar tidak kepanjangan
+            const fullName = userData.full_name || userData.username || "User";
+            setUserName(fullName.split(' ')[0]);
+        }
 
-        if (!userRes.ok) throw new Error('Failed to fetch user data');
-        const userData = await userRes.json();
-        setUserName(userData.full_name || userData.username || "User");
-
-        if (!statsRes.ok) throw new Error(`Failed to fetch stats: ${statsRes.statusText}`);
-        const statsData = await statsRes.json();
-        setStats(statsData);
+        // Fetch stats
+        const statsRes = await fetch('/api/stats/sidebar', { headers });
+        if (statsRes.ok) {
+             const statsData = await statsRes.json();
+             setStats(statsData);
+        }
 
       } catch (err: any) {
-        setError(err.message);
+        console.error("Failed to fetch sidebar data", err);
+        // Silent error is better for UX in sidebar
       } finally {
         setLoading(false);
       }
@@ -86,17 +117,10 @@ const StatsSidebar = () => {
 
   if (loading) {
     return (
-      <div className="h-full flex flex-col items-center justify-center space-y-4">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary"></div>
-        <p className="text-muted-foreground">Loading stats...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="h-full flex flex-col items-center justify-center text-center">
-        <p className="text-destructive">{error}</p>
+      <div className="h-full flex flex-col items-center justify-center space-y-4 animate-pulse">
+        <div className="rounded-full bg-muted h-32 w-32"></div>
+        <div className="h-6 w-3/4 bg-muted rounded"></div>
+        <div className="h-4 w-1/2 bg-muted rounded"></div>
       </div>
     );
   }
@@ -113,22 +137,27 @@ const StatsSidebar = () => {
           level={stats.level}
         />
         <h3 className="mt-4 text-xl font-bold text-foreground">
-          Good Morning, {userName}! 🔥
+          {greeting}, {userName}! 🔥
         </h3>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Continue your journey to achieve your target!
+        <p className="mt-1 text-sm text-muted-foreground px-4">
+          {motivationalQuote}
         </p>
       </div>
 
-      <div className="text-center bg-muted border border-border rounded-lg p-3">
+      <div className="text-center bg-card border border-border rounded-xl p-4 shadow-sm">
         <p className="text-sm text-foreground">
-          <span className="font-bold">Good job!</span> Your workout consistency
+          <span className="font-bold text-primary">Good job!</span> Your workout consistency
           is {stats.consistencyChange >= 0 ? 'up by' : 'down by'}{' '}
-          <span className="font-bold">{Math.abs(stats.consistencyChange)}%</span> from last week.
+          <span className={stats.consistencyChange >= 0 ? "font-bold text-green-500" : "font-bold text-red-500"}>
+            {Math.abs(stats.consistencyChange)}%
+          </span> from last week.
         </p>
       </div>
 
-      <DynamicQuickActions />
+      <div className="w-full">
+         <h4 className="text-sm font-semibold text-muted-foreground mb-4 uppercase tracking-wider">Quick Actions</h4>
+         <DynamicQuickActions />
+      </div>
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/app/lib/auth";
 import { db } from "@/app/lib/db";
-import { workoutLogs, userStreaks } from "@/app/lib/schema";
+import { workoutLogs, userStreaks, userPlans, userPlanDays } from "@/app/lib/schema";
 import { eq, and, gte, desc, sql } from "drizzle-orm";
 import { subDays, startOfDay, endOfDay, format } from "date-fns";
 
@@ -16,6 +16,27 @@ export async function GET(req: NextRequest) {
     const todayStart = startOfDay(new Date());
     const sevenDaysAgo = subDays(todayStart, 6);
     const fiftyDaysAgo = subDays(todayStart, 50);
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+
+    // 0. Get Today's Plan
+    const planQuery = await db
+      .select({
+        planName: userPlanDays.name,
+        description: userPlanDays.description,
+        programName: userPlans.sourceProgramId, // Simplifikasi, idealnya join ke workoutPrograms
+      })
+      .from(userPlanDays)
+      .innerJoin(userPlans, eq(userPlanDays.userPlanId, userPlans.id))
+      .where(
+        and(
+          eq(userPlans.userId, userId),
+          eq(userPlans.isActive, true),
+          eq(userPlanDays.date, todayStr)
+        )
+      )
+      .limit(1);
+    
+    const todaysPlan = planQuery.length > 0 ? planQuery[0] : null;
 
     // 1. Get Today's Stats
     const todayLogs = await db
@@ -126,6 +147,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
         today: todayStats,
+        todaysPlan,
         weekly: weeklyActivity,
         recent: recentLogs,
         streak: current_streak,
