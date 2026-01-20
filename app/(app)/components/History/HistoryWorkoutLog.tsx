@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Dumbbell, Flame, Wind, CheckCircle2 } from "lucide-react";
+import { Dumbbell, Flame, Wind, CheckCircle2, Calendar, Clock, Activity } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 // Define the structure of a single workout log from our API
 interface WorkoutLog {
@@ -13,47 +14,110 @@ interface WorkoutLog {
   date: string; // Formatted as 'YYYY-MM-DD'
 }
 
-// A helper to format the details of a workout log
-const formatDetails = (log: WorkoutLog) => {
-  if (log.type === 'Rest Day') {
-    return 'A well-deserved rest day.';
+// Helper to get color and icon based on workout type
+const getWorkoutTypeStyles = (type: WorkoutLog['type']) => {
+  switch (type) {
+    case 'Strength':
+      return { 
+        color: 'text-blue-500', 
+        bg: 'bg-blue-500/10', 
+        border: 'border-l-blue-500',
+        icon: Dumbbell 
+      };
+    case 'Cardio':
+      return { 
+        color: 'text-red-500', 
+        bg: 'bg-red-500/10', 
+        border: 'border-l-red-500',
+        icon: Flame 
+      };
+    case 'Flexibility':
+      return { 
+        color: 'text-green-500', 
+        bg: 'bg-green-500/10', 
+        border: 'border-l-green-500',
+        icon: Wind 
+      };
+    default: // Rest Day
+      return { 
+        color: 'text-gray-500', 
+        bg: 'bg-gray-500/10', 
+        border: 'border-l-gray-500',
+        icon: CheckCircle2 
+      };
   }
-  return `${log.duration} min / ${log.calories} kcal`;
 };
 
-// A helper to format the date
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
     day: 'numeric',
-  });
+  }).format(date);
 };
 
-const LogEntry = ({ log }: { log: WorkoutLog }) => (
-  <div className="bg-card p-6 rounded-2xl">
-    <div className="border-b border-border pb-4 mb-4">
-      <p className="text-sm font-semibold text-primary">{formatDate(log.date)}</p>
-      <h3 className="text-2xl font-bold text-foreground mt-1 flex items-center">
-        {log.type === 'Strength' ? <Dumbbell className="w-6 h-6 mr-3 text-blue-500" /> : 
-         log.type === 'Cardio' ? <Flame className="w-6 h-6 mr-3 text-red-500" /> :
-         log.type === 'Flexibility' ? <Wind className="w-6 h-6 mr-3 text-green-500" /> :
-         <CheckCircle2 className="w-6 h-6 mr-3 text-gray-500" />}
-        {log.name}
-      </h3>
+const formatDay = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('en-US', {
+      weekday: 'long',
+    }).format(date);
+};
+
+const LogEntry = ({ log }: { log: WorkoutLog }) => {
+  const styles = getWorkoutTypeStyles(log.type);
+  const Icon = styles.icon;
+
+  return (
+    <div className={cn(
+      "group relative bg-card hover:bg-accent/5 transition-all duration-300 rounded-xl border border-border overflow-hidden shadow-sm hover:shadow-md",
+      "border-l-4", styles.border
+    )}>
+      <div className="p-5 flex flex-col h-full justify-between">
+        {/* Header Section */}
+        <div>
+            <div className="flex justify-between items-start mb-3">
+                <span className={cn("inline-flex items-center justify-center p-2 rounded-lg", styles.bg, styles.color)}>
+                    <Icon className="w-5 h-5" />
+                </span>
+                <div className="text-right">
+                    <p className="text-xs font-medium text-muted-foreground">{formatDay(log.date)}</p>
+                    <p className="text-sm font-bold text-foreground">{formatDate(log.date)}</p>
+                </div>
+            </div>
+            
+            <h3 className="text-lg font-bold text-foreground line-clamp-2 mb-1 group-hover:text-primary transition-colors">
+                {log.name}
+            </h3>
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-4">
+                {log.type}
+            </p>
+        </div>
+
+        {/* Stats Section */}
+        {log.type !== 'Rest Day' ? (
+             <div className="grid grid-cols-2 gap-3 mt-auto pt-4 border-t border-border/50">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Clock className="w-4 h-4 text-primary" />
+                    <span className="font-semibold text-foreground">{log.duration}</span>
+                    <span className="text-xs">min</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Activity className="w-4 h-4 text-orange-500" />
+                    <span className="font-semibold text-foreground">{log.calories}</span>
+                    <span className="text-xs">kcal</span>
+                </div>
+            </div>
+        ) : (
+            <div className="mt-auto pt-4 border-t border-border/50">
+                 <p className="text-sm text-muted-foreground italic flex items-center gap-2">
+                    Start fresh tomorrow! ✨
+                 </p>
+            </div>
+        )}
+      </div>
     </div>
-    <div className="mb-4">
-      <ul className="space-y-2">
-        <li className="flex justify-between items-center text-sm bg-background p-3 rounded-lg">
-          <span className="font-medium text-foreground">Details</span>
-          <span className="font-mono text-secondary-foreground">{formatDetails(log)}</span>
-        </li>
-      </ul>
-    </div>
-  </div>
-);
+  );
+};
 
 export default function HistoryWorkoutLog() {
   const [logs, setLogs] = useState<WorkoutLog[]>([]);
@@ -81,27 +145,40 @@ export default function HistoryWorkoutLog() {
   }, []);
 
   if (loading) {
-    return <div className="text-center p-8">Loading workout history...</div>;
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
+            {[1, 2, 3].map((i) => (
+                <div key={i} className="h-40 bg-muted/20 rounded-xl border border-border/50"></div>
+            ))}
+        </div>
+    );
   }
 
   if (error) {
-    return <div className="text-center text-red-500 p-8">Error: {error}</div>;
+    return (
+        <div className="p-6 rounded-xl bg-red-500/10 border border-red-500/20 text-center text-red-600">
+            <p className="font-medium">Oops! Failed to load history.</p>
+            <p className="text-sm opacity-80 mt-1">{error}</p>
+        </div>
+    );
   }
 
   if (logs.length === 0) {
     return (
-      <div className="text-center p-16 rounded-2xl bg-card border border-border flex flex-col items-center justify-center">
-        <Dumbbell className="w-16 h-16 text-muted-foreground/50 mb-6" />
-        <h3 className="text-xl font-bold text-foreground">Your Workout Diary is Empty</h3>
-        <p className="text-muted-foreground mt-2 max-w-sm">
-          It looks like you haven't logged any workouts yet. Click the "Log Workout" button to add your first entry and start your journey!
+      <div className="text-center p-12 rounded-2xl bg-muted/30 border border-dashed border-border flex flex-col items-center justify-center">
+        <div className="bg-background p-4 rounded-full shadow-sm mb-4">
+            <Dumbbell className="w-8 h-8 text-muted-foreground" />
+        </div>
+        <h3 className="text-lg font-bold text-foreground">No workouts logged yet</h3>
+        <p className="text-muted-foreground mt-1 mb-6 text-sm max-w-xs mx-auto">
+          Start your journey today by logging your first activity!
         </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {logs.map((log) => (
         <LogEntry key={log.id} log={log} />
       ))}

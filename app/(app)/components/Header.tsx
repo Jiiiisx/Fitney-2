@@ -109,10 +109,10 @@ const Header = () => {
 
   const navItems = [
     { href: "/dashboard", label: "Dashboard" },
-    { href: "/history", label: "History" },
     { href: "/planner", label: "Planner" },
     { href: "/goals", label: "Goals" },
     { href: "/nutrition", label: "Nutrition" },
+    { href: "/history", label: "History" },
     { href: "/community", label: "Community" },
   ];
 
