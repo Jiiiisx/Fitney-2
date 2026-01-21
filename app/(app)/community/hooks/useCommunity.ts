@@ -14,9 +14,14 @@ const fetcher = (url: string) => {
 
 // --- HOOKS ---
 
-export function useCommunityFeed() {
-  const { data, error, isLoading, mutate } = useSWR("/api/community/feed", fetcher, {
-    refreshInterval: 60000, // Auto refresh setiap 1 menit
+export type FeedFilter = "all" | "mine";
+
+export function useCommunityFeed(filter: FeedFilter = "all") {
+  // Key SWR bergantung pada filter, jadi cache terpisah
+  const url = `/api/community/feed?filter=${filter}`;
+  
+  const { data, error, isLoading, mutate } = useSWR(url, fetcher, {
+    refreshInterval: 60000, 
     revalidateOnFocus: false,
   });
 
@@ -106,8 +111,13 @@ export async function createPost(content: string, imageUrl?: string) {
     if (!res.ok) throw new Error("Failed to create post");
 
     toast.success("Postingan berhasil dibuat!");
-    // Trigger re-fetch feed
-    mutate("/api/community/feed"); 
+    // Trigger re-fetch feed default (all) dan mine (jika user sedang di tab mine)
+    // SWR mutate global key matching:
+    // Idealnya kita revalidate semua key yang start with /api/community/feed
+    // Tapi simpelnya kita hit spesifik
+    mutate("/api/community/feed?filter=all"); 
+    mutate("/api/community/feed?filter=mine"); 
+    
     return await res.json();
   } catch (error) {
     console.error(error);
@@ -128,14 +138,12 @@ export async function followUser(userId: string) {
 
     const data = await res.json();
     
-    // Feedback text
     if (data.following) {
         toast.success("Berhasil mengikuti pengguna");
     } else {
         toast.success("Berhasil berhenti mengikuti");
     }
 
-    // Trigger re-fetch suggestions (karena user ini harus hilang dari suggestion)
     mutate("/api/community/friends/suggestions");
     
     return data;

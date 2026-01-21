@@ -1,23 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/app/lib/db";
-import { posts, users, postLikes, postComments } from "@/app/lib/schema";
+import { posts } from "@/app/lib/schema";
 import { verifyAuth } from "@/app/lib/auth";
-import { desc, eq, sql } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
 export async function GET(req: NextRequest) {
   try {
     const auth = await verifyAuth(req);
-    // Kita izinkan feed diakses publik atau minimal login
     if (auth.error) return auth.error;
+
+    // Ambil parameter filter dari URL
+    const { searchParams } = new URL(req.url);
+    const filter = searchParams.get("filter");
+
+    // Tentukan kondisi WHERE
+    let whereCondition = undefined;
     
-    // Ambil posts dengan user info dan counts
-    // Karena Drizzle query builder untuk counts + join agak kompleks,
-    // kita fetch posts dulu lalu enrich atau gunakan raw SQL/helpers.
-    // Di sini kita gunakan approach: Fetch posts with relations
-    
+    if (filter === "mine") {
+      // Jika filter 'mine', hanya ambil post milik user yang login
+      whereCondition = eq(posts.userId, auth.user.userId);
+    }
+
     const feed = await db.query.posts.findMany({
+      where: whereCondition, // Terapkan filter di sini
       orderBy: [desc(posts.createdAt)],
-      limit: 20, // Pagination limit
+      limit: 20, 
       with: {
         user: {
           columns: {
@@ -26,15 +33,14 @@ export async function GET(req: NextRequest) {
             imageUrl: true,
           }
         },
-        likes: true, // Ambil semua likes (bisa berat kalau banyak, ideally count only)
+        likes: true, 
         comments: true,
       }
     });
 
-    // Format data untuk frontend
     const formattedFeed = feed.map(post => ({
       id: post.id,
-      userId: post.userId, // Tambahkan ini
+      userId: post.userId,
       content: post.content,
       imageUrl: post.imageUrl,
       createdAt: post.createdAt,

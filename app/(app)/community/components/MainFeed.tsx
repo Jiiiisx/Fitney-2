@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Globe, User } from "lucide-react";
 import CreatePost from "./CreatePost";
 import PostCard from "./PostCard";
-import { useCommunityFeed } from "../hooks/useCommunity";
+import { useCommunityFeed, FeedFilter } from "../hooks/useCommunity";
 
 export default function MainFeed() {
-  const { posts, isLoading, mutate } = useCommunityFeed();
+  const [filter, setFilter] = useState<FeedFilter>("all");
+  const { posts, isLoading, mutate } = useCommunityFeed(filter);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -37,10 +38,9 @@ export default function MainFeed() {
   }, []);
 
   const handleDeletePost = (deletedId: number) => {
-      // Optimistic delete UI update
       mutate(
           (currentData: any) => currentData.filter((p: any) => p.id !== deletedId),
-          false // false = don't revalidate immediately
+          false 
       );
   };
 
@@ -48,6 +48,40 @@ export default function MainFeed() {
     <div className="max-w-2xl mx-auto pb-20">
       <CreatePost />
 
+      {/* Filter Tabs */}
+      <div className="flex items-center gap-4 mb-6 border-b border-border pb-2">
+        <button
+          onClick={() => setFilter("all")}
+          className={`flex items-center gap-2 pb-2 text-sm font-medium transition-colors relative ${
+            filter === "all"
+              ? "text-primary"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Globe className="w-4 h-4" />
+          Community
+          {filter === "all" && (
+            <span className="absolute bottom-[-9px] left-0 w-full h-[2px] bg-primary rounded-full" />
+          )}
+        </button>
+
+        <button
+          onClick={() => setFilter("mine")}
+          className={`flex items-center gap-2 pb-2 text-sm font-medium transition-colors relative ${
+            filter === "mine"
+              ? "text-primary"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <User className="w-4 h-4" />
+          My Posts
+          {filter === "mine" && (
+            <span className="absolute bottom-[-9px] left-0 w-full h-[2px] bg-primary rounded-full" />
+          )}
+        </button>
+      </div>
+
+      {/* Feed Content */}
       {isLoading ? (
         <div className="flex justify-center py-10">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -65,7 +99,11 @@ export default function MainFeed() {
         </div>
       ) : (
         <div className="text-center py-10 text-muted-foreground bg-card rounded-xl border border-dashed border-border p-8">
-            <p>No posts yet. Be the first to share your journey!</p>
+            <p>
+                {filter === 'mine' 
+                    ? "You haven't posted anything yet. Share your first update!" 
+                    : "No posts yet. Be the first to share your journey!"}
+            </p>
         </div>
       )}
     </div>
