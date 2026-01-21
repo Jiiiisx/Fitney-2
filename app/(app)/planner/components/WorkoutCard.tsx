@@ -13,6 +13,12 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export type Workout = {
   id: number;
@@ -66,17 +72,28 @@ export default function WorkoutCard({ workout, onDelete, onComplete }: WorkoutCa
     )}>
       {/* Header Section */}
       <div 
-        className={cn("flex justify-between items-start", hasExercises && "cursor-pointer")}
+        className={cn("flex justify-between items-start gap-2", hasExercises && "cursor-pointer")}
         onClick={handleCardClick}
       >
-        <div className="flex-1 pr-2">
+        <div className="flex-1 min-w-0">
             {/* Min-height for title ensures alignment across cards */}
-            <h4 className="font-bold text-sm text-foreground leading-snug line-clamp-2 min-h-[2.5rem]">
-              {workout.name}
-            </h4>
+            <TooltipProvider>
+              <Tooltip delayDuration={300}>
+                <TooltipTrigger asChild>
+                  <h4 
+                    className="font-bold text-sm text-foreground leading-snug line-clamp-2 min-h-[2.5rem] break-words"
+                  >
+                    {workout.name}
+                  </h4>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="font-medium max-w-[200px] break-words">{workout.name}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
         </div>
         
-        <div className="flex items-center gap-1 shrink-0 -mt-1 -mr-1">
+        <div className="flex items-center gap-0.5 shrink-0">
           {hasExercises && (
             <button className="p-1 text-muted-foreground hover:bg-muted rounded-full transition-colors">
                  <ChevronDown
@@ -118,14 +135,14 @@ export default function WorkoutCard({ workout, onDelete, onComplete }: WorkoutCa
 
       {/* Footer Section - Stacked for Consistency */}
       <div className="mt-3 space-y-2">
-        {/* Metadata Row */}
-        <div className="flex items-center justify-between gap-2">
-            <div className={cn("flex items-center gap-1.5 px-2 py-1 rounded-md border text-[10px] font-semibold w-fit", config.bg, config.color)}>
-                {config.icon}
-                <span>{workout.type}</span>
+        {/* Metadata Row - Flex Wrap to handle narrow cards */}
+        <div className="flex flex-wrap items-center justify-between gap-y-1.5 gap-x-2">
+            <div className={cn("flex items-center gap-1.5 px-2 py-1 rounded-md border text-[10px] font-semibold w-fit max-w-full", config.bg, config.color)}>
+                <div className="shrink-0">{config.icon}</div>
+                <span className="truncate">{workout.type}</span>
             </div>
             {workout.duration > 0 && (
-                <span className="text-[10px] font-medium text-muted-foreground tabular-nums shrink-0">
+                <span className="text-[10px] font-medium text-muted-foreground tabular-nums whitespace-nowrap">
                     {workout.duration} min
                 </span>
             )}
