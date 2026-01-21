@@ -1,64 +1,52 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/app/lib/db";
-import { users, userProfiles, followers } from "@/app/lib/schema";
+import { users, followers } from "@/app/lib/schema";
 import { verifyAuth } from "@/app/lib/auth";
-import { eq, and, ne, notInArray } from "drizzle-orm";
+import { eq, notInArray, and, ne } from "drizzle-orm";
 
 export async function GET(req: NextRequest) {
   try {
     const auth = await verifyAuth(req);
     if (auth.error) return auth.error;
+
     const currentUserId = auth.user.userId;
 
-    // 1. Ambil profil user saat ini untuk tahu goal-nya
-    const currentUserProfile = await db.query.userProfiles.findFirst({
-        where: eq(userProfiles.userId, currentUserId),
-        columns: { mainGoal: true }
+    // 1. Ambil daftar ID user yang sudah difollow
+    const following = await db
+      .select({ id: followers.userId })
+      .from(followers)
+      .where(eq(followers.followerId, currentUserId));
+
+    const followingIds = following.map((f) => f.id);
+    
+    // Tambahkan ID user sendiri agar tidak muncul di saran
+    followingIds.push(currentUserId);
+
+    // 2. Ambil user yang TIDAK ada di daftar followingIds
+    const suggestions = await db.query.users.findMany({
+      where: (users, { notInArray }) => notInArray(users.id, followingIds),
+      limit: 5,
+      columns: {
+        id: true,
+        username: true,
+        fullName: true,
+        imageUrl: true,
+        level: true, // Tampilkan level agar lebih menarik
+      },
+      // Opsional: Order by random atau popularity (butuh logic tambahan)
+      // Saat ini kita ambil default order (biasanya by ID atau insertion)
     });
 
-    if (!currentUserProfile || !currentUserProfile.mainGoal) {
-        // Fallback: Kembalikan random users jika user belum set goal
-        const randomUsers = await db.query.users.findMany({
-            where: ne(users.id, currentUserId),
-            limit: 3,
-            columns: { id: true, fullName: true, imageUrl: true, username: true }
-        });
-        return NextResponse.json(randomUsers.map(u => ({...u, reason: "New member"})));
-    }
+    // Format data untuk frontend (tambah field isFollowing: false)
+    const formattedSuggestions = suggestions.map(user => ({
+      ...user,
+      isFollowing: false
+    }));
 
-    const targetGoal = currentUserProfile.mainGoal;
-
-    // 2. Ambil user yang sudah difollow (untuk di-exclude)
-    const following = await db.query.followers.findMany({
-        where: eq(followers.userId, currentUserId),
-        columns: { followerId: true }
-    });
-    const followingIds = following.map(f => f.followerId);
-    followingIds.push(currentUserId); // Exclude diri sendiri
-
-    // 3. Cari user dengan goal yang sama
-    const suggestions = await db.select({
-        id: users.id,
-        fullName: users.fullName,
-        username: users.username,
-        imageUrl: users.imageUrl,
-        goal: userProfiles.mainGoal
-    })
-    .from(users)
-    .innerJoin(userProfiles, eq(users.id, userProfiles.userId))
-    .where(and(
-        eq(userProfiles.mainGoal, targetGoal),
-        notInArray(users.id, followingIds)
-    ))
-    .limit(5);
-
-    return NextResponse.json(suggestions.map(u => ({
-        ...u,
-        reason: `Also interested in ${u.goal?.replace('_', ' ')}`
-    })));
+    return NextResponse.json(formattedSuggestions);
 
   } catch (error) {
-    console.error("GET_FRIEND_SUGGESTIONS_ERROR", error);
+    console.error("GET_SUGGESTIONS_ERROR", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

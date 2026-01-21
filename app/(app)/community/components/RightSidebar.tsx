@@ -1,46 +1,28 @@
 "use client";
 
-import { Award, Calendar, UserPlus, Loader2, User } from "lucide-react";
-import { useState, useEffect } from "react";
-import toast from "react-hot-toast";
+import { Award, Calendar, UserPlus, Loader2, User, Check } from "lucide-react";
+import { useState } from "react";
+import { useSuggestions, followUser } from "../hooks/useCommunity";
 
-interface SuggestedUser {
-    id: string;
-    fullName: string;
-    username: string;
-    imageUrl?: string;
-    reason: string;
-}
+export default function RightSidebar() {
+  const { suggestions, isLoading } = useSuggestions();
+  const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
 
-const RightSidebar = () => {
-  const [suggestedFriends, setSuggestedFriends] = useState<SuggestedUser[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-      const fetchSuggestions = async () => {
-          try {
-              const token = localStorage.getItem("token");
-              if (!token) return;
-              
-              const res = await fetch("/api/community/friends/suggestions", {
-                  headers: { Authorization: `Bearer ${token}` }
-              });
-              if (res.ok) {
-                  const data = await res.json();
-                  setSuggestedFriends(data);
-              }
-          } catch (e) {
-              console.error(e);
-          } finally {
-              setLoading(false);
-          }
-      };
-      fetchSuggestions();
-  }, []);
-
-  const handleFollow = (username: string) => {
-      // Placeholder logic
-      toast.success(`Followed ${username}`);
+  const handleFollow = async (userId: string) => {
+    // Optimistic UI update local state
+    setFollowingIds(prev => new Set(prev).add(userId));
+    
+    try {
+      await followUser(userId);
+      // Success is handled in the hook (toast, mutate)
+    } catch (error) {
+      // Revert local state if failed
+      setFollowingIds(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(userId);
+          return newSet;
+      });
+    }
   };
 
   const topAchievers = [
@@ -60,44 +42,53 @@ const RightSidebar = () => {
         <h3 className="font-bold text-lg mb-4 text-foreground">
           Find Friends
         </h3>
-        {loading ? (
+        {isLoading ? (
             <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
-        ) : suggestedFriends.length > 0 ? (
+        ) : suggestions && suggestions.length > 0 ? (
             <ul className="space-y-4">
-            {suggestedFriends.map((user) => (
-                <li key={user.id} className="flex items-center justify-between">
-                <div className="flex items-center gap-3 overflow-hidden">
-                    {user.imageUrl ? (
-                        <img
-                        src={user.imageUrl}
-                        alt={user.fullName}
-                        className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                        />
-                    ) : (
-                        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                            <User className="w-5 h-5 text-muted-foreground" />
+            {suggestions.map((user: any) => {
+                const isFollowed = followingIds.has(user.id);
+                return (
+                    <li key={user.id} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 overflow-hidden">
+                        {user.imageUrl ? (
+                            <img
+                            src={user.imageUrl}
+                            alt={user.fullName}
+                            className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                            />
+                        ) : (
+                            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                                <User className="w-5 h-5 text-muted-foreground" />
+                            </div>
+                        )}
+                        <div className="min-w-0">
+                            <p className="font-bold text-foreground text-sm truncate">{user.fullName || user.username}</p>
+                            <p className="text-xs text-muted-foreground truncate">Level {user.level || 1}</p>
                         </div>
-                    )}
-                    <div className="min-w-0">
-                        <p className="font-bold text-foreground text-sm truncate">{user.fullName || user.username}</p>
-                        <p className="text-xs text-muted-foreground truncate" title={user.reason}>{user.reason}</p>
                     </div>
-                </div>
-                <button 
-                    onClick={() => handleFollow(user.username)}
-                    className="text-muted-foreground hover:text-primary p-2 rounded-full hover:bg-primary/10 transition-colors flex-shrink-0"
-                >
-                    <UserPlus className="w-5 h-5" />
-                </button>
-                </li>
-            ))}
+                    <button 
+                        onClick={() => handleFollow(user.id)}
+                        disabled={isFollowed}
+                        className={`p-2 rounded-full transition-colors flex-shrink-0 ${
+                            isFollowed 
+                            ? 'text-green-500 bg-green-100 cursor-default' 
+                            : 'text-muted-foreground hover:text-primary hover:bg-primary/10'
+                        }`}
+                        title={isFollowed ? "Followed" : "Follow"}
+                    >
+                        {isFollowed ? <Check className="w-5 h-5" /> : <UserPlus className="w-5 h-5" />}
+                    </button>
+                    </li>
+                );
+            })}
             </ul>
         ) : (
-            <p className="text-sm text-muted-foreground text-center">No suggestions yet.</p>
+            <p className="text-sm text-muted-foreground text-center">No new suggestions.</p>
         )}
       </div>
 
-      {/* Top Achievers */}
+      {/* Top Achievers (Static for now) */}
       <div className="bg-background p-5 rounded-xl border border-border shadow-sm">
         <h3 className="font-bold text-lg mb-4 flex items-center text-foreground">
           <Award className="w-5 h-5 mr-3 text-primary" />
@@ -116,7 +107,7 @@ const RightSidebar = () => {
         </ul>
       </div>
 
-      {/* Upcoming Events */}
+      {/* Upcoming Events (Static for now) */}
       <div className="bg-background p-5 rounded-xl border border-border shadow-sm">
         <h3 className="font-bold text-lg mb-4 flex items-center text-foreground">
           <Calendar className="w-5 h-5 mr-3 text-primary" />
@@ -134,5 +125,3 @@ const RightSidebar = () => {
     </div>
   );
 };
-
-export default RightSidebar;

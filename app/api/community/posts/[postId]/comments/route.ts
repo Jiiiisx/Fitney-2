@@ -1,42 +1,48 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/app/lib/db";
-import { postComments, posts, notifications, users } from "@/app/lib/schema";
+import { postComments } from "@/app/lib/schema";
 import { verifyAuth } from "@/app/lib/auth";
-import { eq, desc, asc } from "drizzle-orm";
+import { desc, asc } from "drizzle-orm";
 
-// GET Comments
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ postId: string }> }
 ) {
-    try {
-        const auth = await verifyAuth(req);
-        if (auth.error) return auth.error;
+  try {
+    const auth = await verifyAuth(req);
+    if (auth.error) return auth.error;
 
-        const resolvedParams = await params;
-        const postId = parseInt(resolvedParams.postId);
-        
-        const comments = await db.query.postComments.findMany({
-            where: eq(postComments.postId, postId),
-            orderBy: [asc(postComments.createdAt)], // Komentar lama di atas
-            with: {
-                user: {
-                    columns: {
-                        username: true,
-                        fullName: true,
-                        imageUrl: true
-                    }
-                }
-            }
-        });
+    const { postId } = await params;
+    const postIdInt = parseInt(postId);
 
-        return NextResponse.json(comments);
-    } catch (error) {
-        return NextResponse.json({ error: "Server Error" }, { status: 500 });
+    if (isNaN(postIdInt)) {
+      return NextResponse.json({ error: "Invalid Post ID" }, { status: 400 });
     }
+
+    // Mengambil komentar menggunakan Relations API Drizzle
+    const comments = await db.query.postComments.findMany({
+      where: (comments, { eq }) => eq(comments.postId, postIdInt),
+      orderBy: [asc(postComments.createdAt)], // Komentar lama di atas
+      with: {
+        user: {
+          columns: {
+            id: true,
+            username: true,
+            fullName: true,
+            imageUrl: true,
+          }
+        }
+      }
+    });
+
+    return NextResponse.json(comments);
+
+  } catch (error) {
+    console.error("GET_COMMENTS_ERROR", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
 }
 
-// POST Comment
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ postId: string }> }
@@ -44,46 +50,45 @@ export async function POST(
   try {
     const auth = await verifyAuth(req);
     if (auth.error) return auth.error;
-    
-    const resolvedParams = await params;
-    const userId = auth.user.userId;
-    const postId = parseInt(resolvedParams.postId);
+
+    const { postId } = await params;
+    const postIdInt = parseInt(postId);
     const body = await req.json();
     const { content } = body;
 
-    if (!content) {
-        return NextResponse.json({ error: "Content required" }, { status: 400 });
+    if (isNaN(postIdInt)) {
+      return NextResponse.json({ error: "Invalid Post ID" }, { status: 400 });
     }
 
-    await db.transaction(async (tx) => {
-        // 1. Insert Comment
-        await tx.insert(postComments).values({
-            userId,
-            postId,
-            content
-        });
+    if (!content || content.trim() === "") {
+        return NextResponse.json({ error: "Comment content is required" }, { status: 400 });
+    }
 
-        // 2. Notifikasi
-        const post = await tx.query.posts.findFirst({
-            where: eq(posts.id, postId),
-            columns: { userId: true, content: true }
-        });
+    // Insert komentar baru
+    const newComment = await db.insert(postComments).values({
+        postId: postIdInt,
+        userId: auth.user.userId,
+        content: content.trim(),
+    }).returning();
 
-        if (post && post.userId !== userId) {
-            await tx.insert(notifications).values({
-                userId: post.userId,
-                type: 'comment',
-                message: `${auth.user.name || 'Someone'} commented on your post: "${content.substring(0, 20)}..."`,
-                linkUrl: `/community`,
-                isRead: false
-            });
+    // Fetch user info untuk dikembalikan ke frontend (biar UI bisa langsung update tanpa refetch)
+    const user = await db.query.users.findFirst({
+        where: (users, { eq }) => eq(users.id, auth.user.userId),
+        columns: {
+            id: true,
+            username: true,
+            fullName: true,
+            imageUrl: true,
         }
     });
 
-    return NextResponse.json({ message: "Comment added" }, { status: 201 });
+    return NextResponse.json({
+        ...newComment[0],
+        user
+    }, { status: 201 });
 
   } catch (error) {
-    console.error("COMMENT_ERROR", error);
+    console.error("CREATE_COMMENT_ERROR", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

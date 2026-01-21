@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/app/lib/db";
-import { postLikes, posts, notifications } from "@/app/lib/schema";
+import { postLikes } from "@/app/lib/schema";
 import { verifyAuth } from "@/app/lib/auth";
 import { and, eq } from "drizzle-orm";
 
@@ -11,64 +11,59 @@ export async function POST(
   try {
     const auth = await verifyAuth(req);
     if (auth.error) return auth.error;
-    
-    const resolvedParams = await params;
-    const userId = auth.user.userId;
-    const postId = parseInt(resolvedParams.postId);
 
-    if (isNaN(postId)) {
-        return NextResponse.json({ error: "Invalid Post ID" }, { status: 400 });
+    // Await params in Next.js 15+ (if applicable, but safe for 13/14 too usually) or just access if not promise
+    // In recent Next.js versions params is a Promise.
+    const { postId } = await params;
+    const postIdInt = parseInt(postId);
+
+    if (isNaN(postIdInt)) {
+      return NextResponse.json({ error: "Invalid Post ID" }, { status: 400 });
     }
 
-    // Cek apakah sudah like
-    const existingLike = await db.query.postLikes.findFirst({
-        where: and(
-            eq(postLikes.userId, userId),
-            eq(postLikes.postId, postId)
+    const userId = auth.user.userId;
+
+    // Cek apakah user sudah like post ini
+    const existingLike = await db
+      .select()
+      .from(postLikes)
+      .where(
+        and(
+          eq(postLikes.postId, postIdInt),
+          eq(postLikes.userId, userId)
         )
-    });
+      );
 
-    if (existingLike) {
-        // UNLIKE
-        await db.delete(postLikes)
-            .where(and(
-                eq(postLikes.userId, userId),
-                eq(postLikes.postId, postId)
-            ));
-        
-        return NextResponse.json({ message: "Unliked", isLiked: false });
+    if (existingLike.length > 0) {
+      // UNLIKE: Hapus like
+      await db
+        .delete(postLikes)
+        .where(
+          and(
+            eq(postLikes.postId, postIdInt),
+            eq(postLikes.userId, userId)
+          )
+        );
+
+      return NextResponse.json({ 
+        liked: false, 
+        message: "Post unliked" 
+      });
     } else {
-        // LIKE
-        await db.transaction(async (tx) => {
-            // 1. Insert Like
-            await tx.insert(postLikes).values({
-                userId,
-                postId
-            });
+      // LIKE: Tambah like
+      await db.insert(postLikes).values({
+        postId: postIdInt,
+        userId: userId,
+      });
 
-            // 2. Ambil pemilik post untuk notifikasi
-            const post = await tx.query.posts.findFirst({
-                where: eq(posts.id, postId),
-                columns: { userId: true, content: true } // Ambil content untuk preview
-            });
-
-            // Jangan kirim notifikasi jika like post sendiri
-            if (post && post.userId !== userId) {
-                await tx.insert(notifications).values({
-                    userId: post.userId,
-                    type: 'like',
-                    message: `${auth.user.name || 'Someone'} liked your post: "${post.content?.substring(0, 20)}..."`,
-                    linkUrl: `/community`, // Bisa diarahkan ke detail post jika ada
-                    isRead: false
-                });
-            }
-        });
-
-        return NextResponse.json({ message: "Liked", isLiked: true });
+      return NextResponse.json({ 
+        liked: true, 
+        message: "Post liked" 
+      });
     }
 
   } catch (error) {
-    console.error("LIKE_ERROR", error);
+    console.error("TOGGLE_LIKE_ERROR", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
