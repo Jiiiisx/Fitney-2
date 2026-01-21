@@ -44,7 +44,7 @@ export default function ProgressCharts({ weeklyData, isLoading }: ProgressCharts
             </CardHeader>
             <CardContent className="h-[300px] flex items-end justify-between px-8 pb-4 gap-4">
                 {[...Array(7)].map((_, i) => (
-                    <div key={i} className="w-full bg-muted/30 rounded-t-xl animate-pulse" style={{ height: `${Math.random() * 60 + 20}%` }} />
+                    <div key={i} className="w-full bg-muted/30 rounded-t-xl animate-pulse" style={{ height: `${((i % 5) + 2) * 10}%` }} />
                 ))}
             </CardContent>
         </Card>

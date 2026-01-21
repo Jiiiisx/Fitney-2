@@ -11,6 +11,7 @@ import GamificationStreak from "../components/GamificationStreak";
 import ProgressCharts from "../components/ProgressCharts";
 import WorkoutBreakdown from "../components/WorkoutBreakdown";
 import CompleteProfileBanner from "../components/CompleteProfileBanner";
+import DashboardInsight from "../components/DashboardInsight";
 // Pastikan toast di-import jika digunakan, atau hapus jika tidak
 import toast from "react-hot-toast"; 
 
@@ -20,11 +21,13 @@ interface DashboardData {
     duration: number;
     calories: number;
     workouts: number;
+    water?: number;
   };
   todaysPlan: any; // Tambahkan ini
   weekly: { name: string; value: number }[]; // Spesifikasikan bentuk array weekly
   recent: any[];
   streak: number;
+  insight?: string;
   breakdown: {
     mostFrequent: string;
     avgDuration: number;
@@ -73,6 +76,7 @@ export default function DashboardPage() {
   const safeWeekly = data?.weekly || [];
   const safeRecent = data?.recent || [];
   const safeStreak = data?.streak || 0;
+  const safeInsight = data?.insight || "";
   // Menyiapkan data breakdown dengan default value
   const safeBreakdown = data?.breakdown || { mostFrequent: "N/A", avgDuration: 0, heatmap: [] };
 

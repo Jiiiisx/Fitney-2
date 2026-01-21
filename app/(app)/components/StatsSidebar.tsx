@@ -68,9 +68,14 @@ const StatsSidebar = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Gunakan useMemo agar quote tidak berubah setiap kali re-render
-  const motivationalQuote = useMemo(() => getRandomQuote(), []);
-  const greeting = getGreeting();
+  const [quote, setQuote] = useState("Continue your journey to achieve your target!");
+  const [greeting, setGreeting] = useState("Hello");
+
+  useEffect(() => {
+    // Set client-side only data to prevent hydration mismatch
+    setQuote(getRandomQuote());
+    setGreeting(getGreeting());
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -140,7 +145,7 @@ const StatsSidebar = () => {
           {greeting}, {userName}! 🔥
         </h3>
         <p className="mt-1 text-sm text-muted-foreground px-4">
-          {motivationalQuote}
+          {quote}
         </p>
       </div>
 

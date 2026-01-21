@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/app/lib/auth";
 import { db } from "@/app/lib/db";
-import { workoutLogs, userStreaks, userPlans, userPlanDays } from "@/app/lib/schema";
-import { eq, and, gte, desc, sql } from "drizzle-orm";
+import { workoutLogs, userStreaks, userPlans, userPlanDays, waterLogs } from "@/app/lib/schema";
+import { eq, and, gte, lte, desc, sql } from "drizzle-orm";
 import { subDays, startOfDay, endOfDay, format } from "date-fns";
 
 export const dynamic = 'force-dynamic';
@@ -15,6 +15,7 @@ export async function GET(req: NextRequest) {
 
     const todayStart = startOfDay(new Date());
     const sevenDaysAgo = subDays(todayStart, 6);
+    const fourteenDaysAgo = subDays(todayStart, 13);
     const fiftyDaysAgo = subDays(todayStart, 50);
     const todayStr = format(new Date(), 'yyyy-MM-dd');
 
@@ -23,7 +24,7 @@ export async function GET(req: NextRequest) {
       .select({
         planName: userPlanDays.name,
         description: userPlanDays.description,
-        programName: userPlans.sourceProgramId, // Simplifikasi, idealnya join ke workoutPrograms
+        programName: userPlans.sourceProgramId, 
       })
       .from(userPlanDays)
       .innerJoin(userPlans, eq(userPlanDays.userPlanId, userPlans.id))
@@ -38,7 +39,7 @@ export async function GET(req: NextRequest) {
     
     const todaysPlan = planQuery.length > 0 ? planQuery[0] : null;
 
-    // 1. Get Today's Stats
+    // 1. Get Today's Stats (Workouts)
     const todayLogs = await db
       .select({
         duration: workoutLogs.durationMin,
@@ -52,13 +53,30 @@ export async function GET(req: NextRequest) {
         )
       );
 
+    // 1b. Get Today's Water
+    const todayWaterLogs = await db
+      .select({
+        amount: waterLogs.amountMl
+      })
+      .from(waterLogs)
+      .where(
+        and(
+          eq(waterLogs.userId, userId),
+          eq(waterLogs.date, todayStr) // waterLogs pakai column 'date' (YYYY-MM-DD string di Drizzle schema 'date') atau date object? Schema says 'date'. 
+          // Di schema: date: date('date').notNull() -> string YYYY-MM-DD
+        )
+      );
+    
+    const totalWater = todayWaterLogs.reduce((acc, log) => acc + log.amount, 0);
+
     const todayStats = {
       duration: todayLogs.reduce((acc, log) => acc + (log.duration || 0), 0),
       calories: todayLogs.reduce((acc, log) => acc + (log.calories || 0), 0),
-      workouts: todayLogs.length
+      workouts: todayLogs.length,
+      water: totalWater
     };
 
-    // 2. Get Weekly Activity (Grafik)
+    // 2. Get Weekly Activity (Grafik & Insight)
     const weeklyLogs = await db
       .select({
         date: workoutLogs.date,
@@ -71,6 +89,34 @@ export async function GET(req: NextRequest) {
             gte(workoutLogs.date, sevenDaysAgo)
         )
       );
+
+    // Calculate Insight
+    // Last week count (7 days ago to today) vs Previous week (14 days ago to 7 days ago)
+    const currentWeekCount = weeklyLogs.length;
+    
+    const previousWeekLogs = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(workoutLogs)
+      .where(
+        and(
+            eq(workoutLogs.userId, userId),
+            gte(workoutLogs.date, fourteenDaysAgo),
+            lte(workoutLogs.date, sevenDaysAgo)
+        )
+      );
+    const prevWeekCount = Number(previousWeekLogs[0].count);
+
+    let insight = "Keep pushing! Every workout counts towards your goal.";
+    if (currentWeekCount > prevWeekCount) {
+        const diff = currentWeekCount - prevWeekCount;
+        insight = `Good job! You did ${diff} more workout${diff > 1 ? 's' : ''} this week compared to last week.`;
+    } else if (currentWeekCount === prevWeekCount && currentWeekCount > 0) {
+        insight = "Consistent! You're matching your workout pace from last week.";
+    } else if (currentWeekCount < prevWeekCount) {
+        insight = "Don't give up! Try to beat your record from last week.";
+    } else if (currentWeekCount === 0 && prevWeekCount === 0) {
+        insight = "Start small! Log your first workout this week to build momentum.";
+    }
 
     const activityMap = new Map<string, number>();
     
@@ -115,7 +161,7 @@ export async function GET(req: NextRequest) {
       .orderBy(desc(sql`count(*)`))
       .limit(1);
 
-    const mostFrequent = freqQuery.length > 0 ? freqQuery[0].type : "No Data";
+    const mostFrequent = freqQuery.length > 0 ? freqQuery[0].type : "N/A";
 
     const avgQuery = await db
       .select({ avg: sql<string>`avg(${workoutLogs.durationMin})` })
@@ -151,6 +197,7 @@ export async function GET(req: NextRequest) {
         weekly: weeklyActivity,
         recent: recentLogs,
         streak: current_streak,
+        insight, // NEW FIELD
         breakdown: {
           mostFrequent,
           avgDuration,

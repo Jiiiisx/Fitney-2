@@ -9,6 +9,7 @@ interface DailyGoalsProps {
     duration: number;
     calories: number;
     workouts: number;
+    water?: number;
   };
 }
 
@@ -16,13 +17,23 @@ export default function DailyGoals({ stats }: DailyGoalsProps) {
   // Defaults if no data
   const calories = stats?.calories || 0;
   const duration = stats?.duration || 0;
+  const waterMl = stats?.water || 0;
+  
+  // Dynamic estimation for steps based on calories (approx 1 kcal = 18 steps for mixed activity)
+  // This makes steps dynamic without extra DB calls for now.
+  const steps = calories > 0 ? calories * 18 : 0; 
   
   // Hardcoded targets for now
   const targetCalories = 500; 
   const targetDuration = 60; 
+  const targetSteps = 10000;
+  const targetWater = 2.5; // Liters
 
   const calPercentage = Math.min(100, (calories / targetCalories) * 100);
   const durPercentage = Math.min(100, (duration / targetDuration) * 100);
+  const stepsPercentage = Math.min(100, (steps / targetSteps) * 100);
+  const waterL = parseFloat((waterMl / 1000).toFixed(1));
+  const waterPercentage = Math.min(100, (waterL / targetWater) * 100);
 
   const items = [
     {
@@ -45,18 +56,18 @@ export default function DailyGoals({ stats }: DailyGoalsProps) {
     },
     {
       label: "Steps",
-      value: "2,400",
-      target: "/ 10,000",
-      percentage: 24,
+      value: steps.toLocaleString(),
+      target: `/ ${targetSteps.toLocaleString()}`,
+      percentage: stepsPercentage,
       icon: Footprints,
       color: "text-emerald-500",
       stroke: "#10b981"
     },
     {
       label: "Water",
-      value: "1.2",
-      target: "/ 2.5 L",
-      percentage: 48,
+      value: `${waterL}`,
+      target: `/ ${targetWater} L`,
+      percentage: waterPercentage,
       icon: Droplets,
       color: "text-cyan-500",
       stroke: "#06b6d4"
