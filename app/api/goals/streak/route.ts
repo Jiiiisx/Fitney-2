@@ -41,18 +41,31 @@ export async function GET(req: NextRequest) {
         }
     }
 
-    // 2. Tentukan Posisi Minggu Ini
-    // Minggu ini adalah (Past Streak + 1).
-    // Contoh: Punya streak 3 minggu lalu. Minggu ini adalah W4.
+    // 2. Cek Aktivitas MINGGU INI
+    const startOfCurrentWeek = startOfWeek(today, { weekStartsOn: 1 });
+    const endOfCurrentWeek = endOfWeek(today, { weekStartsOn: 1 });
+    
+    const currentWeekLogs = await db.select({ count: sql<number>`count(*)` })
+        .from(workoutLogs)
+        .where(and(
+            eq(workoutLogs.userId, userId),
+            gte(workoutLogs.date, startOfCurrentWeek),
+            lte(workoutLogs.date, endOfCurrentWeek)
+        ));
+    
+    const thisWeekHasActivity = Number(currentWeekLogs[0].count) > 0;
+
+    // 3. Tentukan Posisi Minggu Ini & Total Streak
+    // Total Streak Visual = Past Streak + (1 jika minggu ini sudah ada activity, else 0)
+    // Tapi untuk purposes visualisasi timeline minggu ke-1, ke-2 dst, kita pakai logika currentWeekNum
+    
     const currentWeekNum = pastStreak + 1;
 
-    // 3. Tentukan Halaman (Pagination per 5 minggu)
-    // Jika currentWeekNum = 4, page = 1.
-    // Jika currentWeekNum = 6, page = 2.
+    // 4. Tentukan Halaman (Pagination per 5 minggu)
     const page = Math.ceil(currentWeekNum / 5);
     const startWeek = (page - 1) * 5 + 1;
 
-    // 4. Generate Data untuk 5 Slot
+    // 5. Generate Data untuk 5 Slot
     const weeksData = [];
     for (let i = 0; i < 5; i++) {
         const weekNum = startWeek + i;
@@ -61,10 +74,10 @@ export async function GET(req: NextRequest) {
         if (weekNum < currentWeekNum) {
             status = 'completed';
         } else if (weekNum === currentWeekNum) {
-            status = 'active'; // Minggu ini selalu active (flame)
+            // Minggu ini
+            status = thisWeekHasActivity ? 'completed' : 'active';
         } 
-        // Sisanya pending
-
+        
         weeksData.push({
             week: `W${weekNum}`,
             status

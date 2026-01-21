@@ -8,8 +8,11 @@ import {
   Wind,
   X,
   ChevronDown,
+  AlertCircle,
+  Check
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 export type Workout = {
   id: number;
@@ -21,18 +24,19 @@ export type Workout = {
 };
 
 const typeConfig = {
-  Strength: { icon: <Dumbbell className="w-4 h-4" />, color: "text-blue-500", bg: "bg-blue-500/10" },
-  Cardio: { icon: <HeartPulse className="w-4 h-4" />, color: "text-red-500", bg: "bg-red-500/10" },
-  Flexibility: { icon: <Wind className="w-4 h-4" />, color: "text-green-500", bg: "bg-green-500/10" },
-  "Rest Day": { icon: <CheckCircle2 className="w-4 h-4" />, color: "text-secondary-foreground", bg: "bg-secondary" },
+  Strength: { icon: <Dumbbell className="w-3.5 h-3.5" />, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800" },
+  Cardio: { icon: <HeartPulse className="w-3.5 h-3.5" />, color: "text-red-600 dark:text-red-400", bg: "bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800" },
+  Flexibility: { icon: <Wind className="w-3.5 h-3.5" />, color: "text-green-600 dark:text-green-400", bg: "bg-green-50 dark:bg-green-900/20 border-green-100 dark:border-green-800" },
+  "Rest Day": { icon: <CheckCircle2 className="w-3.5 h-3.5" />, color: "text-slate-600 dark:text-slate-400", bg: "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700" },
 };
 
 interface WorkoutCardProps {
   workout: Workout;
   onDelete: (id: number) => void;
+  onComplete?: () => void;
 }
 
-export default function WorkoutCard({ workout, onDelete }: WorkoutCardProps) {
+export default function WorkoutCard({ workout, onDelete, onComplete }: WorkoutCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const config = typeConfig[workout.type];
   const hasExercises = workout.exercises && workout.exercises.length > 0;
@@ -48,26 +52,42 @@ export default function WorkoutCard({ workout, onDelete }: WorkoutCardProps) {
     }
   };
 
+  // Status Styling Logic - More subtle backgrounds
+  const statusStyles = {
+    missed: "border-red-200 bg-white dark:bg-red-950/10 dark:border-red-900/30",
+    completed: "border-green-200 bg-white dark:bg-green-950/10 dark:border-green-900/30",
+    scheduled: "border-border bg-card",
+  };
+
   return (
-    <div className="bg-background p-3 rounded-lg border border-border group">
+    <div className={cn(
+      "relative p-3 rounded-xl border transition-all duration-200 shadow-sm hover:shadow-md w-full flex flex-col justify-between",
+      statusStyles[workout.status] || statusStyles.scheduled
+    )}>
+      {/* Header Section */}
       <div 
-        className={`flex justify-between items-start ${hasExercises ? 'cursor-pointer' : ''}`}
+        className={cn("flex justify-between items-start", hasExercises && "cursor-pointer")}
         onClick={handleCardClick}
       >
-        <h4 className="font-bold text-sm text-foreground mb-1 pr-6">
-          {workout.name}
-        </h4>
+        <div className="flex-1 pr-2">
+            {/* Min-height for title ensures alignment across cards */}
+            <h4 className="font-bold text-sm text-foreground leading-snug line-clamp-2 min-h-[2.5rem]">
+              {workout.name}
+            </h4>
+        </div>
         
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-1 shrink-0 -mt-1 -mr-1">
           {hasExercises && (
-            <ChevronDown
-              size={18}
-              className={`text-muted-foreground transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
-            />
+            <button className="p-1 text-muted-foreground hover:bg-muted rounded-full transition-colors">
+                 <ChevronDown
+                    size={16}
+                    className={`transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}
+                 />
+            </button>
           )}
           <button 
             onClick={handleDeleteClick} 
-            className="text-muted-foreground hover:text-destructive transition-all opacity-0 group-hover:opacity-100"
+            className="p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors"
             aria-label="Delete workout"
           >
             <X size={16} />
@@ -75,19 +95,20 @@ export default function WorkoutCard({ workout, onDelete }: WorkoutCardProps) {
         </div>
       </div>
 
+      {/* Exercises Expandable */}
       <AnimatePresence>
         {isOpen && hasExercises && (
           <motion.div
-            initial={{ height: 0, opacity: 0, marginTop: 0 }}
-            animate={{ height: 'auto', opacity: 1, marginTop: '0.5rem' }}
-            exit={{ height: 0, opacity: 0, marginTop: 0 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="overflow-hidden"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden mb-2"
           >
-            <ul className="space-y-1 text-xs text-muted-foreground">
+            <ul className="pt-2 space-y-1.5">
               {workout.exercises?.map((ex, index) => (
-                <li key={index} className="pl-2 border-l-2 border-border">
-                  {ex}
+                <li key={index} className="text-xs text-muted-foreground flex items-start gap-2 pl-1 border-l-2 border-primary/20">
+                  <span>{ex}</span>
                 </li>
               ))}
             </ul>
@@ -95,16 +116,54 @@ export default function WorkoutCard({ workout, onDelete }: WorkoutCardProps) {
         )}
       </AnimatePresence>
 
-      <div className="flex items-center justify-between mt-3 w-full">
-        <div className={`flex items-center px-2 py-1 rounded-full text-[10px] font-semibold ${config.bg} ${config.color}`}>
-          {config.icon}
-          <span className="ml-1.5">{workout.type}</span>
+      {/* Footer Section - Stacked for Consistency */}
+      <div className="mt-3 space-y-2">
+        {/* Metadata Row */}
+        <div className="flex items-center justify-between gap-2">
+            <div className={cn("flex items-center gap-1.5 px-2 py-1 rounded-md border text-[10px] font-semibold w-fit", config.bg, config.color)}>
+                {config.icon}
+                <span>{workout.type}</span>
+            </div>
+            {workout.duration > 0 && (
+                <span className="text-[10px] font-medium text-muted-foreground tabular-nums shrink-0">
+                    {workout.duration} min
+                </span>
+            )}
         </div>
-        {workout.duration > 0 && (
-          <span className="text-[10px] font-medium text-muted-foreground flex items-center gap-1">
-             {workout.duration} min
-          </span>
-        )}
+
+        {/* Action Button - Full Width for Alignment */}
+        <div className="pt-1">
+            {workout.status === 'missed' && onComplete && (
+                <button 
+                    onClick={(e) => { e.stopPropagation(); onComplete(); }} 
+                    className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-600 border border-red-100 hover:bg-red-100 hover:border-red-200 transition-all text-xs font-semibold shadow-sm"
+                >
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    Log Missed
+                </button>
+            )}
+            
+            {workout.status === 'scheduled' && onComplete && (
+                <button 
+                    onClick={(e) => { e.stopPropagation(); onComplete(); }} 
+                    className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all text-xs font-semibold shadow-sm"
+                >
+                    <Check className="w-3.5 h-3.5" />
+                    Complete
+                </button>
+            )}
+            
+            {workout.status === 'completed' && (
+                <div className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-50 text-green-700 border border-green-100 text-xs font-semibold">
+                    <Check className="w-3.5 h-3.5" />
+                    Completed
+                </div>
+            )}
+             {/* Read-only scheduled state (no onComplete or duration only) */}
+             {workout.status === 'scheduled' && !onComplete && (
+                 <div className="w-full h-[28px]"></div> // Spacer to keep height consistent
+             )}
+        </div>
       </div>
     </div>
   );

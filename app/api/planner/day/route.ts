@@ -6,10 +6,10 @@ import { and, eq } from 'drizzle-orm';
 import { differenceInDays, parseISO, format } from "date-fns";
 
 interface ExercisesData {
-  exerciseId: number;
-  sets?: number;
+  id: number; // Changed from exerciseId to id to match frontend payload
+  sets?: string | number;
   reps?: string;
-  durationSeconds?: number;
+  duration?: string | number; // Frontend sends 'duration' (minutes)
 }
 
 export async function POST(req: NextRequest) {
@@ -65,14 +65,21 @@ export async function POST(req: NextRequest) {
         const newPlanDayId = newPlanDay[0].id;
 
         if (exercises && exercises.length > 0) {
-          const exercisesToInsert = exercises.map((ex, index) => ({
-            userPlanDayId: newPlanDayId,
-            exerciseId: ex.exerciseId,
-            sets: ex.sets,
-            reps: ex.reps,
-            durationSeconds: ex.durationSeconds,
-            displayOrder: index,
-          }));
+          const exercisesToInsert = exercises.map((ex, index) => {
+            // Type conversion and mapping
+            const setsVal = ex.sets ? Number(ex.sets) : null;
+            // Frontend 'duration' is in minutes, DB expects seconds
+            const durationVal = ex.duration ? Number(ex.duration) * 60 : null;
+
+            return {
+              userPlanDayId: newPlanDayId,
+              exerciseId: ex.id, // Map 'id' from frontend to 'exerciseId' for DB
+              sets: isNaN(setsVal!) ? null : setsVal,
+              reps: ex.reps || null,
+              durationSeconds: isNaN(durationVal!) ? null : durationVal,
+              displayOrder: index,
+            };
+          });
 
           await tx.insert(userPlanDayExercises).values(exercisesToInsert);
         }
@@ -83,7 +90,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: 'Day created succesfully', newPlanDayId: newDay.newPlanDayId}, { status: 201 });
   } catch (error) {
     console.error('API_POST_PLANNER_DAY_ERROR', error);
-    return NextResponse.json({ error: 'A plan for this day already exists'}, {status: 409});
-    return NextResponse.json({ error: 'Internal Server Error'}, {status: 500});
+    // Return original error for debugging purposes (in dev mode usually, but useful here)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    // Check specifically for duplicate key violation (Postgres code 23505)
+    if ((error as any).code === '23505') {
+       return NextResponse.json({ error: 'Database constraint violation: Duplicate plan for this day found.' }, { status: 409 });
+    }
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

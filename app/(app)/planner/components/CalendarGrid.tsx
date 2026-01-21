@@ -6,6 +6,7 @@ import { addDays, format, parseISO } from 'date-fns';
 
 import { Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import toast from 'react-hot-toast';
 
 // Interface for the data structure returned by the GET /api/users/profile/active-plan
 interface ActivePlan {
@@ -18,6 +19,7 @@ interface ActivePlan {
     name: string;
     description: string | null;
     date: string;
+    is_completed: boolean; // Add this field
     exercises: {
       name: string;
       sets: number | null;
@@ -100,6 +102,43 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion, onPlan
     }
   };
 
+  const handleCompleteWorkout = async (workout: Workout, date: Date) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('Authentication token not found.');
+
+      const toastId = toast.loading('Logging workout...');
+
+      const response = await fetch('/api/workouts/log', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+            name: workout.name,
+            type: workout.type === 'Rest Day' ? 'Rest' : workout.type,
+            duration: workout.duration,
+            date: format(date, 'yyyy-MM-dd'),
+            sets: 1, 
+            reps: '1',
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to log workout');
+      }
+
+      const data = await response.json();
+      toast.success(`Workout logged! +${data.xpGained} XP`, { id: toastId });
+      
+      onPlanChange(); // Refresh grid
+    } catch (error) {
+        console.error(error);
+        toast.error('Failed to complete workout');
+    }
+  };
+
   const handleSetRestDay = async (date: Date) => {
     try {
       const token = localStorage.getItem('token');
@@ -162,6 +201,7 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion, onPlan
       const dateString = format(dayDate, 'yyyy-MM-dd');
       const displayDate = format(dayDate, 'd MMM');
       const isToday = format(new Date(), 'yyyy-MM-dd') === dateString;
+      const todayDateString = format(new Date(), 'yyyy-MM-dd');
       
       const allEventsForDay = plan.schedule.filter(day => 
         day.date && format(parseISO(day.date), 'yyyy-MM-dd') === dateString
@@ -182,12 +222,28 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion, onPlan
             workoutType = 'Flexibility';
           }
 
+          // --- LOGIC STATUS BARU ---
+          let status: Workout['status'] = 'scheduled';
+          
+          if (scheduledDay.is_completed) {
+            status = 'completed';
+          } else if (workoutType === 'Rest Day') {
+            // Rest Day dianggap completed jika hari ini atau lewat (karena 'doing' rest day = diam)
+            if (dateString <= todayDateString) {
+                status = 'completed';
+            }
+          } else if (dateString < todayDateString) {
+            // Jika BUKAN rest day, dan tanggal sudah lewat, dan BELUM completed -> Missed
+            status = 'missed';
+          }
+          // -------------------------
+
           return {
             id: scheduledDay.id,
             name: scheduledDay.name,
             type: workoutType,
             duration: 60,
-            status: workoutType === 'Rest Day' ? 'completed' : 'scheduled',
+            status: status,
             exercises: scheduledDay.exercises?.map(ex => 
               `${ex.name} - ${ex.sets ? `${ex.sets} sets x ` : ''}${ex.reps ? `${ex.reps} reps` : ''}${ex.duration_seconds ? `${ex.duration_seconds}s` : ''}`
             ) || []
@@ -214,7 +270,12 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion, onPlan
           <div className="space-y-3 xl:flex-grow h-full min-h-[200px] rounded-xl bg-muted/20 p-2">
             {filteredWorkouts.length > 0 ? (
               filteredWorkouts.map((workout, idx) => (
-                <WorkoutCard key={idx} workout={workout} onDelete={handleDelete} />
+                <WorkoutCard 
+                    key={idx} 
+                    workout={workout} 
+                    onDelete={handleDelete} 
+                    onComplete={() => handleCompleteWorkout(workout, dayDate)} // PASS PROP BARU
+                />
               ))
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-center p-2 opacity-0 hover:opacity-100 transition-opacity group">
@@ -247,3 +308,4 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion, onPlan
     </div>
   );
 }
+
