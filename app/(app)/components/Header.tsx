@@ -158,9 +158,6 @@ const Header = () => {
 
           {/* User Actions */}
           <div className="flex items-center space-x-3 pr-4">
-            <button className="p-4 rounded-full hover:bg-muted/50">
-              <Search size={24} className="text-muted-foreground" />
-            </button>
             <Link href="/settings" className="p-4 rounded-full hover:bg-muted/50">
               <Settings size={24} className="text-muted-foreground" />
             </Link>

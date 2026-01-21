@@ -4,6 +4,7 @@ import { Users, Trophy, Hash, User, Loader2, Plus, Filter, Trash2 } from "lucide
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useMyGroups, deleteGroup } from "../hooks/useCommunity";
+import { useCommunityNavigation } from "../CommunityContext";
 import CreateGroupModal from "./CreateGroupModal";
 import {
     DropdownMenu,
@@ -35,6 +36,7 @@ const LeftSidebar = () => {
   const [groupFilter, setGroupFilter] = useState<"all" | "created">("all");
   const { groups, isLoading: loadingGroups } = useMyGroups(groupFilter);
   const [isGroupsExpanded, setIsGroupsExpanded] = useState(false);
+  const { navigateToGroupChat } = useCommunityNavigation();
 
   const handleDeleteGroup = async (groupId: number, groupName: string) => {
       if (confirm(`Are you sure you want to delete group "${groupName}"? This action cannot be undone.`)) {
@@ -176,7 +178,11 @@ const LeftSidebar = () => {
             <>
                 <ul className={`space-y-2 transition-all duration-300 ${isGroupsExpanded ? 'max-h-64 overflow-y-auto pr-2 scrollbar-thin' : ''}`}>
                 {(isGroupsExpanded ? groups : groups.slice(0, 3)).map((group: any) => (
-                    <li key={group.id} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 cursor-pointer transition-colors group">
+                    <li 
+                        key={group.id} 
+                        onClick={() => navigateToGroupChat(group.id, group.name)}
+                        className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 cursor-pointer transition-colors group"
+                    >
                         {group.imageUrl ? (
                             <img src={group.imageUrl} alt={group.name} className="w-8 h-8 rounded-full object-cover" />
                         ) : (

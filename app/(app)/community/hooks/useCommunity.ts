@@ -55,7 +55,44 @@ export function useMyGroups(filter: "all" | "created" = "all") {
   };
 }
 
+// Group Members Hook
+export function useGroupMembers(groupId: number | null) {
+  const { data, error, isLoading, mutate } = useSWR(
+    groupId ? `/api/community/groups/${groupId}/members` : null,
+    fetcher
+  );
+
+  return {
+    members: data || [],
+    isLoading,
+    isError: error,
+    mutate,
+  };
+}
+
 // --- ACTIONS ---
+
+export async function kickMember(groupId: number, userId: string) {
+  const token = localStorage.getItem("token");
+  try {
+    const res = await fetch(`/api/community/groups/${groupId}/members/${userId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to kick member");
+    }
+
+    toast.success("Member removed from group");
+    return true;
+  } catch (error: any) {
+    console.error(error);
+    toast.error(error.message || "Failed to kick member");
+    throw error;
+  }
+}
 
 export async function createGroup(name: string, description: string, imageUrl?: string) {
   const token = localStorage.getItem("token");

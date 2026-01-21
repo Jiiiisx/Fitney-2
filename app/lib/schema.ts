@@ -258,6 +258,15 @@ export const userGroups = pgTable('user_groups', {
   };
 });
 
+export const groupMessages = pgTable('group_messages', {
+  id: serial('id').primaryKey(),
+  groupId: integer('group_id').notNull().references(() => groups.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  content: text('content').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+});
+
+
 
 // User Settings
 export const userSettings = pgTable('user_settings', {
@@ -484,12 +493,19 @@ export const postHashtagsRelations = relations(postHashtags, ({ one }) => ({
 export const groupsRelations = relations(groups, ({ one, many }) => ({
 	createdBy: one(users, { fields: [groups.createdBy], references: [users.id] }),
 	members: many(userGroups),
+    messages: many(groupMessages),
 }));
 
 export const userGroupsRelations = relations(userGroups, ({ one }) => ({
 	user: one(users, { fields: [userGroups.userId], references: [users.id] }),
 	group: one(groups, { fields: [userGroups.groupId], references: [groups.id] }),
 }));
+
+export const groupMessagesRelations = relations(groupMessages, ({ one }) => ({
+	group: one(groups, { fields: [groupMessages.groupId], references: [groups.id] }),
+	user: one(users, { fields: [groupMessages.userId], references: [users.id] }),
+}));
+
 
 export const bodyMeasurementsRelations = relations(bodyMeasurements, ({ one }) => ({
 	user: one(users, { fields: [bodyMeasurements.userId], references: [users.id] }),
