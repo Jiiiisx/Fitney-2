@@ -86,6 +86,31 @@ export async function createGroup(name: string, description: string, imageUrl?: 
   }
 }
 
+export async function deleteGroup(groupId: number) {
+  const token = localStorage.getItem("token");
+  try {
+    const res = await fetch(`/api/community/groups/${groupId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!res.ok) throw new Error("Failed to delete group");
+
+    toast.success("Group deleted successfully");
+    // Refresh lists
+    await Promise.all([
+      mutate("/api/community/groups?filter=all"),
+      mutate("/api/community/groups?filter=created")
+    ]);
+    
+    return true;
+  } catch (error) {
+    console.error(error);
+    toast.error("Failed to delete group");
+    throw error;
+  }
+}
+
 export async function likePost(postId: number) {
   const token = localStorage.getItem("token");
   try {

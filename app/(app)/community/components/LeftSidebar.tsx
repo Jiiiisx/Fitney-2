@@ -1,9 +1,9 @@
 "use client";
 
-import { Users, Trophy, Hash, User, Loader2, Plus, Filter } from "lucide-react";
+import { Users, Trophy, Hash, User, Loader2, Plus, Filter, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useMyGroups } from "../hooks/useCommunity";
+import { useMyGroups, deleteGroup } from "../hooks/useCommunity";
 import CreateGroupModal from "./CreateGroupModal";
 import {
     DropdownMenu,
@@ -35,6 +35,12 @@ const LeftSidebar = () => {
   const [groupFilter, setGroupFilter] = useState<"all" | "created">("all");
   const { groups, isLoading: loadingGroups } = useMyGroups(groupFilter);
   const [isGroupsExpanded, setIsGroupsExpanded] = useState(false);
+
+  const handleDeleteGroup = async (groupId: number, groupName: string) => {
+      if (confirm(`Are you sure you want to delete group "${groupName}"? This action cannot be undone.`)) {
+          await deleteGroup(groupId);
+      }
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -182,7 +188,19 @@ const LeftSidebar = () => {
                             {group.name}
                         </span>
                         {group.isAdmin && (
-                            <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded font-medium">Admin</span>
+                            <div className="flex items-center gap-1">
+                                <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded font-medium">Admin</span>
+                                <button 
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteGroup(group.id, group.name);
+                                    }}
+                                    className="p-1 text-muted-foreground hover:text-red-500 hover:bg-red-100 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                                    title="Delete Group"
+                                >
+                                    <Trash2 className="w-3 h-3" />
+                                </button>
+                            </div>
                         )}
                     </li>
                 ))}
