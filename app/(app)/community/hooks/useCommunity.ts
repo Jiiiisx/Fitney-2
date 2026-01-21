@@ -44,7 +44,47 @@ export function useSuggestions() {
   };
 }
 
+export function useMyGroups(filter: "all" | "created" = "all") {
+  const { data, error, isLoading, mutate } = useSWR(`/api/community/groups?filter=${filter}`, fetcher);
+
+  return {
+    groups: data || [],
+    isLoading,
+    isError: error,
+    mutate,
+  };
+}
+
 // --- ACTIONS ---
+
+export async function createGroup(name: string, description: string, imageUrl?: string) {
+  const token = localStorage.getItem("token");
+  try {
+    const res = await fetch(`/api/community/groups`, {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}` 
+      },
+      body: JSON.stringify({ name, description, imageUrl }),
+    });
+
+    if (!res.ok) throw new Error("Failed to create group");
+
+    toast.success("Group created successfully!");
+    // Trigger re-fetch groups explicitly for both filter keys
+    await Promise.all([
+      mutate("/api/community/groups?filter=all"),
+      mutate("/api/community/groups?filter=created")
+    ]);
+    
+    return await res.json();
+  } catch (error) {
+    console.error(error);
+    toast.error("Failed to create group");
+    throw error;
+  }
+}
 
 export async function likePost(postId: number) {
   const token = localStorage.getItem("token");
@@ -94,6 +134,29 @@ export async function fetchComments(postId: number) {
   });
   if (!res.ok) throw new Error("Failed to fetch comments");
   return await res.json();
+}
+
+export async function uploadImage(file: File) {
+  const token = localStorage.getItem("token");
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    const res = await fetch("/api/upload", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+
+    if (!res.ok) throw new Error("Failed to upload image");
+    
+    const data = await res.json();
+    return data.url;
+  } catch (error) {
+    console.error(error);
+    toast.error("Gagal mengupload gambar");
+    throw error;
+  }
 }
 
 export async function createPost(content: string, imageUrl?: string) {

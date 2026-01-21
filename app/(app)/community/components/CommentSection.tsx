@@ -3,14 +3,15 @@
 import { useState, useEffect } from "react";
 import { User, Loader2, Send } from "lucide-react";
 import { fetchComments, createComment } from "../hooks/useCommunity";
+import { useCurrentUser } from "../hooks/useCurrentUser";
 
 interface CommentData {
   id: number;
   content: string;
   createdAt: string;
   user: {
-    name: string;
-    avatar?: string;
+    fullName: string | null;
+    imageUrl: string | null;
     username: string;
   };
 }
@@ -19,15 +20,16 @@ const CommentItem = ({ comment }: { comment: CommentData }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const maxLength = 150;
   const isLong = comment.content.length > maxLength;
+  const displayName = comment.user.fullName || comment.user.username;
 
   return (
     <div className="flex gap-3">
-      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
-        {comment.user.avatar ? (
+      <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden border border-border">
+        {comment.user.imageUrl ? (
           <img
-            src={comment.user.avatar}
+            src={comment.user.imageUrl}
             className="w-full h-full object-cover"
-            alt={comment.user.name}
+            alt={displayName}
           />
         ) : (
           <User className="w-4 h-4 text-muted-foreground" />
@@ -35,7 +37,7 @@ const CommentItem = ({ comment }: { comment: CommentData }) => {
       </div>
       <div className="bg-muted/30 p-3 rounded-lg flex-grow min-w-0">
         <p className="text-xs font-bold text-foreground mb-1">
-          {comment.user.name}
+          {displayName}
         </p>
         <div className="text-sm text-foreground/90 break-words whitespace-pre-wrap">
           {isLong && !isExpanded
@@ -66,6 +68,7 @@ export default function CommentSection({
   const [loading, setLoading] = useState(true);
   const [input, setInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useCurrentUser();
 
   useEffect(() => {
     let isMounted = true;
@@ -119,8 +122,15 @@ export default function CommentSection({
       </div>
 
       {/* Comment Input */}
-      <div className="flex gap-2 items-end">
-        <div className="flex-grow">
+      <div className="flex gap-3 items-start mt-4 pt-2 border-t border-border/40">
+        <div className="w-8 h-8 rounded-full bg-muted flex-shrink-0 flex items-center justify-center overflow-hidden border border-border mt-1">
+             {user?.imageUrl ? (
+               <img src={user.imageUrl} alt="Me" className="w-full h-full object-cover" />
+             ) : (
+               <User className="text-muted-foreground w-4 h-4" />
+             )}
+        </div>
+        <div className="flex-grow flex gap-2 items-end">
           <textarea
             className="w-full p-2 bg-muted/20 border border-input rounded-md text-sm focus:ring-1 focus:ring-primary outline-none resize-none"
             placeholder="Write a comment..."
@@ -134,18 +144,18 @@ export default function CommentSection({
                 }
             }}
           />
+          <button
+            onClick={handleSubmit}
+            disabled={isSubmitting || !input.trim()}
+            className="p-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 flex-shrink-0 mb-[2px]"
+          >
+            {isSubmitting ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
+          </button>
         </div>
-        <button
-          onClick={handleSubmit}
-          disabled={isSubmitting || !input.trim()}
-          className="p-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 flex-shrink-0"
-        >
-          {isSubmitting ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Send className="w-4 h-4" />
-          )}
-        </button>
       </div>
     </div>
   );

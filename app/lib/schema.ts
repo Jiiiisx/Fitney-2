@@ -203,6 +203,22 @@ export const posts = pgTable('posts', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
 
+// HASHTAGS
+export const hashtags = pgTable('hashtags', {
+  id: serial('id').primaryKey(),
+  tag: varchar('tag', { length: 50 }).notNull().unique(), // Simpan tanpa #
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+});
+
+export const postHashtags = pgTable('post_hashtags', {
+  postId: integer('post_id').notNull().references(() => posts.id, { onDelete: 'cascade' }),
+  hashtagId: integer('hashtag_id').notNull().references(() => hashtags.id, { onDelete: 'cascade' }),
+}, (table) => {
+  return {
+    pk: primaryKey({ columns: [table.postId, table.hashtagId] }),
+  };
+});
+
 export const postLikes = pgTable('post_likes', {
   postId: integer('post_id').notNull().references(() => posts.id, { onDelete: 'cascade' }),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
@@ -220,6 +236,28 @@ export const postComments = pgTable('post_comments', {
   content: text('content').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
+
+// GROUPS (NEW)
+export const groups = pgTable('groups', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  description: text('description'),
+  imageUrl: varchar('image_url', { length: 255 }),
+  createdBy: uuid('created_by').notNull().references(() => users.id),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+});
+
+export const userGroups = pgTable('user_groups', {
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  groupId: integer('group_id').notNull().references(() => groups.id, { onDelete: 'cascade' }),
+  joinedAt: timestamp('joined_at', { withTimezone: true }).defaultNow(),
+  isAdmin: boolean('is_admin').default(false),
+}, (table) => {
+  return {
+    pk: primaryKey({ columns: [table.userId, table.groupId] }),
+  };
+});
+
 
 // User Settings
 export const userSettings = pgTable('user_settings', {
@@ -338,6 +376,8 @@ export const usersRelations = relations(users, ({ one, many }) => ({
 	following: many(followers, { relationName: 'following' }),
 	postLikes: many(postLikes),
 	postComments: many(postComments),
+    userGroups: many(userGroups),
+    createdGroups: many(groups),
 }));
 
 export const userProfilesRelations = relations(userProfiles, ({ one }) => ({
@@ -419,6 +459,7 @@ export const postsRelations = relations(posts, ({ one, many }) => ({
 	user: one(users, { fields: [posts.userId], references: [users.id] }),
 	likes: many(postLikes),
 	comments: many(postComments),
+	hashtags: many(postHashtags),
 }));
 
 export const postLikesRelations = relations(postLikes, ({ one }) => ({
@@ -429,6 +470,25 @@ export const postLikesRelations = relations(postLikes, ({ one }) => ({
 export const postCommentsRelations = relations(postComments, ({ one }) => ({
 	post: one(posts, { fields: [postComments.postId], references: [posts.id] }),
 	user: one(users, { fields: [postComments.userId], references: [users.id] }),
+}));
+
+export const hashtagsRelations = relations(hashtags, ({ many }) => ({
+	posts: many(postHashtags),
+}));
+
+export const postHashtagsRelations = relations(postHashtags, ({ one }) => ({
+	post: one(posts, { fields: [postHashtags.postId], references: [posts.id] }),
+	hashtag: one(hashtags, { fields: [postHashtags.hashtagId], references: [hashtags.id] }),
+}));
+
+export const groupsRelations = relations(groups, ({ one, many }) => ({
+	createdBy: one(users, { fields: [groups.createdBy], references: [users.id] }),
+	members: many(userGroups),
+}));
+
+export const userGroupsRelations = relations(userGroups, ({ one }) => ({
+	user: one(users, { fields: [userGroups.userId], references: [users.id] }),
+	group: one(groups, { fields: [userGroups.groupId], references: [groups.id] }),
 }));
 
 export const bodyMeasurementsRelations = relations(bodyMeasurements, ({ one }) => ({

@@ -29,6 +29,26 @@ interface PostData {
   isLiked: boolean;
 }
 
+// Helper untuk merender text dengan hashtag clickable
+const renderContentWithHashtags = (text: string) => {
+    if (!text) return null;
+    
+    // Regex untuk mencari hashtag (#word)
+    // Penjelasan: Mencari karakter '#' diikuti huruf/angka/underscore
+    const parts = text.split(/(#\w+)/g);
+
+    return parts.map((part, index) => {
+        if (part.startsWith('#')) {
+            return (
+                <span key={index} className="text-primary font-semibold hover:underline cursor-pointer">
+                    {part}
+                </span>
+            );
+        }
+        return part;
+    });
+};
+
 export default function PostCard({
   post: initialPost,
   currentUserId,
@@ -146,14 +166,15 @@ export default function PostCard({
       </div>
 
       {/* Post Content */}
-      <p className="text-foreground text-base mb-4 whitespace-pre-wrap break-words leading-relaxed">
-        {post.content}
-      </p>
+      <div className="text-foreground text-base mb-4 whitespace-pre-wrap break-words leading-relaxed">
+        {renderContentWithHashtags(post.content)}
+      </div>
+      
       {post.imageUrl && (
         <img
           src={post.imageUrl}
           alt="Post content"
-          className="mt-3 rounded-lg w-full object-cover max-h-96 border border-border"
+          className="mt-3 rounded-lg w-full object-cover max-h-96 border border-border bg-muted"
         />
       )}
 
