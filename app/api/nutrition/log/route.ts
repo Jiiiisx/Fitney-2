@@ -4,6 +4,7 @@ import { db } from "@/app/lib/db";
 import { foodLogs, foods } from "@/app/lib/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { startOfDay, endOfDay } from "date-fns";
+import { logFoodSchema } from "@/app/lib/types/api";
 
 //Ambil log makanan hari ini
 export async function GET(req: NextRequest) {
@@ -62,18 +63,25 @@ export async function POST(req: NextRequest) {
     const userId = auth.user.userId;
 
     const body = await req.json();
-    const { foodId, servingSize, date } = body;
-
-    if (!foodId || !servingSize) {
-      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+    
+    // Validate with Zod
+    const validation = logFoodSchema.safeParse(body);
+    
+    if (!validation.success) {
+      return NextResponse.json({ 
+        error: "Invalid input", 
+        details: validation.error.format() 
+      }, { status: 400 });
     }
+
+    const { foodId, servingSize, date } = validation.data;
 
     const logDate = date || new Date().toISOString().split('T')[0];
 
     const newLog = await db.insert(foodLogs).values({
       userId,
       foodId,
-      servingSizeG: servingSize.toString(), // Sesuaikan dengan schema (servingSizeG)
+      servingSizeG: servingSize.toString(),
       date: logDate
     }).returning();
 

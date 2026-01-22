@@ -119,7 +119,17 @@ const LogEntry = ({ log }: { log: WorkoutLog }) => {
   );
 };
 
-export default function HistoryWorkoutLog() {
+interface HistoryWorkoutLogProps {
+  filterType?: string;
+  filterDuration?: string;
+  sortOrder?: string;
+}
+
+export default function HistoryWorkoutLog({ 
+  filterType = "all", 
+  filterDuration = "all", 
+  sortOrder = "newest" 
+}: HistoryWorkoutLogProps) {
   const [logs, setLogs] = useState<WorkoutLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -144,6 +154,37 @@ export default function HistoryWorkoutLog() {
     fetchHistory();
   }, []);
 
+  // Filter and Sort Logic
+  const filteredLogs = logs.filter(log => {
+    // Filter by Type
+    if (filterType !== 'all') {
+      if (log.type.toLowerCase() !== filterType.toLowerCase()) return false;
+    }
+
+    // Filter by Duration
+    if (filterDuration !== 'all') {
+      const duration = log.duration || 0;
+      if (filterDuration === 'short' && duration >= 15) return false;
+      if (filterDuration === 'medium' && (duration < 15 || duration > 45)) return false;
+      if (filterDuration === 'long' && duration <= 45) return false;
+    }
+
+    return true;
+  }).sort((a, b) => {
+    // Sort Logic
+    switch (sortOrder) {
+      case 'oldest':
+        return new Date(a.date).getTime() - new Date(b.date).getTime();
+      case 'calories':
+        return (b.calories || 0) - (a.calories || 0);
+      case 'duration':
+        return (b.duration || 0) - (a.duration || 0);
+      case 'newest':
+      default:
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+    }
+  });
+
   if (loading) {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
@@ -163,15 +204,15 @@ export default function HistoryWorkoutLog() {
     );
   }
 
-  if (logs.length === 0) {
+  if (filteredLogs.length === 0) {
     return (
       <div className="text-center p-12 rounded-2xl bg-muted/30 border border-dashed border-border flex flex-col items-center justify-center">
         <div className="bg-background p-4 rounded-full shadow-sm mb-4">
             <Dumbbell className="w-8 h-8 text-muted-foreground" />
         </div>
-        <h3 className="text-lg font-bold text-foreground">No workouts logged yet</h3>
+        <h3 className="text-lg font-bold text-foreground">No workouts found</h3>
         <p className="text-muted-foreground mt-1 mb-6 text-sm max-w-xs mx-auto">
-          Start your journey today by logging your first activity!
+          Try adjusting your filters or log a new workout.
         </p>
       </div>
     );
@@ -179,7 +220,7 @@ export default function HistoryWorkoutLog() {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {logs.map((log) => (
+      {filteredLogs.map((log) => (
         <LogEntry key={log.id} log={log} />
       ))}
     </div>

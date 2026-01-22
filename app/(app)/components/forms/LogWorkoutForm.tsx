@@ -1,7 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Search, Dumbbell, Clock, Calendar as CalendarIcon, Check, ChevronLeft, Flame, Plus, History, Footprints, RefreshCw } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { 
+  Search, Dumbbell, Clock, Calendar as CalendarIcon, Check, 
+  ChevronLeft, Flame, Plus, History, Footprints, RefreshCw, 
+  ChevronsUpDown, Heart, X, Loader2
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,13 +24,27 @@ import {
   SelectTrigger,
   SelectValue 
 } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import toast from "react-hot-toast";
+import { cn } from "@/lib/utils";
 
-interface Exercise {
+// Types
+type ExerciseInput = {
+  id: number | null;
+  name: string;
+  type: 'Strength' | 'Cardio';
+  sets: string;
+  reps: string;
+  duration: string;
+  weight: string;
+  distance: string;
+};
+
+type ApiExercise = {
   id: number;
   name: string;
   category: string;
-}
+};
 
 interface LogWorkoutFormProps {
   onSuccess?: () => void;
@@ -34,97 +52,116 @@ interface LogWorkoutFormProps {
   mode?: "log" | "plan";
 }
 
-// Dummy recent workouts for demo (In real app, fetch from API)
-const RECENT_WORKOUTS = [
-  { id: 101, name: "Push Up", category: "Strength" },
-  { id: 102, name: "Running", category: "Cardio" },
-  { id: 103, name: "Squat", category: "Strength" },
-];
+function useDebounce(value: string, delay: number) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+  return debouncedValue;
+}
 
 export default function LogWorkoutForm({ onSuccess, onCancel, mode = "log" }: LogWorkoutFormProps) {
   // --- STATE ---
-  const [step, setStep] = useState<"search" | "details">("search");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<Exercise[]>([]);
-  const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
+  const [step, setStep] = useState<"name" | "details">("name");
+  const [sessionName, setSessionName] = useState("");
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [isLoading, setIsLoading] = useState(false);
-  
-  // Manual Category Override
-  const [manualCategory, setManualCategory] = useState<string>("");
-
-  // Smart Mode Management
   const [internalMode, setInternalMode] = useState<"log" | "plan">(mode);
-  const [dateStatus, setDateStatus] = useState<"past" | "today" | "future">("today");
 
-  // Form Data
-  const [formData, setFormData] = useState({
-    sets: "3",
-    reps: "10",
-    weight: "0",
-    duration: "30",
-    distance: "0",
-    date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
-  });
+  // Exercises List State
+  const [exercises, setExercises] = useState<ExerciseInput[]>([
+    { id: null, name: '', type: 'Strength', sets: '3', reps: '10', duration: '30', weight: '0', distance: '0' }
+  ]);
 
-  // --- SEARCH LOGIC ---
+  // Search State
+  const [popoverOpen, setPopoverOpen] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<ApiExercise[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
+  // --- SEARCH EXERCISES ---
   useEffect(() => {
-    const searchExercises = async () => {
-      if (searchQuery.length < 2) {
+    const search = async () => {
+      if (!debouncedSearchQuery || debouncedSearchQuery.length < 2) {
         setSearchResults([]);
         return;
       }
-
+      setIsSearching(true);
       try {
-        const res = await fetch(`/api/exercises/search?q=${encodeURIComponent(searchQuery)}`);
+        const res = await fetch(`/api/exercises/search?q=${encodeURIComponent(debouncedSearchQuery)}`);
         if (res.ok) {
           const data = await res.json();
-          setSearchResults(data);
+          setSearchResults(data.results || []);
         }
       } catch (error) {
         console.error("Search failed", error);
+      } finally {
+        setIsSearching(false);
       }
     };
-
-    const timeoutId = setTimeout(() => {
-      searchExercises();
-    }, 300);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
+    search();
+  }, [debouncedSearchQuery]);
 
   // --- HANDLERS ---
-  const handleSelectExercise = (exercise: Exercise) => {
-    setSelectedExercise(exercise);
-    // Determine initial category from exercise data or name if category is generic/missing
-    let initialCat = exercise.category || "Strength";
+  const handleNextStep = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!sessionName.trim()) {
+        toast.error("Please enter a workout name");
+        return;
+    }
+    setStep("details");
+  };
+
+  const handleExerciseChange = (index: number, field: keyof ExerciseInput, value: any) => {
+    const newExercises = [...exercises];
+    (newExercises[index] as any)[field] = value;
+    setExercises(newExercises);
+  };
+
+  const addExerciseRow = () => {
+    setExercises([...exercises, { id: null, name: '', type: 'Strength', sets: '3', reps: '10', duration: '30', weight: '0', distance: '0' }]);
+  };
+
+  const removeExerciseRow = (index: number) => {
+    const newExercises = exercises.filter((_, i) => i !== index);
+    setExercises(newExercises);
+  };
+
+  const handleSelectExercise = (index: number, exercise: ApiExercise) => {
+    handleExerciseChange(index, 'id', exercise.id);
+    handleExerciseChange(index, 'name', exercise.name);
     
-    // Auto-detect based on name keywords if category is generic
-    if (exercise.name.toLowerCase().includes("run") || exercise.name.toLowerCase().includes("cardio")) {
-        initialCat = "Cardio";
-    } else if (exercise.name.toLowerCase().includes("yoga") || exercise.name.toLowerCase().includes("stretch")) {
-        initialCat = "Flexibility";
+    // Auto-detect type
+    let type: 'Strength' | 'Cardio' = 'Strength';
+    if (exercise.name.toLowerCase().includes("run") || exercise.name.toLowerCase().includes("cardio") || exercise.category === "Cardio") {
+        type = 'Cardio';
+    }
+    handleExerciseChange(index, 'type', type);
+    setPopoverOpen(null);
+    setSearchQuery("");
+  };
+
+  const handleCreateCustom = (index: number, name: string) => {
+     handleExerciseChange(index, 'id', 0); // 0 = Custom
+     handleExerciseChange(index, 'name', name);
+     setPopoverOpen(null);
+     setSearchQuery("");
+  };
+
+  const handleSubmit = async () => {
+    // Validate
+    if (exercises.some(ex => !ex.name)) {
+        toast.error("Please select an exercise for all rows");
+        return;
     }
 
-    setManualCategory(initialCat); 
-    setStep("details");
-    setSearchQuery(""); 
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-  
-  // Dynamic Type Checks based on Manual Category
-  // Prioritize manualCategory state which is driven by the Select
-  const isCardio = manualCategory === "Cardio";
-  const isDurationOnly = manualCategory === "Flexibility";
-  // If neither is true, it defaults to Strength logic (shown when !isCardio && !isDurationOnly)
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
     setIsLoading(true);
-
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -132,68 +169,76 @@ export default function LogWorkoutForm({ onSuccess, onCancel, mode = "log" }: Lo
         return;
       }
 
-      let endpoint = "/api/workouts/log";
-      let payload: any = {};
-      
-
-
-      if (internalMode === "log") {
-          endpoint = "/api/workouts/log";
-          payload = {
-            exerciseId: selectedExercise?.id,
-            name: selectedExercise?.name,
-            type: isCardio ? "Cardio" : "Strength", 
-            sets: isCardio ? null : Number(formData.sets),
-            reps: isCardio ? null : formData.reps,
-            weight: isCardio ? null : Number(formData.weight),
-            duration: Number(formData.duration),
-            distance: isCardio ? Number(formData.distance) : null,
-            date: formData.date
+      if (internalMode === "plan") {
+          // --- PLAN MODE (Bulk Insert) ---
+          const payload = {
+            name: sessionName,
+            date: date,
+            exercises: exercises.map(ex => ({
+                id: ex.id || 0,
+                name: ex.name,
+                sets: ex.type === 'Cardio' ? null : Number(ex.sets),
+                reps: ex.type === 'Cardio' ? null : ex.reps,
+                duration: Number(ex.duration) // mins
+            }))
           };
+
+          const res = await fetch("/api/planner/day", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}`
+            },
+            body: JSON.stringify(payload)
+          });
+
+          if (!res.ok) throw new Error("Failed to save plan");
+          toast.success("Workout Plan Saved!");
+
       } else {
-          // PLAN MODE
-          endpoint = "/api/planner/day";
-          payload = {
-            name: selectedExercise?.name, 
-            date: formData.date,
-            exercises: [{
-                id: selectedExercise?.id,
-                sets: isCardio ? null : Number(formData.sets),
-                reps: isCardio ? null : formData.reps,
-                duration: Number(formData.duration) 
-            }]
-          };
-      }
+          // --- LOG MODE (Sequential Insert) ---
+          let totalXp = 0;
+          let leveledUp = false;
 
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
+          for (const ex of exercises) {
+              const payload = {
+                exerciseId: ex.id || 0,
+                name: ex.name, // Pass name for custom exercises
+                type: ex.type,
+                sets: ex.type === 'Cardio' ? null : Number(ex.sets),
+                reps: ex.type === 'Cardio' ? null : ex.reps,
+                weight: ex.type === 'Cardio' ? null : Number(ex.weight),
+                duration: Number(ex.duration),
+                distance: ex.type === 'Cardio' ? Number(ex.distance) : null,
+                date: date
+              };
 
-      const data = await res.json();
+              const res = await fetch("/api/workouts/log", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+              });
 
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to save");
-      }
+              if (res.ok) {
+                  const data = await res.json();
+                  totalXp += data.xpGained || 0;
+                  if (data.leveledUp) leveledUp = true;
+              }
+          }
 
-      // Success Messages
-      if (internalMode === "log") {
-        toast.success(
+          toast.success(
             <div className="flex flex-col">
             <span className="font-bold">Workout Logged!</span>
             <span className="text-sm flex items-center gap-1">
                 <Flame size={14} className="text-orange-500" /> 
-                You gained {data.xpGained} XP!
+                You gained {totalXp} XP!
             </span>
             </div>
-        );
-        if (data.leveledUp) toast("LEVEL UP! 🎉", { icon: "⭐" });
-      } else {
-        toast.success("Workout Scheduled!");
+          );
+          if (leveledUp) toast("LEVEL UP! 🎉", { icon: "⭐" });
       }
 
       if (onSuccess) onSuccess();
@@ -206,255 +251,195 @@ export default function LogWorkoutForm({ onSuccess, onCancel, mode = "log" }: Lo
     }
   };
 
-
-
-  // --- RENDER: STEP 1 (SEARCH) ---
-  if (step === "search") {
+  // --- RENDER: STEP 1 (NAME) ---
+  if (step === "name") {
     return (
-      <div className="space-y-4">
+      <form onSubmit={handleNextStep} className="space-y-4">
         <div>
             <h4 className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1">
-                <History className="w-3 h-3" /> Quick Select
+               Enter Workout Name
             </h4>
-            <div className="flex flex-wrap gap-2">
-                {RECENT_WORKOUTS.map(ex => (
-                    <button
-                        key={ex.id}
-                        onClick={() => handleSelectExercise(ex)}
-                        className="px-3 py-1.5 bg-secondary hover:bg-secondary/80 rounded-full text-xs font-medium transition-colors border"
-                    >
-                        {ex.name}
-                    </button>
-                ))}
-            </div>
         </div>
 
-        <div className="relative border rounded-lg shadow-sm">
-            <Command className="rounded-lg border-none">
-            <CommandInput 
-                placeholder="Search exercises..." 
-                value={searchQuery}
-                onValueChange={setSearchQuery}
+        <div className="relative">
+            <Input 
+                placeholder="Title (e.g. Morning Run)..." 
+                value={sessionName}
+                onChange={(e) => setSessionName(e.target.value)}
                 autoFocus
-                className="border-none focus:ring-0"
+                className="text-lg font-semibold"
             />
-            <CommandList className="max-h-[250px] overflow-y-auto">
-                <CommandEmpty className="py-6 text-center text-sm text-muted-foreground">
-                    {searchQuery.length > 0 ? (
-                        <div className="flex flex-col items-center gap-2">
-                            <span>No results found.</span>
-                            {searchQuery.length > 2 && (
-                                <button 
-                                    onClick={() => handleSelectExercise({ id: 0, name: searchQuery, category: "Custom" })}
-                                    className="text-blue-500 hover:underline font-medium"
-                                >
-                                    + Create "{searchQuery}"
-                                </button>
-                            )}
-                        </div>
-                    ) : "Start typing to search..."}
-                </CommandEmpty>
-                
-                {searchResults.length > 0 && (
-                    <CommandGroup heading="Results">
-                        {searchResults.map((ex) => (
-                            <CommandItem key={ex.id} onSelect={() => handleSelectExercise(ex)} className="cursor-pointer">
-                                <Dumbbell className="mr-2 h-4 w-4 opacity-50" />
-                                <span>{ex.name}</span>
-                                <span className="ml-auto text-xs text-muted-foreground capitalize">{ex.category}</span>
-                            </CommandItem>
-                        ))}
-                    </CommandGroup>
-                )}
-            </CommandList>
-            </Command>
         </div>
-      </div>
+        
+        <div className="flex justify-end pt-2">
+            <Button type="submit" className="w-full">
+                Next
+            </Button>
+        </div>
+      </form>
     );
   }
 
   // --- RENDER: STEP 2 (DETAILS) ---
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <div className="space-y-5 max-h-[60vh] overflow-y-auto pr-1">
       {/* Header */}
       <div className="flex items-center gap-3 pb-2 border-b">
         <Button 
             type="button" 
             variant="ghost" 
             size="icon" 
-            onClick={() => setStep("search")}
+            onClick={() => setStep("name")}
             className="h-8 w-8 -ml-2"
         >
             <ChevronLeft size={18} />
         </Button>
-            <div>
-                <h3 className="font-bold text-lg leading-none">{selectedExercise?.name}</h3>
-                
-                {/* Replaced Static Type Display with Selector */}
-                <div className="mt-1 flex items-center">
-                    <Select value={manualCategory} onValueChange={(val) => setManualCategory(val)}>
-                        <SelectTrigger className="h-7 text-xs px-2 w-auto min-w-[140px] gap-2 border bg-muted/50 hover:bg-muted focus:ring-0 shadow-sm rounded-md">
-                            <SelectValue placeholder="Select Type" />
-                        </SelectTrigger>
-                        <SelectContent className="z-[9999]">
-                            <SelectItem value="Strength">
-                                <div className="flex items-center gap-2">
-                                    <Dumbbell className="w-4 h-4 text-orange-500" /> 
-                                    <span>Strength Training</span>
-                                </div>
-                            </SelectItem>
-                            <SelectItem value="Cardio">
-                                <div className="flex items-center gap-2">
-                                    <Footprints className="w-4 h-4 text-green-500" /> 
-                                    <span>Cardio / Endurance</span>
-                                </div>
-                            </SelectItem>
-                            <SelectItem value="Flexibility">
-                                <div className="flex items-center gap-2">
-                                    <Clock className="w-4 h-4 text-blue-500" /> 
-                                    <span>Duration Based</span>
-                                </div>
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
+        <div className="flex-1">
+            <h3 className="font-bold text-lg leading-none truncate">{sessionName}</h3>
+            <div className="flex items-center gap-2 mt-1">
+                 <button 
+                    onClick={() => setInternalMode("log")}
+                    className={cn("text-[10px] px-2 py-0.5 rounded-full border transition-colors", internalMode === 'log' ? "bg-green-100 text-green-700 border-green-200 font-bold" : "text-muted-foreground border-transparent hover:bg-muted")}
+                 >
+                    Log Done
+                 </button>
+                 <button 
+                    onClick={() => setInternalMode("plan")}
+                    className={cn("text-[10px] px-2 py-0.5 rounded-full border transition-colors", internalMode === 'plan' ? "bg-blue-100 text-blue-700 border-blue-200 font-bold" : "text-muted-foreground border-transparent hover:bg-muted")}
+                 >
+                    Plan Later
+                 </button>
             </div>
+        </div>
       </div>
 
-      {/* Date Input & Status Indicator */}
-      <div className="space-y-2 bg-muted/30 p-3 rounded-lg border">
-         <div className="flex justify-between items-center mb-1">
-            <Label htmlFor="date" className="text-xs font-bold uppercase text-muted-foreground">Date</Label>
-            
-            {/* Mode Indicator / Switcher */}
-            {dateStatus === "past" && (
-                <span className="text-[10px] font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <Check className="w-3 h-3" /> Completed (Log)
-                </span>
-            )}
-            {dateStatus === "future" && (
-                <span className="text-[10px] font-bold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full flex items-center gap-1">
-                    <CalendarIcon className="w-3 h-3" /> Scheduled (Plan)
-                </span>
-            )}
-            {dateStatus === "today" && (
-                <div className="flex items-center gap-2">
-                    <button 
-                        type="button"
-                        onClick={() => setInternalMode("log")}
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition-colors border ${internalMode === 'log' ? 'bg-green-100 text-green-700 border-green-200' : 'text-muted-foreground border-transparent hover:bg-muted'}`}
-                    >
-                        Done
-                    </button>
-                    <button 
-                        type="button"
-                        onClick={() => setInternalMode("plan")}
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full transition-colors border ${internalMode === 'plan' ? 'bg-blue-100 text-blue-700 border-blue-200' : 'text-muted-foreground border-transparent hover:bg-muted'}`}
-                    >
-                        Plan
-                    </button>
-                </div>
-            )}
-         </div>
+      {/* Date Input */}
+      <div className="bg-muted/30 p-3 rounded-lg border">
+         <Label htmlFor="date" className="text-xs font-bold uppercase text-muted-foreground block mb-1">Date</Label>
          <div className="relative">
             <CalendarIcon className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input 
                 id="date" name="date" type="date"
                 className="pl-9 bg-white dark:bg-black/20"
-                value={formData.date} onChange={handleInputChange}
+                value={date} onChange={(e) => setDate(e.target.value)}
             />
          </div>
-         <p className="text-[10px] text-muted-foreground">
-            {internalMode === 'log' ? "This will be recorded in your history." : "This will be added to your planner."}
-         </p>
       </div>
 
-      {/* Stats Grid - Dynamic based on Type */}
-      <div className="grid grid-cols-2 gap-4">
-        
-        {/* FIELDS FOR STRENGTH */}
-        {!isCardio && !isDurationOnly && (
-            <>
-                <div className="space-y-1.5">
-                    <Label htmlFor="sets" className="text-xs font-semibold uppercase text-muted-foreground">Sets</Label>
-                    <div className="relative">
-                        <div className="absolute left-3 top-2.5 font-bold text-muted-foreground text-xs">x</div>
-                        <Input 
-                            id="sets" name="sets" type="number" 
-                            className="pl-7 bg-muted/20" 
-                            value={formData.sets} onChange={handleInputChange} 
-                        />
-                    </div>
-                </div>
-                
-                <div className="space-y-1.5">
-                    <Label htmlFor="reps" className="text-xs font-semibold uppercase text-muted-foreground">Reps</Label>
-                    <div className="relative">
-                        <RefreshCw className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-                        <Input 
-                            id="reps" name="reps" placeholder="e.g. 10"
-                            className="pl-8 bg-muted/20"
-                            value={formData.reps} onChange={handleInputChange} 
-                        />
-                    </div>
-                </div>
-
-                <div className="space-y-1.5">
-                    <Label htmlFor="weight" className="text-xs font-semibold uppercase text-muted-foreground">Weight (kg)</Label>
-                    <div className="relative">
-                        <Dumbbell className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input 
-                            id="weight" name="weight" type="number" step="0.5"
-                            className="pl-9 bg-muted/20"
-                            value={formData.weight} onChange={handleInputChange} 
-                        />
-                    </div>
-                </div>
-            </>
-        )}
-
-        {/* FIELDS FOR CARDIO */}
-        {isCardio && !isDurationOnly && (
-             <div className="space-y-1.5">
-                <Label htmlFor="distance" className="text-xs font-semibold uppercase text-muted-foreground">Distance (km)</Label>
-                <div className="relative">
-                    <Footprints className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                        id="distance" name="distance" type="number" step="0.1"
-                        className="pl-9 bg-muted/20"
-                        value={formData.distance} onChange={handleInputChange} 
-                    />
-                </div>
-            </div>
-        )}
-
-        {/* Duration (Common for All) */}
-        <div className={`space-y-1.5 ${isDurationOnly ? 'col-span-2' : ''}`}>
-            <Label htmlFor="duration" className="text-xs font-semibold uppercase text-muted-foreground">Duration (min)</Label>
-            <div className="relative">
-                <Clock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input 
-                    id="duration" name="duration" type="number" 
-                    className="pl-9 bg-muted/20" 
-                    value={formData.duration} onChange={handleInputChange} 
-                />
-            </div>
+      {/* Exercises List */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+            <Label className="text-xs font-bold uppercase text-muted-foreground">Exercises</Label>
         </div>
+
+        {exercises.map((ex, index) => (
+             <div key={index} className="p-3 border rounded-lg space-y-3 bg-card relative group">
+                  <Button 
+                    type="button" variant="ghost" size="icon" 
+                    className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity" 
+                    onClick={() => removeExerciseRow(index)} 
+                    disabled={exercises.length <= 1}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+
+                  {/* Exercise Name Selector */}
+                  <div className="grid gap-1.5 w-full pr-6">
+                      <Label className="text-[10px] text-muted-foreground">Exercise</Label>
+                      <Popover open={popoverOpen === index} onOpenChange={(isOpen) => setPopoverOpen(isOpen ? index : null)}>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" role="combobox" className="w-full justify-between text-sm h-9 px-3">
+                            <span className="truncate">{ex.name || "Select exercise..."}</span>
+                            <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[280px] p-0 z-[1000]" align="start">
+                          <Command>
+                            <CommandInput placeholder="Search..." value={searchQuery} onValueChange={setSearchQuery} />
+                            <CommandEmpty>No exercise found.</CommandEmpty>
+                            <CommandList>
+                                <CommandGroup>
+                                    {searchResults.map((result) => (
+                                        <CommandItem key={result.id} value={result.name} onSelect={() => handleSelectExercise(index, result)}>
+                                            <Check className={cn("mr-2 h-3 w-3", ex.id === result.id ? "opacity-100" : "opacity-0")} />
+                                            {result.name}
+                                        </CommandItem>
+                                    ))}
+                                    {searchQuery.length > 2 && !searchResults.find(r => r.name.toLowerCase() === searchQuery.toLowerCase()) && (
+                                        <CommandItem onSelect={() => handleCreateCustom(index, searchQuery)} className="text-blue-500 font-medium cursor-pointer">
+                                            + Create "{searchQuery}"
+                                        </CommandItem>
+                                    )}
+                                </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                  </div>
+
+                  {/* Details Row */}
+                  <div className="flex items-end gap-2">
+                        {/* Type Selector */}
+                        <div className="grid gap-1.5 w-[110px]">
+                             <Label className="text-[10px] text-muted-foreground">Type</Label>
+                             <Select value={ex.type} onValueChange={(val) => handleExerciseChange(index, 'type', val)}>
+                                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Strength">Strength</SelectItem>
+                                    <SelectItem value="Cardio">Cardio</SelectItem>
+                                </SelectContent>
+                             </Select>
+                        </div>
+
+                        {ex.type === 'Strength' ? (
+                            <>
+                                <div className="grid gap-1.5 flex-1">
+                                    <Label className="text-[10px] text-muted-foreground">Sets</Label>
+                                    <Input className="h-8 text-xs" value={ex.sets} onChange={(e) => handleExerciseChange(index, 'sets', e.target.value)} />
+                                </div>
+                                <div className="grid gap-1.5 flex-1">
+                                    <Label className="text-[10px] text-muted-foreground">Reps</Label>
+                                    <Input className="h-8 text-xs" value={ex.reps} onChange={(e) => handleExerciseChange(index, 'reps', e.target.value)} />
+                                </div>
+                                <div className="grid gap-1.5 flex-1">
+                                    <Label className="text-[10px] text-muted-foreground">Kg</Label>
+                                    <Input className="h-8 text-xs" value={ex.weight} onChange={(e) => handleExerciseChange(index, 'weight', e.target.value)} />
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div className="grid gap-1.5 flex-1">
+                                    <Label className="text-[10px] text-muted-foreground">Min</Label>
+                                    <Input className="h-8 text-xs" value={ex.duration} onChange={(e) => handleExerciseChange(index, 'duration', e.target.value)} />
+                                </div>
+                                <div className="grid gap-1.5 flex-1">
+                                    <Label className="text-[10px] text-muted-foreground">Km</Label>
+                                    <Input className="h-8 text-xs" value={ex.distance} onChange={(e) => handleExerciseChange(index, 'distance', e.target.value)} />
+                                </div>
+                            </>
+                        )}
+                  </div>
+             </div>
+        ))}
+        
+        <Button type="button" variant="outline" size="sm" onClick={addExerciseRow} className="w-full border-dashed">
+            <Plus className="h-3 w-3 mr-1" /> Add Exercise
+        </Button>
       </div>
 
       {/* Action Buttons */}
-      <div className="pt-2 flex gap-3">
+      <div className="pt-4 flex gap-3">
         <Button type="button" variant="ghost" className="flex-1" onClick={onCancel}>
             Cancel
         </Button>
         <Button 
-            type="submit" 
-            className={`flex-1 ${internalMode === 'log' ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}`} 
+            onClick={handleSubmit}
+            className={cn("flex-1", internalMode === 'log' ? "bg-green-600 hover:bg-green-700" : "bg-blue-600 hover:bg-blue-700")} 
             disabled={isLoading}
         >
-            {isLoading ? "Saving..." : (internalMode === "log" ? "Log Workout" : "Save Plan")}
+            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : (internalMode === "log" ? "Log All" : "Save Plan")}
         </Button>
       </div>
-    </form>
+    </div>
   );
 }

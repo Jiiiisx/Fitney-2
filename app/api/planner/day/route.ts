@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from '@/app/lib/db';
-import { userPlans, userPlanDays, userPlanDayExercises } from '@/app/lib/schema';
+import { userPlans, userPlanDays, userPlanDayExercises, exercises as exercisesTable } from '@/app/lib/schema';
 import { verifyAuth } from '@/app/lib/auth';
 import { and, eq } from 'drizzle-orm';
 import { differenceInDays, parseISO, format } from "date-fns";
 
 interface ExercisesData {
   id: number; // Changed from exerciseId to id to match frontend payload
+  name?: string;
   sets?: string | number;
   reps?: string;
   duration?: string | number; // Frontend sends 'duration' (minutes)
@@ -52,34 +53,65 @@ export async function POST(req: NextRequest) {
 
         const dayNumber = differenceInDays(parseISO(date), planStartDate);
 
+        // Always create a new day entry (Session) to allow multiple workouts per day
         const newPlanDay = await tx
-          .insert(userPlanDays)
-          .values({
+        .insert(userPlanDays)
+        .values({
             userPlanId: userPlanId,
             dayNumber: dayNumber,
             date: dateForDb,
             name: name,
-          })
-          .returning({ id: userPlanDays.id});
-
+        })
+        .returning({ id: userPlanDays.id});
         const newPlanDayId = newPlanDay[0].id;
 
         if (exercises && exercises.length > 0) {
-          const exercisesToInsert = exercises.map((ex, index) => {
-            // Type conversion and mapping
-            const setsVal = ex.sets ? Number(ex.sets) : null;
-            // Frontend 'duration' is in minutes, DB expects seconds
-            const durationVal = ex.duration ? Number(ex.duration) * 60 : null;
+          const exercisesToInsert = [];
 
-            return {
-              userPlanDayId: newPlanDayId,
-              exerciseId: ex.id, // Map 'id' from frontend to 'exerciseId' for DB
-              sets: isNaN(setsVal!) ? null : setsVal,
-              reps: ex.reps || null,
-              durationSeconds: isNaN(durationVal!) ? null : durationVal,
-              displayOrder: index,
-            };
-          });
+          for (let i = 0; i < exercises.length; i++) {
+             const ex = exercises[i];
+             let finalExerciseId = ex.id;
+
+             // Handle Custom Exercises (id === 0)
+             if (finalExerciseId === 0 || !finalExerciseId) {
+                const exerciseName = ex.name || name; // Use specific name or fallback to plan name
+                
+                // Check if exists by name
+                const existingEx = await tx
+                  .select({ id: exercisesTable.id })
+                  .from(exercisesTable)
+                  .where(eq(exercisesTable.name, exerciseName))
+                  .limit(1);
+
+                if (existingEx.length > 0) {
+                   finalExerciseId = existingEx[0].id;
+                } else {
+                   // Create new
+                   const newEx = await tx
+                     .insert(exercisesTable)
+                     .values({ 
+                        name: exerciseName,
+                        categoryId: null // Or default category if available
+                     })
+                     .returning({ id: exercisesTable.id });
+                   finalExerciseId = newEx[0].id;
+                }
+             }
+
+             // Type conversion and mapping
+             const setsVal = ex.sets ? Number(ex.sets) : null;
+             // Frontend 'duration' is in minutes, DB expects seconds
+             const durationVal = ex.duration ? Number(ex.duration) * 60 : null;
+
+             exercisesToInsert.push({
+               userPlanDayId: newPlanDayId,
+               exerciseId: finalExerciseId,
+               sets: isNaN(setsVal!) ? null : setsVal,
+               reps: ex.reps || null,
+               durationSeconds: isNaN(durationVal!) ? null : durationVal,
+               displayOrder: i,
+             });
+          }
 
           await tx.insert(userPlanDayExercises).values(exercisesToInsert);
         }

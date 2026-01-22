@@ -74,7 +74,16 @@ export async function GET(req: NextRequest) {
     const formattedSchedule = scheduleDays.map(day => {
       // Logic: A day is completed if there is a log on that date WITH THE SAME NAME
       const dayLogs = logsByDate.get(day.date) || [];
-      const isLogged = dayLogs.includes(day.name);
+      
+      // Find index of first matching log (Case insensitive optional? Currently exact match)
+      const logIndex = dayLogs.indexOf(day.name);
+      
+      let isLogged = false;
+      if (logIndex !== -1) {
+          isLogged = true;
+          // Remove this log so it doesn't complete another plan of the same name (1 Log = 1 Plan Completed)
+          dayLogs.splice(logIndex, 1);
+      }
       
       return {
         id: day.id,

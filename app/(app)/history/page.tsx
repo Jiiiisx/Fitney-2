@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import HistoryWorkoutLog from "../components/History/HistoryWorkoutLog";
-import { Button } from "@/components/ui/button";
 import { 
   Select,
   SelectContent,
@@ -10,32 +9,16 @@ import {
   SelectTrigger,
   SelectValue, 
 } from "@/components/ui/select";
-import { Plus, Filter, Clock, ArrowUpDown, Dumbbell } from "lucide-react";
-import { LogWorkoutModal } from "../components/forms/LogWorkoutModal";
+import { Filter, Clock, ArrowUpDown, Dumbbell } from "lucide-react";
 
 export default function HistoryPage() {
-  const [isLogModalOpen, setLogModalOpen] = useState(false);
+  const [filterType, setFilterType] = useState("all");
+  const [filterDuration, setFilterDuration] = useState("all");
+  const [sortOrder, setSortOrder] = useState("newest");
 
   return (
     <>
-      <LogWorkoutModal isOpen={isLogModalOpen} onOpenChange={setLogModalOpen} />
       <div className="space-y-8 p-6 md:p-8">
-        
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-                <h1 className="text-3xl font-bold text-foreground tracking-tight">Workout Diary</h1>
-                <p className="text-muted-foreground mt-1">Track your progress and view past activities.</p>
-            </div>
-             <Button 
-                onClick={() => setLogModalOpen(true)} 
-                className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-md transition-all hover:scale-105"
-            >
-                <Plus className="w-5 h-5 mr-2" />
-                Log Workout
-            </Button>
-        </div>
- 
         {/* Filters & Controls Toolbar */}
         <div className="bg-card/50 backdrop-blur-sm p-4 rounded-xl border border-border/60 shadow-sm">
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
@@ -48,7 +31,7 @@ export default function HistoryPage() {
                     </div>
                     
                     {/* Filter by Type */}
-                    <Select defaultValue="all">
+                    <Select value={filterType} onValueChange={setFilterType}>
                         <SelectTrigger className="w-[140px] h-9 bg-background">
                             <div className="flex items-center gap-2">
                                 <Dumbbell className="w-3.5 h-3.5 text-muted-foreground" />
@@ -59,12 +42,12 @@ export default function HistoryPage() {
                             <SelectItem value="all">All Types</SelectItem>
                             <SelectItem value="strength">Strength</SelectItem>
                             <SelectItem value="cardio">Cardio</SelectItem>
-                            <SelectItem value="yoga">Yoga</SelectItem>
+                            <SelectItem value="flexibility">Flexibility</SelectItem>
                         </SelectContent>
                     </Select>
 
                     {/* Filter by Duration */}
-                    <Select defaultValue="all">
+                    <Select value={filterDuration} onValueChange={setFilterDuration}>
                         <SelectTrigger className="w-[150px] h-9 bg-background">
                             <div className="flex items-center gap-2">
                                 <Clock className="w-3.5 h-3.5 text-muted-foreground" />
@@ -87,12 +70,13 @@ export default function HistoryPage() {
                         <span>Sort:</span>
                     </div>
 
-                    <Select defaultValue="newest">
+                    <Select value={sortOrder} onValueChange={setSortOrder}>
                         <SelectTrigger className="w-[140px] h-9 bg-background">
                             <SelectValue placeholder="Sort by" />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="newest">Newest First</SelectItem>
+                            <SelectItem value="oldest">Oldest First</SelectItem>
                             <SelectItem value="calories">Most Calories</SelectItem>
                             <SelectItem value="duration">Longest Duration</SelectItem>
                         </SelectContent>
@@ -101,7 +85,11 @@ export default function HistoryPage() {
             </div>
         </div>
 
-        <HistoryWorkoutLog />
+        <HistoryWorkoutLog 
+            filterType={filterType} 
+            filterDuration={filterDuration} 
+            sortOrder={sortOrder} 
+        />
       </div>
     </>
   );
