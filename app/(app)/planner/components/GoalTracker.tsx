@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { Target, Footprints, Loader2 } from "lucide-react";
-import { startOfWeek, endOfWeek, isWithinInterval, parseISO } from 'date-fns';
+import { Target, Footprints, Loader2, Flame, Timer, Dumbbell } from "lucide-react";
 
 interface GoalTrackerProps {
   planVersion: number;
@@ -10,18 +9,14 @@ interface GoalTrackerProps {
 
 interface Goal {
   id: number;
-  type: 'weekly_workouts' | 'running_distance';
-  target: number;
-  current_progress: number;
-}
-
-interface GoalsData {
-  weekly_workouts?: Goal;
-  running_distance?: Goal;
+  title: string;
+  metric: string;
+  targetValue: number;
+  currentValue: number;
 }
 
 export default function GoalTracker({ planVersion }: GoalTrackerProps) {
-  const [goals, setGoals] = useState<GoalsData>({});
+  const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -29,67 +24,20 @@ export default function GoalTracker({ planVersion }: GoalTrackerProps) {
       setLoading(true);
       try {
         const token = localStorage.getItem('token');
-        if (!token) {
-          setGoals({});
-          return;
-        }
+        if (!token) return;
 
-        // Fetch goals and active plan in parallel
-        const [goalsResponse, planResponse] = await Promise.all([
-          fetch('/api/users/profile/goals', { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch('/api/users/profile/active-plan', { headers: { 'Authorization': `Bearer ${token}` } })
-        ]);
-
-        if (!goalsResponse.ok) {
-          setGoals({});
-          // Don't return, still try to process plan
-        }
-
-        let goalsData: Goal[] = await goalsResponse.json();
-        const processedGoals: GoalsData = {};
-        
-        if (planResponse.ok) {
-          const plan = await planResponse.json();
-          if (plan && plan.schedule) {
-            const today = new Date();
-            const weekStart = startOfWeek(today, { weekStartsOn: 1 });
-            const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
-
-            const thisWeekSchedule = plan.schedule.filter((s: any) => 
-              isWithinInterval(parseISO(s.date), { start: weekStart, end: weekEnd })
-            );
-
-            // Calculate current progress from this week's schedule
-            const weeklyWorkoutsProgress = thisWeekSchedule.filter((s: any) => s.name !== 'Rest Day').length;
-            
-            // A simple placeholder for running distance.
-            // In a real app, you'd get this from workout data.
-            const runningDistanceProgress = thisWeekSchedule
-              .filter((s: any) => s.name.toLowerCase().includes('run'))
-              .reduce((total: number, s: any) => total + 5, 0); // Assuming each run is 5km
-
-            // Update progress for fetched goals
-            goalsData = goalsData.map(goal => {
-              if (goal.type === 'weekly_workouts') {
-                return { ...goal, current_progress: weeklyWorkoutsProgress };
-              }
-              if (goal.type === 'running_distance') {
-                return { ...goal, current_progress: runningDistanceProgress };
-              }
-              return goal;
-            });
-          }
-        }
-        
-        goalsData.forEach(goal => {
-          processedGoals[goal.type] = goal;
+        // Fetch user goals directly
+        const response = await fetch('/api/goals', { 
+            headers: { 'Authorization': `Bearer ${token}` } 
         });
 
-        setGoals(processedGoals);
-
+        if (response.ok) {
+          const data = await response.json();
+          // Sort by relevance or type if needed, for now take all
+          setGoals(data);
+        }
       } catch (error) {
         console.error("Failed to fetch goals:", error);
-        setGoals({});
       } finally {
         setLoading(false);
       }
@@ -100,48 +48,69 @@ export default function GoalTracker({ planVersion }: GoalTrackerProps) {
 
   if (loading) {
     return (
-      <div className="bg-card rounded-2xl p-6 h-full flex items-center justify-center">
+      <div className="bg-card rounded-3xl p-6 h-full flex items-center justify-center min-h-[200px] border shadow-sm">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
-  const weeklyWorkoutsGoal = goals.weekly_workouts;
-  const runningDistanceGoal = goals.running_distance;
+  // --- Helper for Icons & Colors based on Metric ---
+  const getGoalConfig = (metric: string) => {
+    switch (metric) {
+      case 'workout_frequency': return { icon: <Dumbbell className="w-4 h-4" />, color: "bg-blue-500", label: "Workouts" };
+      case 'calories_burned': return { icon: <Flame className="w-4 h-4" />, color: "bg-orange-500", label: "kcal" };
+      case 'active_minutes': return { icon: <Timer className="w-4 h-4" />, color: "bg-purple-500", label: "mins" };
+      case 'distance_run': return { icon: <Footprints className="w-4 h-4" />, color: "bg-green-500", label: "km" };
+      default: return { icon: <Target className="w-4 h-4" />, color: "bg-primary", label: "" };
+    }
+  };
 
   return (
-    <div className="bg-card rounded-2xl p-6 h-full">
-      <h2 className="text-xl font-bold mb-4 text-foreground">Goal Tracker</h2>
-      <div className="space-y-4">
-        {weeklyWorkoutsGoal ? (
-          <div className="bg-background p-4 rounded-lg">
-            <div className="flex items-center justify-between mb-1">
-              <p className="font-semibold text-foreground">Weekly Workouts</p>
-              <p className="text-sm font-bold text-primary">{weeklyWorkoutsGoal.current_progress} / {weeklyWorkoutsGoal.target}</p>
-            </div>
-            <div className="w-full bg-secondary rounded-full h-2.5">
-              <div
-                className="bg-primary h-2.5 rounded-full"
-                style={{ width: `${(weeklyWorkoutsGoal.current_progress / weeklyWorkoutsGoal.target) * 100}%`, transition: 'width 0.4s ease' }}
-              ></div>
-            </div>
+    <div className="bg-card rounded-3xl p-6 h-full border shadow-sm flex flex-col">
+      <h2 className="text-xl font-bold mb-6 text-foreground flex items-center gap-2">
+        <Target className="w-5 h-5 text-primary fill-primary/20" />
+        Goal Tracker
+      </h2>
+      
+      <div className="space-y-5 flex-1 overflow-y-auto max-h-[300px] scrollbar-hide">
+        {goals.length > 0 ? (
+          goals.map(goal => {
+             const config = getGoalConfig(goal.metric);
+             const percentage = Math.min(100, Math.max(0, (goal.currentValue / goal.targetValue) * 100));
+             
+             return (
+              <div key={goal.id} className="group">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className={`p-1.5 rounded-lg ${config.color} bg-opacity-10 text-${config.color.replace('bg-', '')}`}>
+                        {config.icon}
+                    </div>
+                    <p className="font-semibold text-sm text-foreground">{goal.title}</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-sm font-bold text-foreground">{goal.currentValue}</span>
+                    <span className="text-xs text-muted-foreground"> / {goal.targetValue} {config.label}</span>
+                  </div>
+                </div>
+                
+                <div className="relative w-full h-2.5 bg-secondary/50 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full ${config.color} transition-all duration-700 ease-out`}
+                    style={{ width: `${percentage}%` }}
+                  />
+                </div>
+              </div>
+             );
+          })
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full py-8 text-center space-y-3">
+             <div className="p-3 bg-muted rounded-full">
+                <Target className="w-6 h-6 text-muted-foreground" />
+             </div>
+             <p className="text-sm text-muted-foreground">No active goals yet.</p>
+             {/* You could add a button here to navigate to Goals page if you had routing props */}
           </div>
-        ) : <p className="text-sm text-secondary-foreground text-center py-4">No weekly workout goal set.</p>}
-        
-        {runningDistanceGoal ? (
-          <div className="bg-background p-4 rounded-lg">
-            <div className="flex items-center justify-between mb-1">
-              <p className="font-semibold text-foreground">Running Distance</p>
-              <p className="text-sm font-bold text-green-500">{runningDistanceGoal.current_progress} / {runningDistanceGoal.target} km</p>
-            </div>
-            <div className="w-full bg-secondary rounded-full h-2.5">
-              <div
-                className="bg-green-500 h-2.5 rounded-full"
-                style={{ width: `${(runningDistanceGoal.current_progress / runningDistanceGoal.target) * 100}%`, transition: 'width 0.4s ease' }}
-              ></div>
-            </div>
-          </div>
-        ) : <p className="text-sm text-secondary-foreground text-center py-4">No running distance goal set.</p>}
+        )}
       </div>
     </div>
   );

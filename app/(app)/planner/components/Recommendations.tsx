@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { Lightbulb, Loader2 } from "lucide-react";
-import { startOfWeek, endOfWeek, isWithinInterval, parseISO } from 'date-fns';
+import { Lightbulb, Loader2, Sparkles, Plus, Target } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import toast from 'react-hot-toast';
 
 interface RecommendationsProps {
   planVersion: number;
@@ -10,107 +11,131 @@ interface RecommendationsProps {
   onTryTemplate: () => void;
 }
 
-type Suggestion = {
-  id: string;
+type Recommendation = {
   title: string;
+  category: 'weekly' | 'long_term';
+  metric: string;
+  target_value: number;
   description: string;
-  action: () => void;
 };
 
 export default function Recommendations({ planVersion, onAddFlexibility, onTryTemplate }: RecommendationsProps) {
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchSuggestions = async () => {
+    const fetchRecommendations = async () => {
       setLoading(true);
       try {
         const token = localStorage.getItem('token');
         if (!token) {
-          setSuggestions([]);
+          setRecommendations([]);
           return;
         }
 
-        const response = await fetch('/api/users/profile/active-plan', {
+        const response = await fetch('/api/goals/recommendations', {
           headers: { 'Authorization': `Bearer ${token}` },
         });
 
-        if (!response.ok) {
-          setSuggestions([]);
-          return;
+        if (response.ok) {
+           const data = await response.json();
+           setRecommendations(data.recommendations || []);
         }
-
-        const plan = await response.json();
-        const newSuggestions: Suggestion[] = [];
-
-        if (plan && plan.schedule) {
-          const today = new Date();
-          const weekStart = startOfWeek(today, { weekStartsOn: 1 });
-          const weekEnd = endOfWeek(today, { weekStartsOn: 1 });
-
-          const thisWeekSchedule = plan.schedule.filter((s: any) => 
-            isWithinInterval(parseISO(s.date), { start: weekStart, end: weekEnd })
-          );
-
-          const hasFlexibility = thisWeekSchedule.some((s: any) => s.type === 'Flexibility' || s.description?.toLowerCase().includes('flexibility'));
-          
-          if (!hasFlexibility) {
-            newSuggestions.push({
-              id: 'add-flexibility',
-              title: 'Add a Flexibility session',
-              description: 'You haven’t trained mobility this week.',
-              action: onAddFlexibility,
-            });
-          }
-        }
-        
-        // Always add the generic template suggestion
-        newSuggestions.push({
-          id: 'try-template',
-          title: 'Try a "Push Day" Template',
-          description: 'A great way to balance your muscle groups.',
-          action: onTryTemplate,
-        });
-
-        setSuggestions(newSuggestions);
-
       } catch (error) {
         console.error("Failed to fetch suggestions:", error);
-        setSuggestions([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchSuggestions();
-  }, [planVersion, onAddFlexibility, onTryTemplate]);
+    fetchRecommendations();
+  }, [planVersion]);
+
+  const handleAddGoal = async (rec: Recommendation) => {
+    try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const response = await fetch('/api/goals', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` 
+            },
+            body: JSON.stringify({
+                title: rec.title,
+                category: rec.category,
+                metric: rec.metric,
+                target_value: rec.target_value,
+                end_date: rec.category === 'weekly' ? new Date(new Date().setDate(new Date().getDate() + 7)).toISOString() : null
+            })
+        });
+
+        if (response.ok) {
+            toast.success("Goal added successfully!");
+            // Optionally trigger a refresh of GoalTracker here via a callback or context
+        } else {
+            toast.error("Failed to add goal.");
+        }
+    } catch (e) {
+        toast.error("Error adding goal.");
+    }
+  };
 
   if (loading) {
     return (
-      <div className="bg-card rounded-2xl p-6 h-full flex items-center justify-center">
+      <div className="bg-card rounded-3xl p-6 h-full flex items-center justify-center min-h-[200px] border shadow-sm">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="bg-card rounded-2xl p-6 h-full">
-      <h2 className="text-xl font-bold mb-4 text-foreground">
-        <Lightbulb className="w-5 h-5 inline-block mr-2 text-primary" />
-        Suggestions
+    <div className="bg-card rounded-3xl p-6 h-full border shadow-sm flex flex-col">
+      <h2 className="text-xl font-bold mb-6 text-foreground flex items-center gap-2">
+        <Lightbulb className="w-5 h-5 text-yellow-500 fill-yellow-500/20" />
+        Smart Suggestions
       </h2>
-      <div className="space-y-3">
-        {suggestions.length > 0 ? (
-          suggestions.map(suggestion => (
-            <div key={suggestion.id} onClick={suggestion.action} className="bg-background hover:bg-secondary/80 p-4 rounded-lg cursor-pointer transition-colors">
-              <p className="font-semibold text-foreground">{suggestion.title}</p>
-              <p className="text-sm text-secondary-foreground">
-                {suggestion.description}
-              </p>
+      
+      <div className="space-y-3 flex-1 overflow-y-auto max-h-[300px] scrollbar-hide">
+        {recommendations.length > 0 ? (
+          recommendations.map((rec, index) => (
+            <div key={index} className="bg-background border hover:border-primary/30 p-4 rounded-xl transition-all group relative overflow-hidden">
+               {/* Decorative background element */}
+               <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <Sparkles className="w-12 h-12" />
+               </div>
+
+              <div className="relative z-10">
+                  <div className="flex justify-between items-start mb-1">
+                    <h4 className="font-semibold text-foreground text-sm">{rec.title}</h4>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground font-medium uppercase tracking-wide">
+                        {rec.category.replace('_', ' ')}
+                    </span>
+                  </div>
+                  
+                  <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
+                    {rec.description}
+                  </p>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full h-8 text-xs hover:bg-primary hover:text-primary-foreground transition-colors"
+                    onClick={() => handleAddGoal(rec)}
+                  >
+                    <Plus className="w-3.5 h-3.5 mr-1.5" /> Add Goal
+                  </Button>
+              </div>
             </div>
           ))
         ) : (
-          <p className="text-sm text-secondary-foreground text-center py-4">No suggestions at the moment. Keep up the great work!</p>
+          <div className="flex flex-col items-center justify-center h-full py-8 text-center space-y-3">
+             <div className="p-3 bg-muted rounded-full">
+                <Target className="w-6 h-6 text-muted-foreground" />
+             </div>
+             <p className="text-sm text-muted-foreground">Set your profile goals to get recommendations.</p>
+          </div>
         )}
       </div>
     </div>

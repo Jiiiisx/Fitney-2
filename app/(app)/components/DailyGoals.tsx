@@ -10,6 +10,7 @@ interface DailyGoalsProps {
     calories: number;
     workouts: number;
     water?: number;
+    steps?: number;
   };
 }
 
@@ -19,9 +20,9 @@ export default function DailyGoals({ stats }: DailyGoalsProps) {
   const duration = stats?.duration || 0;
   const waterMl = stats?.water || 0;
   
-  // Dynamic estimation for steps based on calories (approx 1 kcal = 18 steps for mixed activity)
-  // This makes steps dynamic without extra DB calls for now.
-  const steps = calories > 0 ? calories * 18 : 0; 
+  // Use backend provided steps if available, otherwise fallback to 0 (or simple estimation if you prefer)
+  // Backend now calculates steps based on workout type/distance which is more accurate.
+  const steps = stats?.steps !== undefined ? stats.steps : (calories > 0 ? calories * 12 : 0); 
   
   // Hardcoded targets for now
   const targetCalories = 500; 

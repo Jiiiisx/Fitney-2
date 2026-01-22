@@ -43,8 +43,10 @@ export async function GET(req: NextRequest) {
     // 1. Get Today's Stats (Workouts)
     const todayLogs = await db
       .select({
+        type: workoutLogs.type,
         duration: workoutLogs.durationMin,
         calories: workoutLogs.caloriesBurned,
+        distance: workoutLogs.distanceKm,
       })
       .from(workoutLogs)
       .where(
@@ -53,6 +55,29 @@ export async function GET(req: NextRequest) {
           gte(workoutLogs.date, todayStart)
         )
       );
+
+    // Calculate Steps (Estimation)
+    let totalSteps = 0;
+    todayLogs.forEach(log => {
+        // If it's a running/walking activity (has distance), prioritize distance
+        if (log.distance && Number(log.distance) > 0) {
+            // Approx 1250 steps per km
+            totalSteps += Math.floor(Number(log.distance) * 1250);
+        } else {
+            // Fallback to duration-based estimation
+            const duration = log.duration || 0;
+            if (log.type === 'Cardio' || log.type?.toLowerCase().includes('run') || log.type?.toLowerCase().includes('walk')) {
+                // Cardio: approx 100 steps per min
+                totalSteps += duration * 100;
+            } else if (log.type === 'Strength' || log.type === 'Weightlifting') {
+                // Strength: approx 30 steps per min (resting, moving weights)
+                totalSteps += duration * 30;
+            } else {
+                // Yoga/Other: low step count
+                totalSteps += duration * 10;
+            }
+        }
+    });
 
     // 1b. Get Today's Water
     const todayWaterLogs = await db
@@ -74,7 +99,8 @@ export async function GET(req: NextRequest) {
       duration: todayLogs.reduce((acc, log) => acc + (log.duration || 0), 0),
       calories: todayLogs.reduce((acc, log) => acc + (log.calories || 0), 0),
       workouts: todayLogs.length,
-      water: totalWater
+      water: totalWater,
+      steps: totalSteps // Add calculated steps
     };
 
     // 2. Get Weekly Activity (Grafik & Insight)

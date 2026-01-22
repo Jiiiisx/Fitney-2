@@ -57,24 +57,24 @@ export async function GET(req: NextRequest) {
       ),
       columns: {
         date: true,
+        name: true, // Fetch name to match specific workouts
       }
     });
 
-    // Create a Set of dates that have logs for O(1) lookup
-    // Format logs date to YYYY-MM-DD
-    const loggedDates = new Set(logs.map(log => format(new Date(log.date), 'yyyy-MM-dd')));
+    // Group logs by date for easier lookup: Map<DateString, Array<LogName>>
+    const logsByDate = new Map<string, string[]>();
+    logs.forEach(log => {
+      const dateStr = format(new Date(log.date), 'yyyy-MM-dd');
+      if (!logsByDate.has(dateStr)) {
+        logsByDate.set(dateStr, []);
+      }
+      logsByDate.get(dateStr)?.push(log.name);
+    });
 
     const formattedSchedule = scheduleDays.map(day => {
-      // Logic: A day is completed if there is a log on that date OR if it's a Rest Day (auto-complete logic can be handled here or frontend)
-      // The user requested validation logic: "if missed, it's missed. if user validates (logs), it's done."
-      // So we strictly check the logs.
-      const isLogged = loggedDates.has(day.date);
-      
-      // Special case: Rest Days might be auto-completed or require manual "check".
-      // Let's assume for now "Rest Day" doesn't need a log entry to be green, OR user must "check" it.
-      // Based on user request "how to ensure user really did it", strict log check is best.
-      // But for Rest Day, "doing it" means resting. Let's leave Rest Day logic to frontend or assume auto-complete for now if date passed.
-      // Actually, user said "jadwal workout", so for Workouts -> check logs.
+      // Logic: A day is completed if there is a log on that date WITH THE SAME NAME
+      const dayLogs = logsByDate.get(day.date) || [];
+      const isLogged = dayLogs.includes(day.name);
       
       return {
         id: day.id,
@@ -82,7 +82,7 @@ export async function GET(req: NextRequest) {
         name: day.name,
         description: day.description,
         date: day.date,
-        is_completed: isLogged, // NEW FIELD
+        is_completed: isLogged, // Matches specific workout name
         exercises: day.userPlanDayExercises.map(ex => ({
           name: ex.exercise.name,
           sets: ex.sets,
