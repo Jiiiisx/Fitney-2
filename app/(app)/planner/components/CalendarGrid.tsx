@@ -93,7 +93,12 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion, onPlan
       });
 
       if (!response.ok) {
-        console.error('Failed to delete the workout.');
+        if (response.status === 404) {
+          // Already deleted, treat as success
+          onPlanChange();
+        } else {
+          console.error('Failed to delete the workout.');
+        }
       } else {
         onPlanChange();
       }

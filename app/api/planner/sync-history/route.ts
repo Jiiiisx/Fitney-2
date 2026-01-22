@@ -4,6 +4,7 @@ import { userPlans, userPlanDays, workoutLogs } from '@/app/lib/schema';
 import { and, eq, sql } from 'drizzle-orm';
 import { isBefore, startOfToday, format } from 'date-fns';
 import { verifyAuth } from '@/app/lib/auth';
+import { updateUserStreak } from '@/app/lib/streaks';
 
 export async function POST(req: NextRequest) {
   try {
@@ -77,6 +78,10 @@ export async function POST(req: NextRequest) {
         caloriesBurned: calories_burned,
       });
       syncedCount++;
+    }
+
+    if (syncedCount > 0) {
+      await updateUserStreak(userId);
     }
 
     return NextResponse.json({ message: `Synced ${syncedCount} day(s) to history.`});

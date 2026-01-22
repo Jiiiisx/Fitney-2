@@ -49,15 +49,6 @@ export default function PlannerPage() {
         onPlanStarted={handlePlanChange}
       />
       <div className="bg-transparent min-h-screen p-4 sm:p-6 lg:p-8">
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground">
-            Workout Planner
-          </h1>
-          <p className="text-base text-secondary-foreground mt-1">
-            Plan your week, stay consistent, and crush your goals.
-          </p>
-        </header>
-
         <div className="grid lg:grid-cols-12 gap-8 items-start">
             {/* LEFT SIDEBAR - STICKY */}
             <aside className="lg:col-span-3 lg:sticky lg:top-8 space-y-8">

@@ -4,6 +4,7 @@ import { db } from "@/app/lib/db";
 import { workoutLogs, userStreaks, userPlans, userPlanDays, waterLogs } from "@/app/lib/schema";
 import { eq, and, gte, lte, desc, sql } from "drizzle-orm";
 import { subDays, startOfDay, endOfDay, format } from "date-fns";
+import { updateUserStreak } from "@/app/lib/streaks";
 
 export const dynamic = 'force-dynamic';
 
@@ -145,13 +146,42 @@ export async function GET(req: NextRequest) {
         .orderBy(desc(workoutLogs.date))
         .limit(3);
 
-    const streakData = await db
+    let streakData = await db
       .select()
       .from(userStreaks)
       .where(eq(userStreaks.userId, userId))
       .limit(1);
 
-    const current_streak = streakData.length > 0 ? streakData[0].currentStreak: 0;
+    // If no streak record exists, or it's 0 (potential stale default), force a recalculation
+    if (streakData.length === 0 || (streakData[0].currentStreak || 0) === 0) {
+       await updateUserStreak(userId);
+       // Re-fetch
+       streakData = await db
+        .select()
+        .from(userStreaks)
+        .where(eq(userStreaks.userId, userId))
+        .limit(1);
+    }
+
+    let current_streak = 0;
+    if (streakData.length > 0) {
+        current_streak = streakData[0].currentStreak || 0;
+        const lastActivityDate = streakData[0].lastActivityDate;
+        
+        if (current_streak > 0 && lastActivityDate) {
+             const lastDate = new Date(lastActivityDate);
+             const today = startOfDay(new Date());
+             const yesterday = subDays(today, 1);
+             
+             const lastStr = format(lastDate, 'yyyy-MM-dd');
+             const todayStr = format(today, 'yyyy-MM-dd');
+             const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
+
+             if (lastStr !== todayStr && lastStr !== yesterdayStr) {
+                current_streak = 0;
+             }
+        }
+    }
 
     const freqQuery = await db
       .select({ type: workoutLogs.type, count: sql<number>`count(*)` })

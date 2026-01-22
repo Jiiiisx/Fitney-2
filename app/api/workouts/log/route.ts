@@ -3,6 +3,7 @@ import { verifyAuth } from "@/app/lib/auth";
 import { db } from "@/app/lib/db";
 import { workoutLogs, users, exercises } from "@/app/lib/schema";
 import { eq } from "drizzle-orm";
+import { updateUserStreak } from "@/app/lib/streaks";
 
 const calculateXpForNextLevel = (level: number) => {
   return Math.floor(100 * Math.pow(level, 1.5));
@@ -89,6 +90,10 @@ export async function POST(req: NextRequest) {
         distanceKm: distance ? String(distance) : null,
         caloriesBurned: Math.floor(Number(duration) * 5) || 0
     });
+
+    // 7. Update Streak
+    // Fire and forget (optional: await if consistency is critical)
+    await updateUserStreak(userId);
 
     return NextResponse.json({ 
         success: true, 

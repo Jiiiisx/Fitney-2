@@ -122,89 +122,133 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const newPlan = await db.transaction(async (tx) => {
-      await tx
-      .update(userPlans)
-      .set({ isActive: false })
-      .where(and(eq(userPlans.userId, userId), eq(userPlans.isActive, true)));
-
-    const insertedUserPlans = await tx
-      .insert(userPlans)
-      .values({
-        userId: userId,
-        sourceProgramId: programId,
-        isActive: true,
-      })
-      .returning({
-        id: userPlans.id,
-        startDate: userPlans.startDate,
+    const result = await db.transaction(async (tx) => {
+      // 1. Check for existing active plan
+      let activePlan = await tx.query.userPlans.findFirst({
+        where: and(eq(userPlans.userId, userId), eq(userPlans.isActive, true)),
       });
 
-    const newUserPlan = insertedUserPlans[0];
-    if (!newUserPlan) {
-      throw new Error('Failed to create new user plan.');
-    }
+      let planId: number;
+      let planStartDate: Date;
 
-    const templateDays = await tx
-      .select()
-      .from(programDays)
-      .where(eq(programDays.programId, programId))
-      .orderBy(asc(programDays.dayNumber));
-
-    if (templateDays.length === 0) {
-      console.log(`Program ${programId} has no days. Created an empty plan for user ${userId}.`);
-      return newUserPlan;
-    }
-
-    const templateDayIds = templateDays.map(d => d.id);
-
-    const allTemplateExercises = await tx
-      .select()
-      .from(programDayExercises)
-      .where(inArray(programDayExercises.programDayId, templateDayIds))
-
-    for (const templateDay of templateDays) {
-      const specificDate = addDays(new Date(newUserPlan.startDate), templateDay.dayNumber - 1);
-
-      const insertedUserPlanDays = await tx
-        .insert(userPlanDays)
-        .values({
-          userPlanId: newUserPlan.id,
-          dayNumber: templateDay.dayNumber,
-          date: format(specificDate, 'yyyy-MM-dd'),
-          name: templateDay.name,
-        })
-        .returning({ id: userPlanDays.id });
-
-      const newUserPlanDayId = insertedUserPlanDays[0].id;
-
-      const exercisesForThisDay = allTemplateExercises.filter(
-        (ex) => ex.programDayId === templateDay.id
-      );
-
-      if (exercisesForThisDay.length > 0 ) {
-        await tx.insert(userPlanDayExercises).values(
-          exercisesForThisDay.map((ex) => ({
-            userPlanDayId: newUserPlanDayId,
-            exerciseId: ex.exerciseId,
-            sets: ex.sets,
-            reps: ex.reps,
-            durationSeconds: ex.durationSeconds,
-            notes: ex.notes,
-            displayOrder: ex.displayOrder,
-            isCompleted: false,
-          }))
-        );
+      if (activePlan) {
+        // MERGE MODE
+        planId = activePlan.id;
+        // Start date for the MERGE is "Today" so the new program starts effectively from now
+        // This ensures the user doesn't get workouts inserted in the past
+        planStartDate = new Date(); 
+      } else {
+        // CREATE NEW MODE
+        const insertedUserPlans = await tx
+          .insert(userPlans)
+          .values({
+            userId: userId,
+            sourceProgramId: programId,
+            isActive: true,
+            startDate: format(new Date(), 'yyyy-MM-dd'), // Explicitly set today
+          })
+          .returning({
+            id: userPlans.id,
+            startDate: userPlans.startDate,
+          });
+        
+        if (!insertedUserPlans[0]) throw new Error('Failed to create new user plan.');
+        
+        planId = insertedUserPlans[0].id;
+        planStartDate = new Date(insertedUserPlans[0].startDate); // Should be today
       }
-    }
 
-    return newUserPlan;
+      // 2. Fetch Template Days
+      const templateDays = await tx
+        .select()
+        .from(programDays)
+        .where(eq(programDays.programId, programId))
+        .orderBy(asc(programDays.dayNumber));
+
+      if (templateDays.length === 0) {
+        return { message: 'Program has no days', planId };
+      }
+
+      const templateDayIds = templateDays.map(d => d.id);
+      const allTemplateExercises = await tx
+        .select()
+        .from(programDayExercises)
+        .where(inArray(programDayExercises.programDayId, templateDayIds));
+
+      // 3. Iterate and Merge
+      for (const templateDay of templateDays) {
+        // Calculate the target date for this template day relative to merge start date
+        // Day 1 = Today, Day 2 = Tomorrow, etc.
+        const targetDate = addDays(planStartDate, templateDay.dayNumber - 1);
+        const targetDateStr = format(targetDate, 'yyyy-MM-dd');
+
+        // Check if there is already a workout on this date
+        const existingDays = await tx
+          .select()
+          .from(userPlanDays)
+          .where(
+            and(
+              eq(userPlanDays.userPlanId, planId),
+              eq(userPlanDays.date, targetDateStr)
+            )
+          );
+
+        let shouldInsert = true;
+        
+        // Conflict Resolution Logic
+        if (existingDays.length > 0) {
+           for (const existingDay of existingDays) {
+              if (existingDay.name === 'Rest Day') {
+                 // If it's a Rest Day, we DELETE it and replace it with the new workout
+                 // This solves "Rest Day getting overwritten" -> effectively replaced
+                 await tx.delete(userPlanDays).where(eq(userPlanDays.id, existingDay.id));
+              } else {
+                 // If it's a REAL workout, we KEEP it and ADD the new one (stacking)
+                 // So we don't change 'shouldInsert', we just let it insert a second row.
+                 // This solves "Manual workout disappearing" -> Now both exist.
+              }
+           }
+        }
+
+        if (shouldInsert) {
+           const insertedUserPlanDays = await tx
+            .insert(userPlanDays)
+            .values({
+              userPlanId: planId,
+              dayNumber: templateDay.dayNumber, // Note: This dayNumber might duplicate existing ones, but that's fine for rendering
+              date: targetDateStr,
+              name: templateDay.name,
+              description: templateDay.description
+            })
+            .returning({ id: userPlanDays.id });
+          
+          const newUserPlanDayId = insertedUserPlanDays[0].id;
+
+          const exercisesForThisDay = allTemplateExercises.filter(
+            (ex) => ex.programDayId === templateDay.id
+          );
+
+          if (exercisesForThisDay.length > 0) {
+             await tx.insert(userPlanDayExercises).values(
+              exercisesForThisDay.map((ex) => ({
+                userPlanDayId: newUserPlanDayId,
+                exerciseId: ex.exerciseId,
+                sets: ex.sets,
+                reps: ex.reps,
+                durationSeconds: ex.durationSeconds,
+                notes: ex.notes,
+                displayOrder: ex.displayOrder,
+                isCompleted: false,
+              }))
+            );
+          }
+        }
+      }
+
+      return { message: 'Plan merged successfully', planId };
     });
 
-    return NextResponse.json({
-      message: 'Active plan created succesfully',
-      planId: newPlan.id,
-    });
+    return NextResponse.json(result);
   } catch (e: any) {
     console.error('Failed to create active plan:', e);
     return NextResponse.json({ error: 'Internal Server Error'}, { status: 500 });

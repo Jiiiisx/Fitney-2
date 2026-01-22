@@ -130,7 +130,7 @@ export default function NutritionResults({ userData, onEdit }: NutritionResultsP
   const calPercentage = Math.min(100, (consumedCalories / targetCalories) * 100);
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="space-y-6">
       
       {/* SECTION 1: COMPACT SUMMARY */}
       <Card className="overflow-hidden border-none shadow-md bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20">

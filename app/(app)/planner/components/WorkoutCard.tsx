@@ -9,7 +9,8 @@ import {
   X,
   ChevronDown,
   AlertCircle,
-  Check
+  Check,
+  Loader2
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -38,18 +39,26 @@ const typeConfig = {
 
 interface WorkoutCardProps {
   workout: Workout;
-  onDelete: (id: number) => void;
+  onDelete: (id: number) => Promise<void> | void;
   onComplete?: () => void;
 }
 
 export default function WorkoutCard({ workout, onDelete, onComplete }: WorkoutCardProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const config = typeConfig[workout.type];
   const hasExercises = workout.exercises && workout.exercises.length > 0;
 
-  const handleDeleteClick = (e: React.MouseEvent) => {
+  const handleDeleteClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    onDelete(workout.id);
+    if (isDeleting) return;
+    
+    setIsDeleting(true);
+    try {
+        await onDelete(workout.id);
+    } catch (error) {
+        setIsDeleting(false);
+    }
   };
 
   const handleCardClick = () => {
@@ -68,7 +77,8 @@ export default function WorkoutCard({ workout, onDelete, onComplete }: WorkoutCa
   return (
     <div className={cn(
       "relative p-3 rounded-xl border transition-all duration-200 shadow-sm hover:shadow-md w-full flex flex-col justify-between",
-      statusStyles[workout.status] || statusStyles.scheduled
+      statusStyles[workout.status] || statusStyles.scheduled,
+      isDeleting && "opacity-50 pointer-events-none"
     )}>
       {/* Header Section */}
       <div 
@@ -104,10 +114,11 @@ export default function WorkoutCard({ workout, onDelete, onComplete }: WorkoutCa
           )}
           <button 
             onClick={handleDeleteClick} 
-            className="p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors"
+            disabled={isDeleting}
+            className="p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors disabled:opacity-50"
             aria-label="Delete workout"
           >
-            <X size={16} />
+            {isDeleting ? <Loader2 size={16} className="animate-spin" /> : <X size={16} />}
           </button>
         </div>
       </div>
