@@ -20,11 +20,7 @@ export default function ActionModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
-        {/* The header is now part of the form components for better control */}
-        {/* <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader> */}
+        <DialogTitle className="sr-only">Action Modal</DialogTitle>
         {children}
       </DialogContent>
     </Dialog>
