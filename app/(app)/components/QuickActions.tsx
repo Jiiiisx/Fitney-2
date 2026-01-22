@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { Plus, Utensils, GlassWater, Bed } from "lucide-react";
+import { Plus, Utensils, GlassWater } from "lucide-react";
 import ActionModal from "./ActionModal";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -19,7 +19,6 @@ const FormLoadingSkeleton = () => (
 const AddWaterForm = dynamic(() => import('./forms/AddWaterForm'), { loading: () => <FormLoadingSkeleton/>});
 const AddMealForm = dynamic(() => import('./forms/AddMealForm'), { loading: () => <FormLoadingSkeleton/>});
 const LogWorkoutForm = dynamic(() => import('./forms/LogWorkoutForm'), { loading: () => <FormLoadingSkeleton/>});
-const AddSleepForm = dynamic(() => import('./forms/AddSleepForm'), { loading: () => <FormLoadingSkeleton/>});
 
 const actions = [
   {
@@ -43,21 +42,7 @@ const actions = [
     color: "bg-sky-100 dark:bg-sky-900/50",
     textColor: "text-sky-600 dark:text-sky-400",
   },
-  {
-    id: "add-sleep",
-    label: "Add Sleep",
-    icon: Bed,
-    color: "bg-purple-100 dark:bg-purple-900/50",
-    textColor: "text-purple-600 dark:text-purple-400",
-  },
 ];
-
-const modalContent: { [key: string]: React.ReactNode } = {
-    "add-water": <AddWaterForm />,
-    "add-meal": <AddMealForm />,
-    "log-workout": <LogWorkoutForm />,
-    "add-sleep": <AddSleepForm />,
-};
 
 const ActionButton = ({ action, onClick }: { action: (typeof actions)[0], onClick: () => void }) => (
   <button 
@@ -76,10 +61,28 @@ export default function QuickActions() {
 
   const closeModal = () => setActiveModal(null);
 
+  const handleActionCompleted = () => {
+    closeModal();
+    window.location.reload();
+  };
+
+  const renderModalContent = () => {
+    switch (activeModal) {
+      case "add-water":
+        return <AddWaterForm onCompleted={handleActionCompleted} />;
+      case "add-meal":
+        return <AddMealForm onCompleted={handleActionCompleted} />;
+      case "log-workout":
+        return <LogWorkoutForm onSuccess={handleActionCompleted} onCancel={closeModal} />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <div>
       <h2 className="text-xl font-bold text-foreground mb-4">Quick Actions</h2>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         {actions.map((action) => (
           <ActionButton 
             key={action.label} 
@@ -90,7 +93,7 @@ export default function QuickActions() {
       </div>
 
       <ActionModal isOpen={!!activeModal} onClose={closeModal}>
-        {activeModal && modalContent[activeModal]}
+        {renderModalContent()}
       </ActionModal>
     </div>
   );

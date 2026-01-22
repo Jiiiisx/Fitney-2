@@ -9,10 +9,10 @@ declare global {
   var drizzleDb: DrizzleDB | undefined;
 }
 
-const connectionString = process.env.POSTGRES_URL;
+const connectionString = process.env.POSTGRES_URL || process.env.DATABASE_URL;
 
 if (!connectionString) {
-  throw new Error('Variabel lingkungan POSTGRES_URL tidak diatur. Silakan periksa file .env.local Anda');
+  throw new Error('Variabel lingkungan POSTGRES_URL atau DATABASE_URL tidak diatur. Silakan periksa file .env.local Anda');
 }
 
 let pool: Pool;

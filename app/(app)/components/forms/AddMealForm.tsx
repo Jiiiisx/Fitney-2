@@ -35,7 +35,7 @@ type Food = {
   fatPer100g: string;
 };
 
-export default function AddMealForm() {
+export default function AddMealForm({ onCompleted }: { onCompleted?: () => void }) {
   const [step, setStep] = useState<"search" | "details">("search");
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Food[]>([]);
@@ -101,6 +101,7 @@ export default function AddMealForm() {
       if (!res.ok) throw new Error("Failed to log food");
 
       toast.success("Meal logged successfully!");
+      if (onCompleted) onCompleted();
       // Optional: Trigger global refresh or close modal via props if needed
       // window.location.reload(); // Quick dirty refresh, better to use context/SWR mutation
     } catch (error) {
