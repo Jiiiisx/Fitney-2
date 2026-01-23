@@ -2,12 +2,15 @@
 
 import { createContext, useContext, useState, ReactNode } from "react";
 
-type ViewMode = "feed" | "group_chat";
+type ViewMode = "feed" | "group_chat" | "find_friends" | "user_profile";
 
 interface CommunityContextType {
   activeView: ViewMode;
+  setActiveView: (view: ViewMode) => void;
   selectedGroupId: number | null;
   selectedGroupName: string | null;
+  selectedUser: string | null;
+  setSelectedUser: (userId: string | null) => void;
   navigateToFeed: () => void;
   navigateToGroupChat: (groupId: number, groupName: string) => void;
 }
@@ -18,11 +21,13 @@ export function CommunityProvider({ children }: { children: ReactNode }) {
   const [activeView, setActiveView] = useState<ViewMode>("feed");
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
   const [selectedGroupName, setSelectedGroupName] = useState<string | null>(null);
+  const [selectedUser, setSelectedUser] = useState<string | null>(null);
 
   const navigateToFeed = () => {
     setActiveView("feed");
     setSelectedGroupId(null);
     setSelectedGroupName(null);
+    setSelectedUser(null);
   };
 
   const navigateToGroupChat = (groupId: number, groupName: string) => {
@@ -32,7 +37,16 @@ export function CommunityProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <CommunityContext.Provider value={{ activeView, selectedGroupId, selectedGroupName, navigateToFeed, navigateToGroupChat }}>
+    <CommunityContext.Provider value={{ 
+        activeView, 
+        setActiveView,
+        selectedGroupId, 
+        selectedGroupName, 
+        selectedUser,
+        setSelectedUser,
+        navigateToFeed, 
+        navigateToGroupChat 
+    }}>
       {children}
     </CommunityContext.Provider>
   );

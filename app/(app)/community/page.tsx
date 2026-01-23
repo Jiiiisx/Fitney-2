@@ -4,11 +4,27 @@ import LeftSidebar from "./components/LeftSidebar";
 import MainFeed from "./components/MainFeed";
 import RightSidebar from "./components/RightSidebar";
 import GroupChatView from "./components/GroupChatView";
+import FindFriendsView from "./components/FindFriendsView";
+import UserProfileView from "./components/UserProfileView";
 import { CommunityProvider, useCommunityNavigation } from "./CommunityContext";
 
 // Inner component to consume Context
 const CommunityContent = () => {
   const { activeView } = useCommunityNavigation();
+
+  const renderContent = () => {
+    switch (activeView) {
+      case "group_chat":
+        return <GroupChatView />;
+      case "find_friends":
+        return <FindFriendsView />;
+      case "user_profile":
+        return <UserProfileView />;
+      case "feed":
+      default:
+        return <MainFeed />;
+    }
+  };
 
   return (
     <div className="h-full flex flex-col">
@@ -24,11 +40,7 @@ const CommunityContent = () => {
         {/* Main Center Area (Switchable) */}
         <main className="w-full lg:w-[50%] bg-background overflow-y-auto">
           <div className="p-6 h-full">
-            {activeView === "group_chat" ? (
-                <GroupChatView />
-            ) : (
-                <MainFeed />
-            )}
+            {renderContent()}
           </div>
         </main>
 

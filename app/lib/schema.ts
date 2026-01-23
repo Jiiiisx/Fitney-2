@@ -266,6 +266,15 @@ export const groupMessages = pgTable('group_messages', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
 
+export const directMessages = pgTable('direct_messages', {
+  id: serial('id').primaryKey(),
+  senderId: uuid('sender_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  receiverId: uuid('receiver_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  content: text('content').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  isRead: boolean('is_read').default(false),
+});
+
 
 
 // User Settings
@@ -387,6 +396,13 @@ export const usersRelations = relations(users, ({ one, many }) => ({
 	postComments: many(postComments),
     userGroups: many(userGroups),
     createdGroups: many(groups),
+    sentMessages: many(directMessages, { relationName: 'sentMessages' }),
+    receivedMessages: many(directMessages, { relationName: 'receivedMessages' }),
+}));
+
+export const directMessagesRelations = relations(directMessages, ({ one }) => ({
+	sender: one(users, { fields: [directMessages.senderId], references: [users.id], relationName: 'sentMessages' }),
+	receiver: one(users, { fields: [directMessages.receiverId], references: [users.id], relationName: 'receivedMessages' }),
 }));
 
 export const userProfilesRelations = relations(userProfiles, ({ one }) => ({

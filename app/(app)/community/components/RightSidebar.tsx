@@ -1,12 +1,15 @@
 "use client";
 
-import { Award, Calendar, UserPlus, Loader2, User, Check } from "lucide-react";
+import { Award, Calendar, UserPlus, Loader2, User, Check, ArrowRight } from "lucide-react";
 import { useState } from "react";
 import { useSuggestions, followUser } from "../hooks/useCommunity";
+import { Button } from "@/components/ui/button";
+import { useCommunityNavigation } from "../CommunityContext";
 
 export default function RightSidebar() {
   const { suggestions, isLoading } = useSuggestions();
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
+  const { setActiveView } = useCommunityNavigation();
 
   const handleFollow = async (userId: string) => {
     // Optimistic UI update local state
@@ -39,14 +42,20 @@ export default function RightSidebar() {
     <div className="space-y-6">
       {/* Find Friends */}
       <div className="bg-background p-5 rounded-xl border border-border shadow-sm">
-        <h3 className="font-bold text-lg mb-4 text-foreground">
-          Find Friends
-        </h3>
+        <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-lg text-foreground">
+            Find Friends
+            </h3>
+            <Button variant="link" className="p-0 h-auto text-xs" onClick={() => setActiveView("find_friends")}>
+                View All <ArrowRight className="ml-1 w-3 h-3"/>
+            </Button>
+        </div>
+        
         {isLoading ? (
             <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>
         ) : suggestions && suggestions.length > 0 ? (
             <ul className="space-y-4">
-            {suggestions.map((user: any) => {
+            {suggestions.slice(0, 3).map((user: any) => {
                 const isFollowed = followingIds.has(user.id);
                 return (
                     <li key={user.id} className="flex items-center justify-between">

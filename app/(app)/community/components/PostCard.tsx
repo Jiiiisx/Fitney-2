@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { likePost } from "../hooks/useCommunity";
 import CommentSection from "./CommentSection";
+import { useCommunityNavigation } from "../CommunityContext";
 
 interface PostData {
   id: number;
@@ -61,6 +62,7 @@ export default function PostCard({
   const [post, setPost] = useState(initialPost);
   const [isLiking, setIsLike] = useState(false);
   const [showComments, setShowComments] = useState(false);
+  const { setSelectedUser, setActiveView } = useCommunityNavigation();
 
   // Helper untuk format tanggal aman
   const formatDate = (dateString: string) => {
@@ -69,6 +71,14 @@ export default function PostCard({
     } catch (e) {
       return "just now";
     }
+  };
+
+  const handleUserClick = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (post.userId) {
+          setSelectedUser(post.userId);
+          setActiveView("user_profile");
+      }
   };
 
   const handleLike = async () => {
@@ -143,7 +153,7 @@ export default function PostCard({
       )}
 
       {/* Post Header */}
-      <div className="flex items-center mb-4">
+      <div className="flex items-center mb-4 cursor-pointer" onClick={handleUserClick}>
         {post.user.avatar ? (
           <img
             src={post.user.avatar}
@@ -158,7 +168,7 @@ export default function PostCard({
           </div>
         )}
         <div>
-          <p className="font-bold text-foreground text-sm">{post.user.name}</p>
+          <p className="font-bold text-foreground text-sm hover:underline">{post.user.name}</p>
           <p className="text-xs text-muted-foreground">
             {formatDate(post.createdAt)}
           </p>
