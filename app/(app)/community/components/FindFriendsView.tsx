@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, UserPlus, UserCheck, Loader2 } from "lucide-react";
+import { Search, UserPlus, UserCheck, Loader2, Users, ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -22,10 +22,71 @@ type UserResult = {
 export default function FindFriendsView() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<UserResult[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loadingSearch, setLoadingSearch] = useState(false);
+  
+  // State baru untuk mode tampilan & following list
+  const [viewMode, setViewMode] = useState<'list' | 'find'>('find'); 
+  const [followingList, setFollowingList] = useState<UserResult[]>([]);
+  const [loadingFollowing, setLoadingFollowing] = useState(true);
+
+  const [recommendations, setRecommendations] = useState<UserResult[]>([]);
+  const [loadingRecs, setLoadingRecs] = useState(false);
+
   const { setActiveView, setSelectedUser } = useCommunityNavigation();
 
-  // Debounce search
+  // 1. Fetch Following List on Mount
+  useEffect(() => {
+    const fetchFollowing = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`/api/community/users/following`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setFollowingList(data);
+          // Jika punya following, default ke 'list' view
+          if (data.length > 0) {
+            setViewMode('list');
+          } else {
+            setViewMode('find');
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch following list", error);
+      } finally {
+        setLoadingFollowing(false);
+      }
+    };
+
+    fetchFollowing();
+  }, []);
+
+  // 2. Fetch Recommendations (hanya jika masuk mode find)
+  useEffect(() => {
+    if (viewMode === 'find') {
+      const fetchRecommendations = async () => {
+          setLoadingRecs(true);
+          try {
+              const token = localStorage.getItem("token");
+              const res = await fetch(`/api/community/users/recommendations`, {
+                  headers: { Authorization: `Bearer ${token}` }
+              });
+              if (res.ok) {
+                  const data = await res.json();
+                  setRecommendations(data);
+              }
+          } catch (error) {
+              console.error("Failed to fetch recommendations", error);
+          } finally {
+              setLoadingRecs(false);
+          }
+      };
+      fetchRecommendations();
+    }
+  }, [viewMode]);
+
+  // 3. Search Logic (Debounce)
   useEffect(() => {
     const timer = setTimeout(() => {
       if (query.length >= 2) {
@@ -38,7 +99,7 @@ export default function FindFriendsView() {
   }, [query]);
 
   const performSearch = async () => {
-    setLoading(true);
+    setLoadingSearch(true);
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(`/api/community/users/search?q=${query}`, {
@@ -51,12 +112,12 @@ export default function FindFriendsView() {
     } catch (error) {
       console.error("Search failed", error);
     } finally {
-      setLoading(false);
+      setLoadingSearch(false);
     }
   };
 
   const handleFollowToggle = async (e: React.MouseEvent, user: UserResult) => {
-    e.stopPropagation(); // Prevent card click
+    e.stopPropagation(); 
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(`/api/community/users/${user.id}/follow`, {
@@ -65,10 +126,28 @@ export default function FindFriendsView() {
       });
       
       if (res.ok) {
+         const isNowFollowing = !user.isFollowing;
+         
+         // Update Search Results UI
          setResults(prev => prev.map(u => 
-            u.id === user.id ? { ...u, isFollowing: !u.isFollowing } : u
+            u.id === user.id ? { ...u, isFollowing: isNowFollowing } : u
          ));
-         toast.success(user.isFollowing ? "Unfollowed" : "Following!");
+
+         // Update Recommendations UI
+         setRecommendations(prev => prev.map(u => 
+             u.id === user.id ? { ...u, isFollowing: isNowFollowing } : u
+         ));
+
+         // Update Following List UI locally
+         if (isNowFollowing) {
+             // Add to list (optimistic)
+             setFollowingList(prev => [{ ...user, isFollowing: true }, ...prev]);
+         } else {
+             // Remove from list
+             setFollowingList(prev => prev.filter(u => u.id !== user.id));
+         }
+
+         toast.success(isNowFollowing ? "Following!" : "Unfollowed");
       }
     } catch (error) {
       toast.error("Action failed");
@@ -80,36 +159,105 @@ export default function FindFriendsView() {
       setActiveView("user_profile");
   };
 
-  const [recommendations, setRecommendations] = useState<UserResult[]>([]);
-  const [loadingRecs, setLoadingRecs] = useState(false);
+  // --- RENDER: LOADING INITIAL ---
+  if (loadingFollowing) {
+      return (
+          <div className="flex justify-center p-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+      );
+  }
 
-  useEffect(() => {
-    const fetchRecommendations = async () => {
-        setLoadingRecs(true);
-        try {
-            const token = localStorage.getItem("token");
-            const res = await fetch(`/api/community/users/recommendations`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setRecommendations(data);
-            }
-        } catch (error) {
-            console.error("Failed to fetch recommendations", error);
-        } finally {
-            setLoadingRecs(false);
-        }
-    };
+  // --- RENDER: LIST VIEW (MY CONNECTIONS) ---
+  if (viewMode === 'list') {
+      return (
+        <div className="space-y-6 animate-in fade-in duration-500">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="-ml-2" 
+                        onClick={() => setActiveView('feed')}
+                        title="Back to Feed"
+                    >
+                        <ArrowLeft className="h-6 w-6" />
+                    </Button>
+                    <div>
+                        <h2 className="text-2xl font-bold">My Connections</h2>
+                        <p className="text-muted-foreground">People you follow ({followingList.length})</p>
+                    </div>
+                </div>
+                <Button onClick={() => setViewMode('find')}>
+                    <UserPlus className="mr-2 h-4 w-4" /> Find New Friends
+                </Button>
+            </div>
 
-    fetchRecommendations();
-  }, []);
+            <div className="space-y-4">
+                {followingList.length === 0 ? (
+                    <div className="text-center py-10 border border-dashed rounded-xl">
+                        <p className="text-muted-foreground mb-4">You aren't following anyone yet.</p>
+                        <Button variant="outline" onClick={() => setViewMode('find')}>Start Exploring</Button>
+                    </div>
+                ) : (
+                    followingList.map((user) => (
+                        <Card 
+                            key={user.id} 
+                            className="cursor-pointer hover:bg-muted/50 transition-colors"
+                            onClick={() => handleViewProfile(user.id)}
+                        >
+                            <CardContent className="p-4 flex items-center justify-between">
+                                <div className="flex items-center gap-4">
+                                    <Avatar className="h-12 w-12 border-2 border-background">
+                                        <AvatarImage src={user.imageUrl || ""} />
+                                        <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                        <h4 className="font-semibold text-lg leading-none">{user.fullName || user.username}</h4>
+                                        <p className="text-sm text-muted-foreground">@{user.username} • Lvl {user.level}</p>
+                                    </div>
+                                </div>
+                                <Button 
+                                    size="sm" 
+                                    variant="secondary" // Always 'secondary' because they are followed
+                                    onClick={(e) => handleFollowToggle(e, user)}
+                                >
+                                    <UserCheck className="mr-2 h-4 w-4" /> Following
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    ))
+                )}
+            </div>
+        </div>
+      );
+  }
 
+  // --- RENDER: FIND VIEW (SEARCH & RECS) ---
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold">Find Friends</h2>
-        <p className="text-muted-foreground">Search for people to follow and connect with.</p>
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="space-y-1">
+            <div className="flex items-center gap-2">
+                <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="-ml-2" 
+                    onClick={() => followingList.length > 0 ? setViewMode('list') : setActiveView('feed')}
+                    title={followingList.length > 0 ? "Back to Connections" : "Back to Feed"}
+                >
+                    <ArrowLeft className="h-6 w-6" />
+                </Button>
+                <h2 className="text-2xl font-bold">Find Friends</h2>
+            </div>
+            <p className="text-muted-foreground">Search for people to follow and connect with.</p>
+        </div>
+        
+        {followingList.length > 0 && (
+             <Button variant="outline" size="sm" onClick={() => setViewMode('list')} className="hidden md:flex">
+                <Users className="mr-2 h-4 w-4" /> My Connections
+             </Button>
+        )}
       </div>
 
       <div className="relative">
@@ -119,21 +267,22 @@ export default function FindFriendsView() {
           className="pl-10 h-12 text-lg"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          autoFocus
         />
       </div>
 
       <div className="space-y-4">
-        {loading && (
+        {loadingSearch && (
              <div className="flex justify-center p-8">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
              </div>
         )}
 
-        {!loading && query === "" && (
-            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        {/* REKOMENDASI (Hanya jika tidak sedang mencari) */}
+        {!loadingSearch && query === "" && (
+            <div className="space-y-4">
                 <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold text-foreground">Recommended for You</h3>
-                    <Button variant="link" className="text-primary h-auto p-0">View All</Button>
                 </div>
                 
                 {loadingRecs ? (
@@ -172,12 +321,13 @@ export default function FindFriendsView() {
                         ))}
                     </div>
                 ) : (
-                    <div className="text-sm text-muted-foreground italic">No recommendations available at the moment.</div>
+                    <div className="text-sm text-muted-foreground italic">No new recommendations available.</div>
                 )}
             </div>
         )}
 
-        {!loading && results.length === 0 && query.length >= 2 && (
+        {/* HASIL PENCARIAN */}
+        {!loadingSearch && results.length === 0 && query.length >= 2 && (
             <div className="text-center p-8 text-muted-foreground">
                 No users found matching "{query}"
             </div>

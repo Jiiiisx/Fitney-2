@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/app/lib/db";
-import { postLikes } from "@/app/lib/schema";
+import { postLikes, posts } from "@/app/lib/schema";
 import { verifyAuth } from "@/app/lib/auth";
 import { and, eq } from "drizzle-orm";
+import { createNotification } from "@/app/lib/notifications";
 
 export async function POST(
   req: NextRequest,
@@ -12,8 +13,6 @@ export async function POST(
     const auth = await verifyAuth(req);
     if (auth.error) return auth.error;
 
-    // Await params in Next.js 15+ (if applicable, but safe for 13/14 too usually) or just access if not promise
-    // In recent Next.js versions params is a Promise.
     const { postId } = await params;
     const postIdInt = parseInt(postId);
 
@@ -22,6 +21,15 @@ export async function POST(
     }
 
     const userId = auth.user.userId;
+
+    // Ambil info post untuk tau siapa pemiliknya
+    const post = await db.query.posts.findFirst({
+        where: eq(posts.id, postIdInt)
+    });
+
+    if (!post) {
+        return NextResponse.json({ error: "Post not found" }, { status: 404 });
+    }
 
     // Cek apakah user sudah like post ini
     const existingLike = await db
@@ -55,6 +63,18 @@ export async function POST(
         postId: postIdInt,
         userId: userId,
       });
+
+      // KIRIM NOTIFIKASI
+      if (post.userId !== userId) {
+          await createNotification({
+              recipientId: post.userId,
+              senderId: userId,
+              type: 'like',
+              resourceId: postIdInt,
+              message: "liked your post",
+              linkUrl: `/community/posts/${postIdInt}`
+          });
+      }
 
       return NextResponse.json({ 
         liked: true, 

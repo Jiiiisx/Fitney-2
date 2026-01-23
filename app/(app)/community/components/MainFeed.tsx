@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Globe, User } from "lucide-react";
+import { Loader2, Globe, User, Users } from "lucide-react";
 import CreatePost from "./CreatePost";
 import PostCard from "./PostCard";
 import { useCommunityFeed, FeedFilter } from "../hooks/useCommunity";
@@ -61,6 +61,21 @@ export default function MainFeed() {
           <Globe className="w-4 h-4" />
           Community
           {filter === "all" && (
+            <span className="absolute bottom-[-9px] left-0 w-full h-[2px] bg-primary rounded-full" />
+          )}
+        </button>
+
+        <button
+          onClick={() => setFilter("friends")}
+          className={`flex items-center gap-2 pb-2 text-sm font-medium transition-colors relative ${
+            filter === "friends"
+              ? "text-primary"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Users className="w-4 h-4" />
+          Friends
+          {filter === "friends" && (
             <span className="absolute bottom-[-9px] left-0 w-full h-[2px] bg-primary rounded-full" />
           )}
         </button>

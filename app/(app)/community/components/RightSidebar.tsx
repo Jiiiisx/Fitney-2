@@ -2,14 +2,32 @@
 
 import { Award, Calendar, UserPlus, Loader2, User, Check, ArrowRight } from "lucide-react";
 import { useState } from "react";
+import useSWR from "swr"; // Import SWR
 import { useSuggestions, followUser } from "../hooks/useCommunity";
 import { Button } from "@/components/ui/button";
 import { useCommunityNavigation } from "../CommunityContext";
+
+// Reuse fetcher
+const fetcher = (url: string) => {
+    const token = localStorage.getItem("token");
+    return fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    }).then((res) => {
+      if (!res.ok) throw new Error("Failed to fetch");
+      return res.json();
+    });
+};
 
 export default function RightSidebar() {
   const { suggestions, isLoading } = useSuggestions();
   const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
   const { setActiveView } = useCommunityNavigation();
+
+  // Fetch Top Achievers (Friends)
+  const { data: achievers, isLoading: isLoadingAchievers } = useSWR("/api/community/stats/achievers", fetcher);
+
+  // Fetch Upcoming Events
+  const { data: events, isLoading: isLoadingEvents } = useSWR("/api/community/events/upcoming", fetcher);
 
   const handleFollow = async (userId: string) => {
     // Optimistic UI update local state
@@ -28,15 +46,10 @@ export default function RightSidebar() {
     }
   };
 
-  const topAchievers = [
-    { name: "Sarah J.", stat: "50 workouts", rank: "🥇" },
-    { name: "David L.", stat: "100km run", rank: "🥈" },
-  ];
-
-  const upcomingEvents = [
-    { name: "Community Yoga", time: "Sunday, 7 AM" },
-    { name: "Weekend Jog", time: "Saturday, 8 AM" },
-  ];
+  const formatDate = (dateString: string) => {
+      const date = new Date(dateString);
+      return new Intl.DateTimeFormat('en-US', { weekday: 'long', hour: 'numeric', minute: '2-digit' }).format(date);
+  };
 
   return (
     <div className="space-y-6">
@@ -97,39 +110,63 @@ export default function RightSidebar() {
         )}
       </div>
 
-      {/* Top Achievers (Static for now) */}
+      {/* Top Friend Achievers */}
       <div className="bg-background p-5 rounded-xl border border-border shadow-sm">
         <h3 className="font-bold text-lg mb-4 flex items-center text-foreground">
           <Award className="w-5 h-5 mr-3 text-primary" />
-          Top Achievers
+          Top Friend Achievers
         </h3>
-        <ul className="space-y-3">
-          {topAchievers.map((achiever) => (
-            <li key={achiever.name} className="flex items-center text-foreground">
-              <span className="text-xl mr-3">{achiever.rank}</span>
-              <div>
-                <span className="font-semibold">{achiever.name}</span>
-                <p className="text-sm text-secondary-foreground">{achiever.stat}</p>
-              </div>
-            </li>
-          ))}
-        </ul>
+        
+        {isLoadingAchievers ? (
+             <div className="space-y-3">
+                {[1,2,3].map(i => <div key={i} className="h-10 bg-muted/50 rounded animate-pulse" />)}
+             </div>
+        ) : achievers && achievers.length > 0 ? (
+            <ul className="space-y-3">
+            {achievers.map((achiever: any) => (
+                <li key={achiever.id} className={`flex items-center p-2 rounded-md ${achiever.isMe ? "bg-primary/5 border border-primary/20" : ""}`}>
+                <span className="text-xl mr-3 w-6 text-center">{achiever.rank}</span>
+                <div className="flex-1 min-w-0">
+                    <span className={`font-semibold block truncate ${achiever.isMe ? "text-primary" : "text-foreground"}`}>
+                        {achiever.name} {achiever.isMe && "(You)"}
+                    </span>
+                    <p className="text-sm text-muted-foreground">{achiever.stat}</p>
+                </div>
+                </li>
+            ))}
+            </ul>
+        ) : (
+            <div className="text-center py-4 text-muted-foreground text-sm">
+                Add friends to see who's topping the leaderboard!
+            </div>
+        )}
       </div>
 
-      {/* Upcoming Events (Static for now) */}
+      {/* Upcoming Events */}
       <div className="bg-background p-5 rounded-xl border border-border shadow-sm">
         <h3 className="font-bold text-lg mb-4 flex items-center text-foreground">
           <Calendar className="w-5 h-5 mr-3 text-primary" />
           Upcoming Events
         </h3>
-        <ul className="space-y-3">
-          {upcomingEvents.map((event) => (
-            <li key={event.name} className="p-2 rounded-md hover:bg-secondary/80 cursor-pointer transition-colors">
-              <p className="font-semibold text-foreground">{event.name}</p>
-              <p className="text-sm text-secondary-foreground">{event.time}</p>
-            </li>
-          ))}
-        </ul>
+        
+        {isLoadingEvents ? (
+            <div className="space-y-3">
+               {[1,2].map(i => <div key={i} className="h-12 bg-muted/50 rounded animate-pulse" />)}
+            </div>
+        ) : events && !events.error && events.length > 0 ? (
+            <ul className="space-y-3">
+            {events.map((event: any) => (
+                <li key={event.id} className="p-2 rounded-md hover:bg-secondary/50 cursor-pointer transition-colors">
+                <p className="font-semibold text-foreground truncate">{event.title}</p>
+                <p className="text-sm text-muted-foreground">{formatDate(event.startTime)}</p>
+                </li>
+            ))}
+            </ul>
+        ) : (
+            <p className="text-sm text-muted-foreground">
+                {events?.error ? "Please run db migration." : "No upcoming events."}
+            </p>
+        )}
       </div>
     </div>
   );

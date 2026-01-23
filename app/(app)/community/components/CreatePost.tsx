@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { User, Image as ImageIcon, Send, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { createPost, uploadImage } from "../hooks/useCommunity";
 import { useCurrentUser } from "../hooks/useCurrentUser";
 import toast from "react-hot-toast";
@@ -13,6 +14,7 @@ interface Hashtag {
 
 export default function CreatePost() {
   const { user } = useCurrentUser(); // Ambil data user
+  const [isExpanded, setIsExpanded] = useState(false); // New state for collapsing
   const [content, setContent] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -27,6 +29,38 @@ export default function CreatePost() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null); // Ref for click outside
+
+  // Click outside logic
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        // Only collapse if not currently posting
+        if (!isPosting) {
+            setIsExpanded(false);
+            // Optional: clear content if it was empty anyway
+            if (!content.trim() && !selectedFile) {
+                setContent("");
+                removeImage();
+            }
+        }
+      }
+    };
+
+    if (isExpanded) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isExpanded, isPosting, content, selectedFile]);
+
+  // Focus textarea when expanded
+  useEffect(() => {
+    if (isExpanded && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [isExpanded]);
 
   // Load trending hashtags on mount
   useEffect(() => {
@@ -45,6 +79,7 @@ export default function CreatePost() {
       }
       setSelectedFile(file);
       setPreviewUrl(URL.createObjectURL(file));
+      setIsExpanded(true); // Auto-expand when file selected
     }
   };
 
@@ -68,6 +103,7 @@ export default function CreatePost() {
       setContent("");
       removeImage();
       setShowSuggestions(false);
+      setIsExpanded(false); // Collapse after posting
     } catch (error) {
       // Error handled in hook
     } finally {
@@ -76,6 +112,7 @@ export default function CreatePost() {
   };
 
   // --- HASHTAG LOGIC ---
+  // ... (keeping existing hashtag logic)
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       const val = e.target.value;
@@ -119,15 +156,11 @@ export default function CreatePost() {
       setContent(newContent);
       setShowSuggestions(false);
       
-      // Refocus and set cursor
       if (textareaRef.current) {
           textareaRef.current.focus();
-          // We can't easily set cursor position perfectly in React without a timeout or layout effect
-          // but focusing back is essential
       }
   };
 
-  // Handle keyboard navigation for suggestions
   const handleKeyDown = (e: React.KeyboardEvent) => {
       if (showSuggestions) {
           if (e.key === "ArrowDown") {
@@ -148,97 +181,141 @@ export default function CreatePost() {
   };
 
   return (
-    <div className="bg-card p-5 rounded-xl border border-border shadow-sm mb-8 relative z-10">
-      <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-full bg-muted flex-shrink-0 flex items-center justify-center overflow-hidden border border-border">
-             {user?.imageUrl ? (
-               <img src={user.imageUrl} alt={user.fullName} className="w-full h-full object-cover" />
-             ) : (
-               <User className="text-muted-foreground w-6 h-6" />
-             )}
-        </div>
-        <div className="flex-grow relative">
-            <textarea
-                ref={textareaRef}
-                className="w-full p-3 bg-muted/30 border-none focus:ring-0 rounded-lg text-base text-foreground placeholder:text-muted-foreground resize-none focus:outline-none min-h-[80px]"
-                placeholder="Share your progress... Type # for tags"
-                rows={3}
-                value={content}
-                onChange={handleContentChange}
-                onKeyDown={handleKeyDown}
-                onClick={(e) => setCursorPosition(e.currentTarget.selectionStart)}
-            ></textarea>
-
-            {/* Suggestions Dropdown */}
-            {showSuggestions && filteredTags.length > 0 && (
-                <div className="absolute left-0 top-full mt-1 w-64 bg-popover border border-border rounded-lg shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-                    <div className="py-1 max-h-48 overflow-y-auto">
-                        <div className="px-3 py-1 text-xs font-semibold text-muted-foreground bg-muted/50">
-                            Trending Hashtags
-                        </div>
-                        {filteredTags.map((item, index) => (
-                            <button
-                                key={item.tag}
-                                onClick={() => selectHashtag(item.tag)}
-                                className={`w-full text-left px-3 py-2 text-sm flex justify-between items-center transition-colors ${
-                                    index === activeTagIndex 
-                                    ? "bg-primary/10 text-primary" 
-                                    : "hover:bg-muted text-foreground"
-                                }`}
-                            >
-                                <span className="font-medium">#{item.tag}</span>
-                                <span className="text-xs text-muted-foreground">{item.count} posts</span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* Image Preview */}
-            {previewUrl && (
-                <div className="relative mt-3 inline-block">
-                    <img 
-                        src={previewUrl} 
-                        alt="Preview" 
-                        className="rounded-lg max-h-60 object-cover border border-border"
-                    />
-                    <button 
-                        onClick={removeImage}
-                        className="absolute top-2 right-2 p-1 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors"
-                    >
-                        <X className="w-4 h-4" />
-                    </button>
-                </div>
-            )}
-        </div>
-      </div>
-
-      <div className="flex justify-between items-center mt-3 pl-14">
-        <div className="flex space-x-2">
-          <input 
-            type="file" 
-            ref={fileInputRef}
-            className="hidden" 
-            accept="image/*"
-            onChange={handleFileSelect}
-          />
+    <div 
+        ref={containerRef}
+        className={`bg-card p-4 rounded-xl border border-border shadow-sm mb-8 transition-all duration-300 ${isExpanded ? "ring-1 ring-primary/20" : ""}`}
+    >
+      {!isExpanded ? (
+        // COMPACT VIEW
+        <div className="flex items-center gap-3 cursor-text" onClick={() => setIsExpanded(true)}>
+          <div className="w-10 h-10 rounded-full bg-muted flex-shrink-0 flex items-center justify-center overflow-hidden border border-border">
+               {user?.imageUrl ? (
+                 <img src={user.imageUrl} alt={user.fullName} className="w-full h-full object-cover" />
+               ) : (
+                 <User className="text-muted-foreground w-6 h-6" />
+               )}
+          </div>
+          <div className="flex-grow bg-muted/30 hover:bg-muted/50 transition-colors border border-border/50 rounded-full py-2.5 px-5 text-muted-foreground text-sm">
+             Share your progress...
+          </div>
           <button 
-            onClick={() => fileInputRef.current?.click()}
-            className="text-muted-foreground hover:text-primary p-2 rounded-full hover:bg-primary/10 transition-colors flex items-center gap-2 group"
+            className="p-2 text-muted-foreground hover:text-primary transition-colors"
+            onClick={(e) => {
+                e.stopPropagation();
+                fileInputRef.current?.click();
+            }}
           >
-            <ImageIcon className="w-5 h-5 group-hover:scale-110 transition-transform" />
-            <span className="text-xs font-medium">Add Photo</span>
+            <ImageIcon className="w-5 h-5" />
           </button>
         </div>
-        <button
-          onClick={handlePost}
-          disabled={isPosting || (!content.trim() && !selectedFile)}
-          className="bg-primary text-primary-foreground font-bold py-2 px-6 rounded-full hover:bg-primary/90 transition-all duration-300 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-        >
-          {isPosting ? "Posting..." : "Post"}
-          {!isPosting && <Send className="w-4 h-4" />}
-        </button>
-      </div>
+      ) : (
+        // EXPANDED VIEW
+        <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-full bg-muted flex-shrink-0 flex items-center justify-center overflow-hidden border border-border">
+                 {user?.imageUrl ? (
+                   <img src={user.imageUrl} alt={user.fullName} className="w-full h-full object-cover" />
+                 ) : (
+                   <User className="text-muted-foreground w-6 h-6" />
+                 )}
+            </div>
+            <div className="flex-grow relative">
+                <textarea
+                    ref={textareaRef}
+                    className="w-full p-2 bg-transparent border-none focus:ring-0 rounded-lg text-base text-foreground placeholder:text-muted-foreground resize-none focus:outline-none min-h-[100px]"
+                    placeholder="What's on your mind? Type # for tags"
+                    value={content}
+                    onChange={handleContentChange}
+                    onKeyDown={handleKeyDown}
+                    onClick={(e) => setCursorPosition(e.currentTarget.selectionStart)}
+                ></textarea>
+
+                {/* Suggestions Dropdown */}
+                {showSuggestions && filteredTags.length > 0 && (
+                    <div className="absolute left-0 top-full mt-1 w-64 bg-popover border border-border rounded-lg shadow-lg z-50 overflow-hidden">
+                        <div className="py-1 max-h-48 overflow-y-auto">
+                            {filteredTags.map((item, index) => (
+                                <button
+                                    key={item.tag}
+                                    onClick={() => selectHashtag(item.tag)}
+                                    className={`w-full text-left px-3 py-2 text-sm flex justify-between items-center transition-colors ${
+                                        index === activeTagIndex 
+                                        ? "bg-primary/10 text-primary" 
+                                        : "hover:bg-muted text-foreground"
+                                    }`}
+                                >
+                                    <span className="font-medium">#{item.tag}</span>
+                                    <span className="text-xs text-muted-foreground">{item.count} posts</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Image Preview */}
+                {previewUrl && (
+                    <div className="relative mt-3 inline-block">
+                        <img 
+                            src={previewUrl} 
+                            alt="Preview" 
+                            className="rounded-lg max-h-60 object-cover border border-border"
+                        />
+                        <button 
+                            onClick={removeImage}
+                            className="absolute top-2 right-2 p-1 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
+                )}
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center mt-4 pt-3 border-t border-border/50">
+            <div className="flex space-x-2">
+              <input 
+                type="file" 
+                ref={fileInputRef}
+                className="hidden" 
+                accept="image/*"
+                onChange={handleFileSelect}
+              />
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="text-muted-foreground hover:text-primary p-2 rounded-full hover:bg-primary/10 transition-colors flex items-center gap-2 group"
+              >
+                <ImageIcon className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                <span className="text-xs font-medium">Add Photo</span>
+              </button>
+            </div>
+            
+            <div className="flex items-center gap-2">
+                <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => {
+                        setIsExpanded(false);
+                        if (!content.trim() && !selectedFile) {
+                            setContent("");
+                            removeImage();
+                        }
+                    }}
+                    disabled={isPosting}
+                >
+                    Cancel
+                </Button>
+                <button
+                    onClick={handlePost}
+                    disabled={isPosting || (!content.trim() && !selectedFile)}
+                    className="bg-primary text-primary-foreground font-bold py-1.5 px-6 rounded-full hover:bg-primary/90 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm"
+                >
+                    {isPosting ? "Posting..." : "Post"}
+                    {!isPosting && <Send className="w-4 h-4" />}
+                </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

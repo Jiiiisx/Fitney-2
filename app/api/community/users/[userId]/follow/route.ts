@@ -3,6 +3,7 @@ import { db } from "@/app/lib/db";
 import { followers } from "@/app/lib/schema";
 import { verifyAuth } from "@/app/lib/auth";
 import { and, eq } from "drizzle-orm";
+import { createNotification } from "@/app/lib/notifications";
 
 export async function POST(
   req: NextRequest,
@@ -20,7 +21,6 @@ export async function POST(
     }
 
     // Cek apakah sudah follow
-    // Schema: userId (yang difollow), followerId (yang memfollow)
     const existingFollow = await db
       .select()
       .from(followers)
@@ -51,6 +51,15 @@ export async function POST(
       await db.insert(followers).values({
         userId: targetUserId,
         followerId: currentUserId,
+      });
+
+      // KIRIM NOTIFIKASI
+      await createNotification({
+          recipientId: targetUserId,
+          senderId: currentUserId,
+          type: 'follow',
+          message: "started following you",
+          linkUrl: `/community/profile/${currentUserId}`
       });
 
       return NextResponse.json({ 

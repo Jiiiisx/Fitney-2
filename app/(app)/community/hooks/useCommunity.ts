@@ -14,7 +14,7 @@ const fetcher = (url: string) => {
 
 // --- HOOKS ---
 
-export type FeedFilter = "all" | "mine";
+export type FeedFilter = "all" | "mine" | "friends";
 
 export function useCommunityFeed(filter: FeedFilter = "all") {
   // Key SWR bergantung pada filter, jadi cache terpisah
@@ -242,6 +242,7 @@ export async function createPost(content: string, imageUrl?: string) {
     // Tapi simpelnya kita hit spesifik
     mutate("/api/community/feed?filter=all"); 
     mutate("/api/community/feed?filter=mine"); 
+    mutate("/api/community/feed?filter=friends");
     
     return await res.json();
   } catch (error) {

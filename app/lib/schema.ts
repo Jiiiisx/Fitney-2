@@ -332,8 +332,10 @@ export const waterLogs = pgTable('water_logs', {
 // Notifications
 export const notifications = pgTable('notifications', {
   id: serial('id').primaryKey(),
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  type: varchar('type', { length: 50 }),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }), // Recipient
+  senderId: uuid('sender_id').references(() => users.id, { onDelete: 'cascade' }), // Triggerer
+  type: varchar('type', { length: 50 }).notNull(), // 'like', 'comment', 'follow', 'system'
+  resourceId: integer('resource_id'), // ID of post or other resource
   message: text('message').notNull(),
   linkUrl: varchar('link_url', { length: 255 }),
   isRead: boolean('is_read').default(false),
@@ -372,6 +374,17 @@ export const userProfiles = pgTable('user_profiles', {
   experienceLevel: varchar('experience_level', { length: 50 }),
   workoutLocation: varchar('workout_location', { length: 50 }),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+});
+
+export const communityEvents = pgTable('community_events', {
+  id: serial('id').primaryKey(),
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description'),
+  startTime: timestamp('start_time', { withTimezone: true }).notNull(),
+  endTime: timestamp('end_time', { withTimezone: true }),
+  location: varchar('location', { length: 255 }),
+  type: varchar('type', { length: 50 }).default('community'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
 
 import { relations } from 'drizzle-orm';

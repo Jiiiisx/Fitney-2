@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/app/lib/db";
-import { postComments } from "@/app/lib/schema";
+import { postComments, posts } from "@/app/lib/schema";
 import { verifyAuth } from "@/app/lib/auth";
-import { desc, asc } from "drizzle-orm";
+import { desc, asc, eq } from "drizzle-orm";
+import { createNotification } from "@/app/lib/notifications";
 
 export async function GET(
   req: NextRequest,
@@ -64,6 +65,11 @@ export async function POST(
         return NextResponse.json({ error: "Comment content is required" }, { status: 400 });
     }
 
+    // Ambil info post untuk tau siapa pemiliknya
+    const post = await db.query.posts.findFirst({
+        where: eq(posts.id, postIdInt)
+    });
+
     // Insert komentar baru
     const newComment = await db.insert(postComments).values({
         postId: postIdInt,
@@ -71,7 +77,7 @@ export async function POST(
         content: content.trim(),
     }).returning();
 
-    // Fetch user info untuk dikembalikan ke frontend (biar UI bisa langsung update tanpa refetch)
+    // Fetch user info untuk dikembalikan ke frontend
     const user = await db.query.users.findFirst({
         where: (users, { eq }) => eq(users.id, auth.user.userId),
         columns: {
@@ -81,6 +87,18 @@ export async function POST(
             imageUrl: true,
         }
     });
+
+    // KIRIM NOTIFIKASI
+    if (post && post.userId !== auth.user.userId) {
+        await createNotification({
+            recipientId: post.userId,
+            senderId: auth.user.userId,
+            type: 'comment',
+            resourceId: postIdInt,
+            message: "commented on your post",
+            linkUrl: `/community/posts/${postIdInt}`
+        });
+    }
 
     return NextResponse.json({
         ...newComment[0],
