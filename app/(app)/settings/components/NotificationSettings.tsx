@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -10,8 +10,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { fetchWithAuth } from "@/app/lib/fetch-helper";
+import { toast } from "react-hot-toast";
+import { Loader2 } from "lucide-react";
 
-// In a real app, this would be a shared component.
 const SettingsCard = ({
   title,
   description,
@@ -49,25 +51,52 @@ const SettingRow = ({
 );
 
 export default function NotificationSettings() {
-  // General Settings
-  const [allowNotifications, setAllowNotifications] = useState(true);
-  const [sound, setSound] = useState("default");
-  const [vibration, setVibration] = useState(true);
-  const [showPopup, setShowPopup] = useState(true);
-  const [showBadge, setShowBadge] = useState(true);
+  const [settings, setSettings] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Channel Settings
-  const [workoutReminders, setWorkoutReminders] = useState(true);
-  const [achievements, setAchievements] = useState(true);
-  const [socialUpdates, setSocialUpdates] = useState(true);
-  const [weeklySummary, setWeeklySummary] = useState(false);
-  const [appUpdates, setAppUpdates] = useState(false);
+  const fetchSettings = useCallback(async () => {
+    try {
+      const data = await fetchWithAuth("/api/users/settings");
+      setSettings(data);
+    } catch (error) {
+      console.error("Failed to fetch settings", error);
+      toast.error("Failed to load settings");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  // Smart Settings
-  const [smartSummary, setSmartSummary] = useState(false);
-  const [activityBased, setActivityBased] = useState(false);
-  const [goalBased, setGoalBased] = useState(true);
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
 
+  const updateSetting = async (key: string, value: any) => {
+    // Optimistic update
+    const previousSettings = { ...settings };
+    setSettings({ ...settings, [key]: value });
+
+    try {
+      await fetchWithAuth("/api/users/settings", {
+        method: "PATCH",
+        body: JSON.stringify({ [key]: value }),
+      });
+    } catch (error) {
+      console.error(`Failed to update setting ${key}`, error);
+      toast.error("Failed to save changes");
+      // Revert on error
+      setSettings(previousSettings);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!settings) return null;
 
   return (
     <div className="space-y-10">
@@ -81,18 +110,21 @@ export default function NotificationSettings() {
             description="Enable or disable all notifications."
           >
             <Switch
-              checked={allowNotifications}
-              onCheckedChange={setAllowNotifications}
+              checked={settings.pushNotifications}
+              onCheckedChange={(val) => updateSetting("pushNotifications", val)}
             />
           </SettingRow>
 
-          {allowNotifications && (
+          {settings.pushNotifications && (
             <>
               <SettingRow
                 label="Notification Sound"
                 description="Choose a sound or mute."
               >
-                <Select value={sound} onValueChange={setSound}>
+                <Select 
+                    value={settings.notificationSound} 
+                    onValueChange={(val) => updateSetting("notificationSound", val)}
+                >
                   <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Select a sound" />
                   </SelectTrigger>
@@ -109,28 +141,37 @@ export default function NotificationSettings() {
                 label="Vibration (mobile)"
                 description="On/off vibration for notifications."
               >
-                <Switch checked={vibration} onCheckedChange={setVibration} />
+                <Switch 
+                    checked={settings.vibrationEnabled} 
+                    onCheckedChange={(val) => updateSetting("vibrationEnabled", val)} 
+                />
               </SettingRow>
 
               <SettingRow
                 label="Show Pop-up / Banner"
                 description="Display notifications as a toast pop-up."
               >
-                <Switch checked={showPopup} onCheckedChange={setShowPopup} />
+                <Switch 
+                    checked={settings.showPopup} 
+                    onCheckedChange={(val) => updateSetting("showPopup", val)} 
+                />
               </SettingRow>
 
               <SettingRow
                 label="Show Badge Count"
                 description="Show unread count on the app icon."
               >
-                <Switch checked={showBadge} onCheckedChange={setShowBadge} />
+                <Switch 
+                    checked={settings.showBadge} 
+                    onCheckedChange={(val) => updateSetting("showBadge", val)} 
+                />
               </SettingRow>
             </>
           )}
         </div>
       </SettingsCard>
 
-      {allowNotifications && (
+      {settings.pushNotifications && (
         <>
             <SettingsCard
             title="Notification Channels"
@@ -141,31 +182,41 @@ export default function NotificationSettings() {
                         label="Workout Reminders"
                         description="Reminders for your scheduled training sessions."
                     >
-                        <Switch checked={workoutReminders} onCheckedChange={setWorkoutReminders} />
+                        <Switch 
+                            checked={settings.channelWorkout} 
+                            onCheckedChange={(val) => updateSetting("channelWorkout", val)} 
+                        />
                     </SettingRow>
                     <SettingRow
                         label="Achievements & Badges"
                         description="Get notified when you unlock a new achievement."
                     >
-                        <Switch checked={achievements} onCheckedChange={setAchievements} />
+                        <Switch 
+                            checked={settings.channelAchievements} 
+                            onCheckedChange={(val) => updateSetting("channelAchievements", val)} 
+                        />
                     </SettingRow>
                     <SettingRow
                         label="Friend Requests & Social Updates"
                         description="Notifications for friend requests, likes, or comments."
                     >
-                        <Switch checked={socialUpdates} onCheckedChange={setSocialUpdates} />
+                        <Switch 
+                            checked={settings.channelSocial} 
+                            onCheckedChange={(val) => updateSetting("channelSocial", val)} 
+                        />
                     </SettingRow>
+                    {/* Placeholder fields not yet in DB, but UI remains for future expansion or we add to DB */}
                     <SettingRow
                         label="Weekly Progress Summary"
                         description="Receive your weekly training report."
                     >
-                        <Switch checked={weeklySummary} onCheckedChange={setWeeklySummary} />
+                        <Switch checked={false} disabled />
                     </SettingRow>
                     <SettingRow
                         label="App Updates / Announcements"
                         description="Info on new features or important updates."
                     >
-                        <Switch checked={appUpdates} onCheckedChange={setAppUpdates} />
+                        <Switch checked={false} disabled />
                     </SettingRow>
                 </div>
             </SettingsCard>
@@ -179,19 +230,19 @@ export default function NotificationSettings() {
                         label="Smart Summary Mode"
                         description="Group non-urgent notifications into a daily summary."
                     >
-                        <Switch checked={smartSummary} onCheckedChange={setSmartSummary} />
+                        <Switch checked={false} disabled />
                     </SettingRow>
                     <SettingRow
                         label="Activity-Based Notifications"
                         description="Only show notifications when you are active."
                     >
-                        <Switch checked={activityBased} onCheckedChange={setActivityBased} />
+                        <Switch checked={false} disabled />
                     </SettingRow>
                     <SettingRow
                         label="Goal-Based Reminders"
                         description="Adjust reminders based on your weekly goals."
                     >
-                        <Switch checked={goalBased} onCheckedChange={setGoalBased} />
+                        <Switch checked={true} disabled />
                     </SettingRow>
                 </div>
             </SettingsCard>

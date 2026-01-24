@@ -64,18 +64,30 @@ const Header = () => {
   const [level, setLevel] = useState(1); // State for user level
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationSound, setNotificationSound] = useState("default");
   const lastNotifId = useRef<number | null>(null);
 
   const fetchUser = useCallback(async () => {
     try {
       const userData = await fetchWithAuth('/api/users/profile');
       setUser(userData);
+      
+      // Also fetch settings for sound preference
+      const settings = await fetchWithAuth('/api/users/settings');
+      setNotificationSound(settings.notificationSound || "default");
+
       if (!userData.hasCompletedOnboarding) {
         setShowOnboarding(true);
       }
     } catch (error) {
       console.error("Profile fetch error", error);
     }
+  }, []);
+
+  const playNotificationSound = useCallback((soundName: string) => {
+    if (soundName === 'mute') return;
+    const audio = new Audio(`/sounds/${soundName}.wav`);
+    audio.play().catch(err => console.error("Error playing sound:", err));
   }, []);
 
   // Fetch gamification stats
@@ -101,6 +113,10 @@ const Header = () => {
           const newest = unread[0];
           if (newest.id !== lastNotifId.current) {
             lastNotifId.current = newest.id;
+            
+            // Play Sound
+            playNotificationSound(notificationSound);
+
             toast.success(`${newest.sender?.fullName || 'System'}: ${newest.message}`, {
               icon: '🔔',
               duration: 5000,
@@ -112,7 +128,7 @@ const Header = () => {
         }
       }
     } catch (e) { }
-  }, []);
+  }, [notificationSound, playNotificationSound]);
 
   useEffect(() => {
     fetchUser();

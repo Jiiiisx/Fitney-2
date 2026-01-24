@@ -287,6 +287,11 @@ export const groupMessages = pgTable('group_messages', {
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   content: text('content').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, (table) => {
+  return {
+    groupMessagesGroupIdIdx: index('group_messages_group_id_idx').on(table.groupId),
+    groupMessagesCreatedAtIdx: index('group_messages_created_at_idx').on(table.createdAt),
+  };
 });
 
 export const directMessages = pgTable('direct_messages', {
@@ -296,7 +301,27 @@ export const directMessages = pgTable('direct_messages', {
   content: text('content').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   isRead: boolean('is_read').default(false),
+}, (table) => {
+  return {
+    directMessagesSenderIdx: index('direct_messages_sender_id_idx').on(table.senderId),
+    directMessagesReceiverIdx: index('direct_messages_receiver_id_idx').on(table.receiverId),
+    directMessagesCreatedAtIdx: index('direct_messages_created_at_idx').on(table.createdAt),
+  };
 });
+
+export const hiddenGroupMessages = pgTable('hidden_group_messages', {
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  messageId: integer('message_id').notNull().references(() => groupMessages.id, { onDelete: 'cascade' }),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.userId, table.messageId] }),
+}));
+
+export const hiddenDirectMessages = pgTable('hidden_direct_messages', {
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  messageId: integer('message_id').notNull().references(() => directMessages.id, { onDelete: 'cascade' }),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.userId, table.messageId] }),
+}));
 
 
 
@@ -305,8 +330,16 @@ export const userSettings = pgTable('user_settings', {
   userId: uuid('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
   theme: userSettingsThemeEnum('theme').default('system'),
   measurementUnits: userSettingsUnitsEnum('measurement_units').default('metric'),
+  fontSize: varchar('font_size', { length: 50 }).default('text-size-md'),
   emailNotifications: boolean('email_notifications').default(true),
   pushNotifications: boolean('push_notifications').default(true),
+  notificationSound: varchar('notification_sound', { length: 50 }).default('default'),
+  vibrationEnabled: boolean('vibration_enabled').default(true),
+  showPopup: boolean('show_popup').default(true),
+  showBadge: boolean('show_badge').default(true),
+  channelWorkout: boolean('channel_workout').default(true),
+  channelAchievements: boolean('channel_achievements').default(true),
+  channelSocial: boolean('channel_social').default(true),
   hasCompletedOnboarding: boolean('has_completed_onboarding').default(false),
 });
 
@@ -436,6 +469,8 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   receivedMessages: many(directMessages, { relationName: 'receivedMessages' }),
   stories: many(stories),
   savedPosts: many(savedPosts),
+  hiddenGroupMessages: many(hiddenGroupMessages),
+  hiddenDirectMessages: many(hiddenDirectMessages),
 }));
 
 export const directMessagesRelations = relations(directMessages, ({ one }) => ({
@@ -570,6 +605,16 @@ export const savedPostsRelations = relations(savedPosts, ({ one }) => ({
 export const groupMessagesRelations = relations(groupMessages, ({ one }) => ({
   group: one(groups, { fields: [groupMessages.groupId], references: [groups.id] }),
   user: one(users, { fields: [groupMessages.userId], references: [users.id] }),
+}));
+
+export const hiddenGroupMessagesRelations = relations(hiddenGroupMessages, ({ one }) => ({
+  user: one(users, { fields: [hiddenGroupMessages.userId], references: [users.id] }),
+  message: one(groupMessages, { fields: [hiddenGroupMessages.messageId], references: [groupMessages.id] }),
+}));
+
+export const hiddenDirectMessagesRelations = relations(hiddenDirectMessages, ({ one }) => ({
+  user: one(users, { fields: [hiddenDirectMessages.userId], references: [users.id] }),
+  message: one(directMessages, { fields: [hiddenDirectMessages.messageId], references: [directMessages.id] }),
 }));
 
 

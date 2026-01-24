@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/app/lib/db";
-import { groupMessages, userGroups, users } from "@/app/lib/schema";
+import { groupMessages, userGroups, users, hiddenGroupMessages } from "@/app/lib/schema";
 import { verifyAuth } from "@/app/lib/auth";
-import { eq, asc, and } from "drizzle-orm";
+import { eq, asc, and, notInArray, inArray } from "drizzle-orm";
 
 // GET: Ambil pesan untuk grup tertentu
 export async function GET(
@@ -12,45 +12,88 @@ export async function GET(
   try {
     const auth = await verifyAuth(req);
     if (auth.error) return auth.error;
+    const userId = auth.user.userId;
 
     const { groupId } = await params;
     const groupIdInt = parseInt(groupId);
 
     if (isNaN(groupIdInt)) return NextResponse.json({ error: "Invalid Group ID" }, { status: 400 });
 
-    // Cek apakah user adalah member grup (Optional: untuk privacy)
-    // Untuk performa, bisa di-skip jika grup publik, tapi sebaiknya dicek
-    const membership = await db.query.userGroups.findFirst({
-        where: and(eq(userGroups.userId, auth.user.userId), eq(userGroups.groupId, groupIdInt))
+    // 1. Dapatkan ID pesan yang disembunyikan oleh user ini
+    const hiddenIds = await db
+        .select({ id: hiddenGroupMessages.messageId })
+        .from(hiddenGroupMessages)
+        .where(eq(hiddenGroupMessages.userId, userId));
+    
+    const hiddenIdList = hiddenIds.map(h => h.id);
+
+    // 2. Fetch pesan
+    const messages = await db.query.groupMessages.findMany({
+      where: and(
+        eq(groupMessages.groupId, groupIdInt),
+        hiddenIdList.length > 0 ? notInArray(groupMessages.id, hiddenIdList) : undefined
+      ),
+      orderBy: [asc(groupMessages.createdAt)],
+      with: {
+        user: {
+          columns: {
+            id: true,
+            username: true,
+            fullName: true,
+            imageUrl: true,
+          }
+        }
+      }
     });
 
-    // Jika tidak member, blokir akses (uncomment jika ingin private)
-    // if (!membership) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-
-    // Gunakan db.select + Join untuk stabilitas
-    const rows = await db
-      .select({
-        id: groupMessages.id,
-        content: groupMessages.content,
-        createdAt: groupMessages.createdAt,
-        userId: groupMessages.userId,
-        user: {
-            id: users.id,
-            username: users.username,
-            fullName: users.fullName,
-            imageUrl: users.imageUrl,
-        }
-      })
-      .from(groupMessages)
-      .leftJoin(users, eq(groupMessages.userId, users.id))
-      .where(eq(groupMessages.groupId, groupIdInt))
-      .orderBy(asc(groupMessages.createdAt))
-      .limit(100);
-
-    return NextResponse.json(rows);
+    return NextResponse.json(messages);
 
   } catch (error) {
     console.error("GET_GROUP_MESSAGES_ERROR", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
+
+// DELETE: Hapus banyak pesan sekaligus (Bulk Delete)
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ groupId: string }> }
+) {
+  try {
+    const auth = await verifyAuth(req);
+    if (auth.error) return auth.error;
+    const userId = auth.user.userId;
+
+    const { ids, mode } = await req.json(); // IDs: number[], mode: 'me' | 'everyone'
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return NextResponse.json({ error: "No IDs provided" }, { status: 400 });
+    }
+
+    if (mode === "everyone") {
+      // Hanya hapus pesan yang memang dikirim oleh user ini
+      await db.update(groupMessages)
+        .set({ content: "_DELETED_" })
+        .where(and(
+          inArray(groupMessages.id, ids),
+          eq(groupMessages.userId, userId)
+        ));
+    } else {
+      // Hapus untuk saya (hide)
+      const values = ids.map(id => ({
+        userId: userId,
+        messageId: id
+      }));
+      
+      await db.insert(hiddenGroupMessages)
+        .values(values)
+        .onConflictDoNothing();
+    }
+
+    return NextResponse.json({ success: true });
+
+  } catch (error) {
+    console.error("BULK_DELETE_GROUP_ERROR", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

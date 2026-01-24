@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTheme } from "next-themes";
 import { Sun, Moon, Laptop, Ruler, Weight } from "lucide-react";
 import {
@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { toast } from "react-hot-toast";
+import { fetchWithAuth } from "@/app/lib/fetch-helper";
 
 const SettingsCard = ({
   title,
@@ -37,19 +38,24 @@ export default function AppearanceSettings() {
   const [units, setUnits] = useState("metric");
   const [loading, setLoading] = useState(true);
 
+  // Apply font size class to document root
+  const applyFontSize = useCallback((size: string) => {
+    document.documentElement.classList.remove("text-size-sm", "text-size-md", "text-size-lg");
+    document.documentElement.classList.add(size);
+    setFontSize(size);
+  }, []);
+
   // Fetch initial settings from DB
   useEffect(() => {
     async function fetchSettings() {
       try {
-        const res = await fetch("/api/users/settings", {
-          credentials: 'include'
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          // Sync DB settings with local state
-          if (data.theme) setTheme(data.theme);
-          if (data.measurementUnits) setUnits(data.measurementUnits);
+        const data = await fetchWithAuth("/api/users/settings");
+        
+        // Sync DB settings with local state
+        if (data.theme) setTheme(data.theme);
+        if (data.measurementUnits) setUnits(data.measurementUnits);
+        if (data.fontSize) {
+            applyFontSize(data.fontSize);
         }
       } catch (error) {
         console.error("Failed to fetch settings", error);
@@ -58,21 +64,13 @@ export default function AppearanceSettings() {
       }
     }
 
-    // Load local font size preference
-    const savedSize = localStorage.getItem("font-size") || "text-size-md";
-    handleFontSizeChange(savedSize, false); // Don't save to DB, just apply class
-
     fetchSettings();
-  }, [setTheme]);
+  }, [setTheme, applyFontSize]);
 
   const updateSettings = async (updates: any) => {
     try {
-      await fetch("/api/users/settings", {
+      await fetchWithAuth("/api/users/settings", {
         method: "PATCH",
-        credentials: 'include',
-        headers: {
-          "Content-Type": "application/json"
-        },
         body: JSON.stringify(updates)
       });
     } catch (error) {
@@ -92,13 +90,9 @@ export default function AppearanceSettings() {
     toast.success(`Units updated to ${newUnit === 'metric' ? 'Metric (kg/cm)' : 'Imperial (lbs/ft)'}`);
   };
 
-  const handleFontSizeChange = (size: string, saveToLocal = true) => {
-    document.documentElement.classList.remove("text-size-sm", "text-size-md", "text-size-lg");
-    document.documentElement.classList.add(size);
-    if (saveToLocal) {
-      localStorage.setItem("font-size", size);
-    }
-    setFontSize(size);
+  const handleFontSizeChange = (size: string) => {
+    applyFontSize(size);
+    updateSettings({ fontSize: size });
   };
 
   const themes = [
@@ -108,7 +102,7 @@ export default function AppearanceSettings() {
   ];
 
   if (loading) {
-    return <div className="p-8 text-center text-muted-foreground">Loading settings...</div>;
+    return <div className="p-8 text-center text-muted-foreground">Loading appearance settings...</div>;
   }
 
   return (
@@ -181,7 +175,7 @@ export default function AppearanceSettings() {
       >
         <div className="max-w-xs">
           <Label htmlFor="font-size-select" className="sr-only">Font Size</Label>
-          <Select value={fontSize} onValueChange={(val) => handleFontSizeChange(val, true)}>
+          <Select value={fontSize} onValueChange={(val) => handleFontSizeChange(val)}>
             <SelectTrigger id="font-size-select">
               <SelectValue placeholder="Select font size" />
             </SelectTrigger>

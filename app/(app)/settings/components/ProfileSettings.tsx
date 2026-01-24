@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import toast from "react-hot-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Mail, User, Lock, Calendar, Weight, Ruler, PersonStanding, Loader } from "lucide-react";
+import { fetchWithAuth } from "@/app/lib/fetch-helper";
 
 const SettingsCard = ({
   title,
@@ -24,7 +25,7 @@ const SettingsCard = ({
   <div className="bg-card border rounded-xl relative">
     {isLoading && (
       <div className="absolute inset-0 bg-card/50 backdrop-blur-sm flex items-center justify-center z-10 rounded-xl">
-        <Loader className="animate-spin text-muted-foreground" />
+        <Loader className="animate-spin text-primary" />
       </div>
     )}
     <div className="p-6 border-b">
@@ -61,22 +62,22 @@ export default function ProfileSettings() {
     weight: "",
     imageUrl: "",
   });
+  
+  const [passwords, setPasswords] = useState({
+    current: "",
+    new: "",
+    confirm: ""
+  });
+
   const [isLoading, setIsLoading] = useState(true);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch('/api/users/profile', {
-          credentials: 'include'
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setProfile(data);
-        } else {
-          console.error("Failed to fetch profile", response.statusText);
-        }
+        const data = await fetchWithAuth('/api/users/profile');
+        setProfile(data);
       } catch (error) {
         console.error("Error fetching profile:", error);
       } finally {
@@ -93,6 +94,11 @@ export default function ProfileSettings() {
     setProfile(prev => ({ ...prev, [id]: value }));
   };
 
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setPasswords(prev => ({ ...prev, [id]: value }));
+  };
+
   const handleSelectChange = (id: string, value: string) => {
     setProfile(prev => ({ ...prev, [id]: value }));
   };
@@ -100,12 +106,8 @@ export default function ProfileSettings() {
   const handleUpdateProfile = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/users/profile", {
+      await fetchWithAuth("/api/users/profile", {
         method: "PUT",
-        credentials: 'include',
-        headers: {
-          "Content-type": "application/json"
-        },
         body: JSON.stringify({
           fullName: profile.fullName,
           dob: profile.dob,
@@ -114,10 +116,6 @@ export default function ProfileSettings() {
           weight: Number(profile.weight),
         }),
       });
-
-      if (!res.ok) {
-        throw new Error("Failed to update profile");
-      }
 
       toast.success("Profile updated succesfully!");
     } catch (error) {
@@ -132,17 +130,13 @@ export default function ProfileSettings() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      alert("Please upload an image file");
-      return;
-    }
-
     const formData = new FormData();
     formData.append("file", file);
 
     setIsLoading(true);
 
     try {
+      // Manual fetch for FormData, fetchWithAuth defaults to JSON
       const res = await fetch("/api/users/profile/photo", {
         method: "POST",
         credentials: 'include',
@@ -152,16 +146,62 @@ export default function ProfileSettings() {
       if (!res.ok) throw new Error("Upload failed");
 
       const data = await res.json();
-
       setProfile((prev) => ({ ...prev, imageUrl: data.imageUrl }));
       toast.success("Photo updated!");
     } catch (error) {
       console.error("Error uploading photo:", error);
-      alert("Failed to upload photo");
+      toast.error("Failed to upload photo");
     } finally {
       setIsLoading(false);
     }
-  }
+  };
+
+  const handleRemovePhoto = async () => {
+    if (!confirm("Are you sure you want to remove your profile photo?")) return;
+    
+    setIsLoading(true);
+    try {
+        await fetchWithAuth("/api/users/profile/photo", {
+            method: "DELETE"
+        });
+        setProfile(prev => ({ ...prev, imageUrl: "" }));
+        toast.success("Photo removed");
+    } catch (err) {
+        console.error(err);
+        toast.error("Failed to remove photo");
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
+  const handleUpdatePassword = async () => {
+    if (passwords.new !== passwords.confirm) {
+        toast.error("New passwords do not match");
+        return;
+    }
+
+    if (passwords.new.length < 6) {
+        toast.error("New password must be at least 6 characters");
+        return;
+    }
+
+    setIsUpdatingPassword(true);
+    try {
+        await fetchWithAuth("/api/auth/update-password", {
+            method: "POST",
+            body: JSON.stringify({
+                currentPassword: passwords.current,
+                newPassword: passwords.new
+            })
+        });
+        toast.success("Password updated successfully");
+        setPasswords({ current: "", new: "", confirm: "" });
+    } catch (err: any) {
+        toast.error(err.message || "Failed to update password");
+    } finally {
+        setIsUpdatingPassword(false);
+    }
+  };
 
   return (
     <div className="space-y-10">
@@ -182,9 +222,9 @@ export default function ProfileSettings() {
             aria-label="Upload profile picture"
           />
           <img
-            src={profile.imageUrl || "/assets/Testimonial/michael-b.jpg"}
+            src={profile.imageUrl || `https://ui-avatars.com/api/?name=${profile.fullName || 'User'}&background=random`}
             alt="Your avatar"
-            className="w-20 h-20 rounded-full border-2 p-1 object-cover"
+            className="w-20 h-20 rounded-full border-2 p-1 object-cover bg-muted"
           />
           <div className="flex gap-2">
             <Button
@@ -195,7 +235,14 @@ export default function ProfileSettings() {
             >
               Change
             </Button>
-            <Button variant="ghost" className="text-destructive hover:bg-destructive/10 hover:text-destructive" disabled={isLoading}>Remove</Button>
+            <Button 
+                variant="ghost" 
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive" 
+                disabled={isLoading || !profile.imageUrl}
+                onClick={handleRemovePhoto}
+            >
+                Remove
+            </Button>
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -243,20 +290,29 @@ export default function ProfileSettings() {
       <SettingsCard
         title="Password"
         description="Manage your password. A strong password is recommended."
-        footer={<Button className="font-semibold">Update Password</Button>}
+        footer={
+            <Button 
+                className="font-semibold" 
+                onClick={handleUpdatePassword} 
+                disabled={isUpdatingPassword || !passwords.current || !passwords.new}
+            >
+                {isUpdatingPassword ? "Updating..." : "Update Password"}
+            </Button>
+        }
+        isLoading={isUpdatingPassword}
       >
         <div className="space-y-2">
-          <Label htmlFor="currentPassword">Current Password</Label>
-          <InputWithIcon icon={<Lock size={16} />} id="currentPassword" type="password" />
+          <Label htmlFor="current">Current Password</Label>
+          <InputWithIcon icon={<Lock size={16} />} id="current" type="password" value={passwords.current} onChange={handlePasswordChange} />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <Label htmlFor="newPassword">New Password</Label>
-            <InputWithIcon icon={<Lock size={16} />} id="newPassword" type="password" />
+            <Label htmlFor="new">New Password</Label>
+            <InputWithIcon icon={<Lock size={16} />} id="new" type="password" value={passwords.new} onChange={handlePasswordChange} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm New Password</Label>
-            <InputWithIcon icon={<Lock size={16} />} id="confirmPassword" type="password" />
+            <Label htmlFor="confirm">Confirm New Password</Label>
+            <InputWithIcon icon={<Lock size={16} />} id="confirm" type="password" value={passwords.confirm} onChange={handlePasswordChange} />
           </div>
         </div>
       </SettingsCard>

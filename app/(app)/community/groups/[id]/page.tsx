@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Send, Loader2, User, Info, Trash2, MoreVertical } from "lucide-react";
+import { ArrowLeft, Send, Loader2, User, Info, Trash2, MoreVertical, Copy, CheckSquare, X as CloseIcon } from "lucide-react";
 import useSWR from "swr";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import GroupDetailModal from "../../components/GroupDetailModal";
+import toast from "react-hot-toast";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -26,23 +27,17 @@ export default function GroupChatPage() {
     const groupId = params?.id ? Number(params.id) : null;
 
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+    const [input, setInput] = useState("");
+    const [sending, setSending] = useState(false);
+    const [isSelectionMode, setIsSelectionMode] = useState(false);
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
+    const scrollRef = useRef<HTMLDivElement>(null);
 
     // Fetch specific group details directly
-    // Note: API endpoint for single group might need to be verified or created if missing.
-    // Assuming GET /api/community/groups/[id] exists or filtering list if not.
-    // Let's try to fetch list and find for now to match previous logic, but cleaner.
-    // BETTER: Use proper endpoint. I'll assume standard REST: /api/community/groups/[id]
     const { data: groupData, error: groupError } = useSWR(
         groupId ? `/api/community/groups/${groupId}` : null,
         fetcher
     );
-
-    // Fallback logic if API returns array or error
-    // If your API returns single object, great.
-
-    const [input, setInput] = useState("");
-    const [sending, setSending] = useState(false);
-    const scrollRef = useRef<HTMLDivElement>(null);
 
     // Decode Token
     useEffect(() => {
@@ -93,10 +88,10 @@ export default function GroupChatPage() {
         }
     };
 
-    const handleDeleteMessage = async (messageId: number) => {
-        if (!confirm("Delete this message?")) return;
+    const handleDeleteMessage = async (messageId: number, mode: 'me' | 'everyone' = 'me') => {
+        if (!confirm(`Delete this message for ${mode === 'me' ? 'you' : 'everyone'}?`)) return;
         try {
-            await fetch(`/api/community/groups/${groupId}/messages/${messageId}`, {
+            await fetch(`/api/community/groups/${groupId}/messages/${messageId}?mode=${mode}`, {
                 method: "DELETE",
                 credentials: 'include'
             });
@@ -105,6 +100,51 @@ export default function GroupChatPage() {
             console.error("Failed to delete message", err);
         }
     };
+
+    const handleCopy = (text: string) => {
+        navigator.clipboard.writeText(text);
+        toast.success("Message copied!");
+    };
+
+    const toggleSelection = (id: number) => {
+        setSelectedIds(prev => 
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        );
+    };
+
+    const handleBulkDelete = async (mode: 'me' | 'everyone' = 'me') => {
+        if (!confirm(`Delete ${selectedIds.length} messages for ${mode === 'me' ? 'you' : 'everyone'}?`)) return;
+        
+        const toastId = toast.loading("Deleting messages...");
+        try {
+            // Optimistic Update: Hide locally first
+            mutate(
+                messages.filter((m: any) => !selectedIds.includes(m.id)),
+                false
+            );
+
+            await fetch(`/api/community/groups/${groupId}/messages`, {
+                method: "DELETE",
+                credentials: 'include',
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ids: selectedIds, mode })
+            });
+
+            toast.success(`Messages deleted`, { id: toastId });
+            mutate(); // Real sync
+            setIsSelectionMode(false);
+            setSelectedIds([]);
+        } catch (err) {
+            toast.error("Failed to delete messages", { id: toastId });
+            mutate(); // Revert on error
+        }
+    };
+
+    // Cek apakah semua pesan yang dipilih adalah milik user ini
+    const canDeleteAllForEveryone = selectedIds.length > 0 && selectedIds.every(id => {
+        const msg = messages?.find((m: any) => m.id === id);
+        return msg?.userId === currentUserId;
+    });
 
     if (groupError) return <div className="p-8 text-center text-red-500">Error loading group.</div>;
     if (!groupId) return <div className="p-8 text-center">Invalid Group ID</div>;
@@ -164,20 +204,24 @@ export default function GroupChatPage() {
                     messages.map((msg: any) => {
                         const isMe = msg.userId === currentUserId;
                         const isDeleted = msg.content === "_DELETED_";
+                        const isSelected = selectedIds.includes(msg.id);
 
                         return (
-                            <div key={msg.id} className={`flex gap-3 ${isMe ? 'flex-row-reverse' : ''}`}>
-                                <div className="w-8 h-8 rounded-full bg-muted flex-shrink-0 flex items-center justify-center overflow-hidden border border-border mt-1">
-                                    {msg.user?.imageUrl ? (
-                                        <img src={msg.user.imageUrl} className="w-full h-full object-cover" />
-                                    ) : (
-                                        <User className="w-4 h-4 text-muted-foreground" />
-                                    )}
-                                </div>
-                                <div className={`max-w-[70%] p-3 rounded-xl shadow-sm text-sm break-words overflow-visible relative group/msg ${isMe
+                            <div 
+                                key={msg.id} 
+                                className={`flex gap-3 items-center ${isMe ? 'flex-row-reverse' : ''} ${isSelectionMode ? 'cursor-pointer' : ''}`}
+                                onClick={() => isSelectionMode && toggleSelection(msg.id)}
+                            >
+                                {isSelectionMode && (
+                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${isSelected ? 'bg-primary border-primary' : 'border-muted-foreground/30'}`}>
+                                        {isSelected && <div className="w-2 h-2 bg-white rounded-full" />}
+                                    </div>
+                                )}
+
+                                <div className={`max-w-[70%] p-3 rounded-xl shadow-sm text-sm break-all overflow-visible relative group/msg ${isMe
                                         ? 'bg-primary text-primary-foreground rounded-tr-none'
                                         : 'bg-card text-foreground border border-border rounded-tl-none'
-                                    } ${isDeleted ? 'opacity-60 bg-muted/50 text-muted-foreground italic' : ''}`}>
+                                    } ${isDeleted ? 'opacity-60 bg-muted/50 text-muted-foreground italic' : ''} ${isSelected ? 'ring-2 ring-primary ring-offset-2' : ''}`}>
                                     
                                     {!isMe && <p className="text-xs font-bold mb-1 opacity-80">{msg.user.fullName || msg.user.username}</p>}
                                     
@@ -195,22 +239,54 @@ export default function GroupChatPage() {
                                             {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </span>
                                         
-                                        {isMe && !isDeleted && (
+                                        {!isSelectionMode && (
                                             <div className="flex-shrink-0">
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
-                                                        <button className="p-0.5 hover:bg-black/10 rounded transition-colors">
+                                                        <button className="p-0.5 hover:bg-black/10 rounded transition-colors text-current">
                                                             <MoreVertical className="w-3 h-3" />
                                                         </button>
                                                     </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end" className="w-32">
+                                                    <DropdownMenuContent align="end" className="w-40">
+                                                        {!isDeleted && (
+                                                            <>
+                                                                <DropdownMenuItem 
+                                                                    onClick={() => handleCopy(msg.content)}
+                                                                    className="flex items-center gap-2 cursor-pointer"
+                                                                >
+                                                                    <Copy className="w-3.5 h-3.5" />
+                                                                    Copy Text
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem 
+                                                                    onClick={() => {
+                                                                        setIsSelectionMode(true);
+                                                                        setSelectedIds([msg.id]);
+                                                                    }}
+                                                                    className="flex items-center gap-2 cursor-pointer"
+                                                                >
+                                                                    <CheckSquare className="w-3.5 h-3.5" />
+                                                                    Select
+                                                                </DropdownMenuItem>
+                                                            </>
+                                                        )}
+                                                        
                                                         <DropdownMenuItem 
-                                                            onClick={() => handleDeleteMessage(msg.id)}
+                                                            onClick={() => handleDeleteMessage(msg.id, "me")}
                                                             className="text-destructive focus:text-destructive flex items-center gap-2 cursor-pointer"
                                                         >
                                                             <Trash2 className="w-3.5 h-3.5" />
-                                                            Delete
+                                                            Delete for me
                                                         </DropdownMenuItem>
+
+                                                        {isMe && !isDeleted && (
+                                                            <DropdownMenuItem 
+                                                                onClick={() => handleDeleteMessage(msg.id, "everyone")}
+                                                                className="text-destructive focus:text-destructive flex items-center gap-2 cursor-pointer"
+                                                            >
+                                                                <Trash2 className="w-3.5 h-3.5" />
+                                                                Delete for everyone
+                                                            </DropdownMenuItem>
+                                                        )}
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                             </div>
@@ -223,23 +299,72 @@ export default function GroupChatPage() {
                 )}
             </div>
 
-            {/* Input Area */}
-            <form onSubmit={handleSend} className="p-4 bg-card border-t border-border flex gap-2 items-center flex-shrink-0">
-                <input
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder="Type a message..."
-                    className="flex-grow p-3 bg-muted/30 border border-input rounded-full focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all"
-                />
-                <button
-                    type="submit"
-                    disabled={!input.trim() || sending}
-                    className="p-3 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 disabled:opacity-50 transition-transform active:scale-95"
+            {/* Selection Toolbar or Input Area */}
+            {isSelectionMode ? (
+                <div className="p-4 bg-primary text-primary-foreground flex items-center justify-between animate-in slide-in-from-bottom-2 duration-300">
+                    <div className="flex items-center gap-4">
+                        <button 
+                            onClick={() => {
+                                setIsSelectionMode(false);
+                                setSelectedIds([]);
+                            }}
+                            className="p-2 hover:bg-white/10 rounded-full"
+                        >
+                            <CloseIcon className="w-5 h-5" />
+                        </button>
+                        <span className="font-bold">{selectedIds.length} selected</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <button 
+                                    disabled={selectedIds.length === 0}
+                                    className="flex items-center gap-2 px-4 py-2 bg-white text-primary rounded-lg font-bold disabled:opacity-50 transition-opacity"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                    Delete
+                                </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuItem onClick={() => handleBulkDelete('me')} className="cursor-pointer">
+                                    Delete for me
+                                </DropdownMenuItem>
+                                {canDeleteAllForEveryone && (
+                                    <DropdownMenuItem onClick={() => handleBulkDelete('everyone')} className="text-destructive focus:text-destructive cursor-pointer">
+                                        Delete for everyone
+                                    </DropdownMenuItem>
+                                )}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                </div>
+            ) : (
+                <form 
+                    onSubmit={handleSend} 
+                    className="p-4 bg-card border-t border-border flex gap-2 items-end flex-shrink-0"
                 >
-                    {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-                </button>
-            </form>
+                    <textarea
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSend();
+                            }
+                        }}
+                        placeholder="Type a message..."
+                        rows={1}
+                        className="flex-grow p-3 bg-muted/30 border border-input rounded-2xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all resize-none min-h-[45px] max-h-32 overflow-y-auto py-3"
+                    />
+                    <button
+                        type="submit"
+                        disabled={!input.trim() || sending}
+                        className="p-3 bg-primary text-primary-foreground rounded-full hover:bg-primary/90 disabled:opacity-50 transition-transform active:scale-95 mb-0.5"
+                    >
+                        {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                    </button>
+                </form>
+            )}
         </div>
     );
 }

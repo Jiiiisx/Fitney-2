@@ -51,3 +51,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: "Internal Server Error"}, { status: 500 });
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const auth = await verifyAuth(req);
+    if (auth.error) return auth.error;
+    const userId = auth.user.userId;
+
+    // Reset imageUrl to null in database
+    await db.update(users)
+      .set({ imageUrl: null })
+      .where(eq(users.id, userId));
+
+    return NextResponse.json({
+      message: "Profile photo removed",
+      imageUrl: null
+    });
+  } catch (error) {
+    console.error("DELETE_PHOTO_ERROR", error);
+    return NextResponse.json({ message: "Internal Server Error"}, { status: 500 });
+  }
+}

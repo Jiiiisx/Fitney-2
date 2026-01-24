@@ -20,8 +20,16 @@ export async function GET(req: NextRequest) {
         userId: userId,
         theme: 'system',
         measurementUnits: 'metric',
+        fontSize: 'text-size-md',
         emailNotifications: true,
         pushNotifications: true,
+        notificationSound: 'default',
+        vibrationEnabled: true,
+        showPopup: true,
+        showBadge: true,
+        channelWorkout: true,
+        channelAchievements: true,
+        channelSocial: true,
       }).returning();
       settings = newSettings[0];
     }
@@ -40,13 +48,33 @@ export async function PATCH(req: NextRequest) {
     const userId = auth.user.userId;
 
     const body = await req.json();
-    const { theme, measurementUnits, emailNotifications, pushNotifications } = body;
+    
+    // List of allowed fields to update
+    const allowedFields = [
+      'theme', 
+      'measurementUnits', 
+      'fontSize',
+      'emailNotifications', 
+      'pushNotifications',
+      'notificationSound',
+      'vibrationEnabled',
+      'showPopup',
+      'showBadge',
+      'channelWorkout',
+      'channelAchievements',
+      'channelSocial'
+    ];
 
     const updates: any = {};
-    if (theme) updates.theme = theme;
-    if (measurementUnits) updates.measurementUnits = measurementUnits;
-    if (emailNotifications !== undefined) updates.emailNotifications = emailNotifications;
-    if (pushNotifications !== undefined) updates.pushNotifications = pushNotifications;
+    allowedFields.forEach(field => {
+      if (body[field] !== undefined) {
+        updates[field] = body[field];
+      }
+    });
+
+    if (Object.keys(updates).length === 0) {
+      return NextResponse.json({ error: "No valid fields provided" }, { status: 400 });
+    }
 
     // Pastikan user punya record settings sebelum update
     const existingSettings = await db.query.userSettings.findFirst({
@@ -58,10 +86,7 @@ export async function PATCH(req: NextRequest) {
     if (!existingSettings) {
        updatedSettings = await db.insert(userSettings).values({
         userId,
-        theme: theme || 'system',
-        measurementUnits: measurementUnits || 'metric',
-        emailNotifications: emailNotifications ?? true,
-        pushNotifications: pushNotifications ?? true,
+        ...updates
       }).returning();
     } else {
        updatedSettings = await db.update(userSettings)
@@ -72,8 +97,8 @@ export async function PATCH(req: NextRequest) {
 
     return NextResponse.json(updatedSettings[0]);
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("UPDATE_SETTINGS_ERROR", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }

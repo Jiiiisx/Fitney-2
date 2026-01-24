@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, FormEvent, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
-import { Pencil, Plus, Droplets, Flame, Utensils } from 'lucide-react';
+import { Pencil, Plus, Droplets, Flame, Utensils, Lightbulb, Sparkles, ChefHat, Search, Loader2 } from 'lucide-react';
 import AddFoodModal from './AddFoodModal'; // Import Modal
 
 interface UserData {
@@ -32,6 +32,15 @@ interface Recipe {
   };
 }
 
+interface RecommendedFood {
+  id: number;
+  name: string;
+  caloriesPer100g: string;
+  proteinPer100g: string;
+  carbsPer100g: string;
+  fatPer100g: string;
+}
+
 export default function NutritionResults({ userData, onEdit }: NutritionResultsProps) {
   // --- State for Nutrition Tracking ---
   const [summary, setSummary] = useState<any>(null);
@@ -40,19 +49,21 @@ export default function NutritionResults({ userData, onEdit }: NutritionResultsP
   const [loading, setLoading] = useState(true);
   const [isAddFoodOpen, setIsAddFoodOpen] = useState(false); // State untuk Modal
 
-  // --- State for Recipe Finder ---
+  // --- State for Recommendations ---
+  const [recommendedFoods, setRecommendedFoods] = useState<RecommendedFood[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
 
   // --- Fetch Nutrition Data ---
-  const refreshData = async () => {
+  const refreshData = useCallback(async () => {
     try {
-      const [summaryRes, logsRes, waterRes] = await Promise.all([
+      const [summaryRes, logsRes, waterRes, recFoodsRes] = await Promise.all([
         fetch("/api/nutrition/summary", { credentials: 'include' }),
         fetch("/api/nutrition/log", { credentials: 'include' }),
-        fetch("/api/nutrition/water", { credentials: 'include' })
+        fetch("/api/nutrition/water", { credentials: 'include' }),
+        fetch("/api/nutrition/recommendations", { credentials: 'include' })
       ]);
 
       if (summaryRes.ok) setSummary(await summaryRes.json());
@@ -61,16 +72,44 @@ export default function NutritionResults({ userData, onEdit }: NutritionResultsP
         const waterData = await waterRes.json();
         setWaterIntake(waterData.amountMl || 0);
       }
+      if (recFoodsRes.ok) setRecommendedFoods(await recFoodsRes.json());
     } catch (error) {
       console.error("Failed to fetch data", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  const handleRecipeSearch = useCallback(async (query: string = '') => {
+    if (!userData.tdee) return;
+
+    setIsSearching(true);
+    setSearchError(null);
+
+    try {
+      const params = new URLSearchParams({
+        targetCalories: String(userData.tdee),
+        query: query,
+      });
+      const response = await fetch(`/api/recipes/search?${params.toString()}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch recipes.');
+      }
+      const data = await response.json();
+      setRecipes(data);
+    } catch (err) {
+      setSearchError(err instanceof Error ? err.message : 'An unknown error occurred.');
+    } finally {
+      setIsSearching(false);
+    }
+  }, [userData.tdee]);
 
   useEffect(() => {
     refreshData();
-  }, []);
+    // Initial recommendation fetch
+    handleRecipeSearch();
+  }, [refreshData, handleRecipeSearch]);
 
   // --- Handlers ---
   const handleAddWater = async (amount: number) => {
@@ -92,31 +131,9 @@ export default function NutritionResults({ userData, onEdit }: NutritionResultsP
     }
   };
 
-  const handleRecipeSearch = async (e: FormEvent) => {
+  const onSearchSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (!userData.tdee) return;
-
-    setIsSearching(true);
-    setSearchError(null);
-    setRecipes([]);
-
-    try {
-      const params = new URLSearchParams({
-        targetCalories: String(userData.tdee),
-        query: searchQuery,
-      });
-      const response = await fetch(`/api/recipes/search?${params.toString()}`);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to fetch recipes.');
-      }
-      const data = await response.json();
-      setRecipes(data);
-    } catch (err) {
-      setSearchError(err instanceof Error ? err.message : 'An unknown error occurred.');
-    } finally {
-      setIsSearching(false);
-    }
+    handleRecipeSearch(searchQuery);
   };
 
   // Calculations
@@ -246,39 +263,109 @@ export default function NutritionResults({ userData, onEdit }: NutritionResultsP
         </Card>
       </div>
 
-      {/* SECTION 3: RECIPE FINDER (Existing) */}
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle>Recipe Finder</CardTitle>
-          <CardDescription>Find healthy recipes that fit your goals.</CardDescription>
+      {/* SECTION 3: FOOD RECOMMENDATIONS */}
+      <Card className="shadow-sm border-none bg-orange-50/50 dark:bg-orange-950/10">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg flex items-center gap-2 text-orange-700 dark:text-orange-400">
+            <Lightbulb className="w-5 h-5" />
+            Recommended Healthy Foods
+          </CardTitle>
+          <CardDescription>Nutritious options to help you reach your goals.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleRecipeSearch} className="flex items-center gap-4 mb-6">
-            <Input placeholder="Search recipes (e.g. high protein chicken)..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="flex-grow" />
-            <Button type="submit" disabled={isSearching}>{isSearching ? '...' : 'Search'}</Button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {recommendedFoods.map((food) => (
+              <div key={food.id} className="bg-background border rounded-xl p-4 shadow-sm hover:shadow-md transition-all">
+                <h4 className="font-bold text-sm mb-2">{food.name}</h4>
+                <div className="flex justify-between items-end">
+                  <div>
+                    <p className="text-xs text-muted-foreground">per 100g</p>
+                    <p className="text-lg font-bold text-primary">{Math.round(parseFloat(food.caloriesPer100g))} <span className="text-[10px] font-normal text-muted-foreground uppercase">kcal</span></p>
+                  </div>
+                  <div className="text-[10px] text-right space-y-0.5 text-muted-foreground font-medium">
+                    <p>P: {food.proteinPer100g}g</p>
+                    <p>C: {food.carbsPer100g}g</p>
+                    <p>F: {food.fatPer100g}g</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* SECTION 4: RECIPE FINDER & RECOMMENDATIONS */}
+      <Card className="shadow-sm overflow-hidden">
+        <CardHeader className="bg-primary/5 border-b border-primary/10">
+          <CardTitle className="flex items-center gap-2">
+            <ChefHat className="w-5 h-5 text-primary" />
+            Recipe Recommendations
+          </CardTitle>
+          <CardDescription>Personalized recipes based on your {userData.tdee} kcal target.</CardDescription>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <form onSubmit={onSearchSubmit} className="flex items-center gap-4 mb-8">
+            <div className="relative flex-grow">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input 
+                placeholder="Find more recipes (e.g. high protein chicken)..." 
+                value={searchQuery} 
+                onChange={e => setSearchQuery(e.target.value)} 
+                className="pl-10 h-11 rounded-full border-primary/20 focus-visible:ring-primary" 
+              />
+            </div>
+            <Button type="submit" disabled={isSearching} className="rounded-full h-11 px-8">
+              {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Search'}
+            </Button>
           </form>
 
           {/* List Recipes */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {recipes.map(recipe => (
-              <a key={recipe.id} href={`https://spoonacular.com/recipes/${recipe.title.replace(/\s+/g, '-')}-${recipe.id}`} target="_blank" rel="noopener noreferrer" className="block group">
-                <Card className="overflow-hidden h-full hover:shadow-md transition-all border-none bg-muted/30">
-                  <div className="relative w-full h-32">
-                    <Image src={recipe.image} alt={recipe.title} layout="fill" objectFit="cover" />
+          {isSearching && recipes.length === 0 ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {recipes.map(recipe => (
+                <a 
+                  key={recipe.id} 
+                  href={`https://spoonacular.com/recipes/${recipe.title.replace(/\s+/g, '-')}-${recipe.id}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="block group"
+                >
+                  <div className="bg-card rounded-2xl overflow-hidden border border-border/50 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full flex flex-col">
+                    <div className="relative w-full h-40">
+                      <Image src={recipe.image} alt={recipe.title} layout="fill" objectFit="cover" className="group-hover:scale-105 transition-transform duration-500" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
+                        <span className="text-white text-xs font-medium flex items-center gap-1">
+                          View Recipe <Plus className="w-3 h-3" />
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-4 flex-grow flex flex-col justify-between">
+                      <h4 className="font-bold text-sm leading-tight line-clamp-2 group-hover:text-primary transition-colors">{recipe.title}</h4>
+                      <div className="mt-3 pt-3 border-t border-border/50 flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 text-primary">
+                          <Sparkles className="w-3.5 h-3.5" />
+                          <span className="text-xs font-bold">
+                            {recipe.nutrition.nutrients.find(n => n.name === 'Calories')?.amount.toFixed(0)} kcal
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Per Serving</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="p-3">
-                    <h4 className="font-semibold text-sm line-clamp-1">{recipe.title}</h4>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {recipe.nutrition.nutrients.find(n => n.name === 'Calories')?.amount.toFixed(0)} kcal
-                    </p>
-                  </div>
-                </Card>
-              </a>
-            ))}
-          </div>
+                </a>
+              ))}
+            </div>
+          )}
 
-          {recipes.length === 0 && !isSearching && searchQuery && (
-            <p className="text-center text-muted-foreground text-sm py-4">No recipes found.</p>
+          {recipes.length === 0 && !isSearching && (
+            <div className="text-center py-12 bg-muted/20 rounded-2xl border border-dashed border-border">
+              <ChefHat className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-20" />
+              <p className="text-muted-foreground text-sm italic">Enter a keyword to explore specialized recipes.</p>
+            </div>
           )}
 
         </CardContent>

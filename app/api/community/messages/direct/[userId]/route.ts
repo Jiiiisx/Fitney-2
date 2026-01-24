@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/app/lib/db";
-import { directMessages, users, notifications } from "@/app/lib/schema";
+import { directMessages, users, notifications, hiddenDirectMessages } from "@/app/lib/schema";
 import { verifyAuth } from "@/app/lib/auth";
-import { eq, and, or, desc, asc } from "drizzle-orm";
+import { eq, and, or, desc, asc, notInArray } from "drizzle-orm";
 
 export async function GET(
   req: NextRequest,
@@ -15,15 +15,28 @@ export async function GET(
     const myId = auth.user.userId;
     const { userId: friendId } = await params;
 
+    // 1. Dapatkan ID pesan yang disembunyikan oleh user ini
+    const hiddenIds = await db
+        .select({ id: hiddenDirectMessages.messageId })
+        .from(hiddenDirectMessages)
+        .where(eq(hiddenDirectMessages.userId, myId));
+    
+    const hiddenIdList = hiddenIds.map(h => h.id);
+
+    // 2. Fetch pesan dengan format db.query agar relasi 'sender' benar
     const messages = await db.query.directMessages.findMany({
-      where: or(
-        and(eq(directMessages.senderId, myId), eq(directMessages.receiverId, friendId)),
-        and(eq(directMessages.senderId, friendId), eq(directMessages.receiverId, myId))
+      where: and(
+        or(
+          and(eq(directMessages.senderId, myId), eq(directMessages.receiverId, friendId)),
+          and(eq(directMessages.senderId, friendId), eq(directMessages.receiverId, myId))
+        ),
+        hiddenIdList.length > 0 ? notInArray(directMessages.id, hiddenIdList) : undefined
       ),
       orderBy: [asc(directMessages.createdAt)],
       with: {
         sender: {
           columns: {
+            id: true,
             username: true,
             fullName: true,
             imageUrl: true,
