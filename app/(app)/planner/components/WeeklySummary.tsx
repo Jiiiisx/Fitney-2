@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { BarChart, TrendingUp, Clock, Zap, Loader2 } from "lucide-react";
 import { startOfWeek, endOfWeek, isWithinInterval, parseISO } from 'date-fns';
+import { fetchWithAuth } from "@/app/lib/fetch-helper";
 
 interface WeeklySummaryProps {
   planVersion: number;
@@ -23,22 +24,8 @@ export default function WeeklySummary({ planVersion }: WeeklySummaryProps) {
     const fetchWeeklySummary = async () => {
       setLoading(true);
       try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          setSummary(null);
-          return;
-        }
-
-        const response = await fetch('/api/users/profile/active-plan', {
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
-
-        if (!response.ok) {
-          setSummary(null);
-          return;
-        }
-
-        const plan = await response.json();
+        const plan = await fetchWithAuth('/api/users/profile/active-plan');
+        
         if (plan && plan.schedule) {
           const today = new Date();
           const weekStart = startOfWeek(today, { weekStartsOn: 1 }); // Monday

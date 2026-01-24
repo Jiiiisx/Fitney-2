@@ -13,6 +13,7 @@ import { NotificationPopup } from "./NotificationPopup";
 import OnboardingModal from "./OnboardingModal";
 import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
+import { fetchWithAuth } from "@/app/lib/fetch-helper";
 
 interface UserProfile {
   fullName: string;
@@ -64,13 +65,10 @@ const Header = () => {
 
   const fetchUser = useCallback(async () => {
     try {
-      const res = await fetch('/api/users/profile');
-      if (res.ok) {
-        const userData = await res.json();
-        setUser(userData);
-        if (!userData.hasCompletedOnboarding) {
-          setShowOnboarding(true);
-        }
+      const userData = await fetchWithAuth('/api/users/profile');
+      setUser(userData);
+      if (!userData.hasCompletedOnboarding) {
+        setShowOnboarding(true);
       }
     } catch (error) {
       console.error("Profile fetch error", error);
@@ -80,11 +78,8 @@ const Header = () => {
   // Fetch gamification stats
   const fetchLevel = useCallback(async () => {
     try {
-      const res = await fetch('/api/users/gamification-stats');
-      if (res.ok) {
-        const gamificationData = await res.json();
-        setLevel(gamificationData.level);
-      }
+      const gamificationData = await fetchWithAuth('/api/users/gamification-stats');
+      setLevel(gamificationData.level);
     } catch (error) {
       console.error("Stats fetch error", error);
     }
@@ -97,7 +92,7 @@ const Header = () => {
 
   const handleLogout = async () => {
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await fetchWithAuth("/api/auth/logout", { method: "POST" });
       router.push("/login");
       router.refresh(); // Refresh to clear server component cache if any
     } catch (error) {

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, Dumbbell, Heart, Mountain, Building, Home, Leaf, Zap, Wind } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { fetchWithAuth } from '@/app/lib/fetch-helper';
 
 // Define types for onboarding state
 interface OnboardingData {
@@ -34,16 +35,9 @@ const OnboardingModal = ({ onComplete }: OnboardingModalProps) => {
     console.log('Onboarding Complete. Final Data:', data);
     
     try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error("No token found");
-
       // API call to save user preferences and mark onboarding as complete
-      await fetch('/api/users/profile/complete-onboarding', {
+      await fetchWithAuth('/api/users/profile/complete-onboarding', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
         body: JSON.stringify(data) // Sending the collected data
       });
       

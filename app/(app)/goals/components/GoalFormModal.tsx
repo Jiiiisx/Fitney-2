@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { Goal } from "../page";
+import { fetchWithAuth } from "@/app/lib/fetch-helper";
 
 interface GoalFormModalProps {
   open: boolean;
@@ -78,17 +79,8 @@ export function GoalFormModal({ open, onOpenChange, onSave, goalToEdit }: GoalFo
     const method = isEditMode ? 'PUT' : 'POST';
 
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Authentication token not found. Please log in.');
-      }
-
-      const response = await fetch(url, {
+      const savedGoal = await fetchWithAuth(url, {
         method: method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
         body: JSON.stringify({
           title,
           category,
@@ -97,12 +89,6 @@ export function GoalFormModal({ open, onOpenChange, onSave, goalToEdit }: GoalFo
         }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Failed to ${isEditMode ? 'update' : 'create'} goal`);
-      }
-
-      const savedGoal = await response.json();
       onSave(savedGoal); // Pass the saved goal back to the parent
       onOpenChange(false); // Close the modal
 

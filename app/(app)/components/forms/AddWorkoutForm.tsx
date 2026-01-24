@@ -38,6 +38,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { cn } from '@/lib/utils';
+import { fetchWithAuth } from '@/app/lib/fetch-helper';
 
 function useDebounce(value: string, delay: number) {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -145,23 +146,14 @@ export function AddWorkoutForm({ open, onOpenChange, onPlanChange }: AddWorkoutF
 
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('Authentication token not found.');
-
-      const response = await fetch('/api/planner/day', {
+      await fetchWithAuth('/api/planner/day', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({
           name: workoutName,
           date,
           exercises: exercises.filter(ex => ex.id),
         }),
       });
-
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.error || 'Failed to add workout.');
-      }
 
       onPlanChange();
       onOpenChange(false);

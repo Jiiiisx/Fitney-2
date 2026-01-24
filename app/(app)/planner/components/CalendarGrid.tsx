@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import WorkoutCard, { Workout } from "./WorkoutCard";
 import { addDays, format, parseISO } from 'date-fns';
+import { fetchWithAuth } from '@/app/lib/fetch-helper';
 
 import { Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -53,28 +54,14 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion, onPlan
     setLoading(true);
     setError(null);
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setPlan(null);
-        return;
-      }
-
-      const response = await fetch('/api/users/profile/active-plan', {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      
-      if (response.status === 404) {
-        setPlan(null);
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch active plan');
-      }
-      
-      const data = await response.json();
+      const data = await fetchWithAuth('/api/users/profile/active-plan');
       setPlan(data);
-    } catch (err) {
+    } catch (err: any) {
+       // If 404, it means no active plan, which is valid state (not error)
+       if (err.message && err.message.includes('404')) {
+            setPlan(null);
+            return;
+       }
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {
       setLoading(false);
@@ -84,42 +71,27 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion, onPlan
   const handleDelete = async (dayId: number) => {
     console.log("handleDelete called with dayId:", dayId);
     try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('Authentication token not found.');
-
-      const response = await fetch(`/api/users/profile/active-plan/days/${dayId}`, {
+      await fetchWithAuth(`/api/users/profile/active-plan/days/${dayId}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` },
       });
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          // Already deleted, treat as success
-          onPlanChange();
-        } else {
-          console.error('Failed to delete the workout.');
+      // Success
+      onPlanChange();
+    } catch (error: any) {
+        if (error.message && error.message.includes('404')) {
+             // Already deleted
+             onPlanChange();
+             return;
         }
-      } else {
-        onPlanChange();
-      }
-    } catch (error) {
       console.error('An error occurred while deleting the workout:', error);
     }
   };
 
   const handleCompleteWorkout = async (workout: Workout, date: Date) => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('Authentication token not found.');
-
       const toastId = toast.loading('Logging workout...');
 
-      const response = await fetch('/api/workouts/log', {
+      const data = await fetchWithAuth('/api/workouts/log', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        },
         body: JSON.stringify({
             name: workout.name,
             type: workout.type === 'Rest Day' ? 'Rest' : workout.type,
@@ -130,11 +102,6 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion, onPlan
         })
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to log workout');
-      }
-
-      const data = await response.json();
       toast.success(`Workout logged! +${data.xpGained} XP`, { id: toastId });
       
       onPlanChange(); // Refresh grid
@@ -146,15 +113,8 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion, onPlan
 
   const handleSetRestDay = async (date: Date) => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('Authentication token not found.');
-
-      const response = await fetch('/api/planner/day', {
+      await fetchWithAuth('/api/planner/day', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
         body: JSON.stringify({
           name: 'Rest Day',
           type: 'Rest Day',
@@ -162,12 +122,8 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion, onPlan
           duration: 0,
         }),
       });
-
-      if (!response.ok) {
-        console.error('Failed to set rest day.');
-      } else {
-        onPlanChange();
-      }
+      // Success
+      onPlanChange();
     } catch (error) {
       console.error('An error occurred while setting rest day:', error);
     }

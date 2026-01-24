@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Target, Footprints, Loader2, Flame, Timer, Dumbbell } from "lucide-react";
+import { fetchWithAuth } from "@/app/lib/fetch-helper";
 
 interface GoalTrackerProps {
   planVersion: number;
@@ -23,19 +24,9 @@ export default function GoalTracker({ planVersion }: GoalTrackerProps) {
     const fetchGoals = async () => {
       setLoading(true);
       try {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-
         // Fetch user goals directly
-        const response = await fetch('/api/goals', { 
-            headers: { 'Authorization': `Bearer ${token}` } 
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          // Sort by relevance or type if needed, for now take all
-          setGoals(data);
-        }
+        const data = await fetchWithAuth('/api/goals');
+        setGoals(data);
       } catch (error) {
         console.error("Failed to fetch goals:", error);
       } finally {

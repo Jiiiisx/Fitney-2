@@ -9,6 +9,7 @@ import { Plus } from "lucide-react";
 import { GoalFormModal } from "./components/GoalFormModal";
 import { GoalRecommendations } from "./components/GoalRecommendations";
 import { Card, CardContent } from "@/components/ui/card";
+import { fetchWithAuth } from "@/app/lib/fetch-helper";
 
 // Interfaces remain the same
 export interface Goal {
@@ -46,21 +47,15 @@ export default function GoalsPage() {
     const fetchInitialData = async () => {
       try {
         setLoading(true);
-        const token = localStorage.getItem('token');
-        if (!token) throw new Error('Authentication token not found.');
-
-        const response = await fetch('/api/goals', { headers: { 'Authorization': `Bearer ${token}` }});
-        if (!response.ok) throw new Error('Failed to fetch goals');
+        // import fetchWithAuth at top of file if not present, but for now assuming it needs to be added or is available
+        // Note: I will need to check imports separately, but let's fix the logic first.
         
-        const goalsData = await response.json();
+        const goalsData = await fetchWithAuth('/api/goals');
         setGoals(goalsData);
 
         if (goalsData.length === 0) {
           setRecsLoading(true);
-          const recsResponse = await fetch('/api/goals/recommendations', { headers: { 'Authorization': `Bearer ${token}` }});
-          if (!recsResponse.ok) throw new Error('Failed to fetch recommendations');
-          
-          const recsData = await recsResponse.json();
+          const recsData = await fetchWithAuth('/api/goals/recommendations');
           setRecommendations(recsData.recommendations);
           setRecsLoading(false);
         }
@@ -101,17 +96,9 @@ export default function GoalsPage() {
     setGoals(goals.filter(g => g.id !== goalId));
 
     try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('No auth token');
-
-      const res = await fetch(`/api/goals/${goalId}`, {
+      await fetchWithAuth(`/api/goals/${goalId}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
       });
-
-      if (!res.ok) {
-        throw new Error('Failed to delete');
-      }
     } catch (err) {
       console.error("Failed to delete goal:", err);
       // Revert if failed
@@ -122,15 +109,10 @@ export default function GoalsPage() {
   
   const handleAcceptRecommendation = async (recommendation: GoalTemplate) => {
     try {
-        const token = localStorage.getItem('token');
-        if (!token) throw new Error('Authentication token not found.');
-        const response = await fetch('/api/goals', {
+        const newGoal = await fetchWithAuth('/api/goals', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify(recommendation),
         });
-        if (!response.ok) throw new Error('Failed to accept recommendation');
-        const newGoal = await response.json();
         setGoals(prevGoals => [newGoal, ...prevGoals]);
         setRecommendations([]);
     } catch (err) {

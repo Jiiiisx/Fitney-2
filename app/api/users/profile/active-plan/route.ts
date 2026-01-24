@@ -76,7 +76,7 @@ export async function GET(req: NextRequest) {
       const dayLogs = logsByDate.get(day.date) || [];
       
       // Find index of first matching log (Case insensitive optional? Currently exact match)
-      const logIndex = dayLogs.indexOf(day.name);
+      const logIndex = dayLogs.indexOf(day.name || '');
       
       let isLogged = false;
       if (logIndex !== -1) {

@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft } from 'lucide-react';
+import { fetchWithAuth } from '@/app/lib/fetch-helper';
 
 interface Program {
   id: number;
@@ -53,11 +54,7 @@ export function WorkoutTemplates({ open, onOpenChange, onPlanStarted }: WorkoutT
 
       async function fetchPrograms() {
         try {
-          const response = await fetch('/api/workout-programs');
-          if (!response.ok) {
-            throw new Error('Failed to fetch workout programs');
-          }
-          const data = await response.json();
+          const data = await fetchWithAuth('/api/workout-programs');
           setPrograms(data);
         } catch (err) {
           setError(err instanceof Error ? err.message : 'An unknown error occurred');
@@ -75,24 +72,10 @@ export function WorkoutTemplates({ open, onOpenChange, onPlanStarted }: WorkoutT
     setIsStarting(true);
     setStartError(null);
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Unauthorized. Please log in again.');
-      }
-
-      const response = await fetch('/api/users/profile/active-plan', {
+      await fetchWithAuth('/api/users/profile/active-plan', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
         body: JSON.stringify({ programId: selectedProgram.id }),
       });
-
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || 'Failed to start program.');
-      }
       
       onPlanStarted();
       onOpenChange(false);

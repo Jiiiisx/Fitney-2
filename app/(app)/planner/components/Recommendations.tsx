@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Lightbulb, Loader2, Sparkles, Plus, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import toast from 'react-hot-toast';
+import { fetchWithAuth } from "@/app/lib/fetch-helper";
 
 interface RecommendationsProps {
   planVersion: number;
@@ -27,20 +28,8 @@ export default function Recommendations({ planVersion, onAddFlexibility, onTryTe
     const fetchRecommendations = async () => {
       setLoading(true);
       try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          setRecommendations([]);
-          return;
-        }
-
-        const response = await fetch('/api/goals/recommendations', {
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
-
-        if (response.ok) {
-           const data = await response.json();
-           setRecommendations(data.recommendations || []);
-        }
+        const data = await fetchWithAuth('/api/goals/recommendations');
+        setRecommendations(data.recommendations || []);
       } catch (error) {
         console.error("Failed to fetch suggestions:", error);
       } finally {
@@ -53,15 +42,8 @@ export default function Recommendations({ planVersion, onAddFlexibility, onTryTe
 
   const handleAddGoal = async (rec: Recommendation) => {
     try {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-
-        const response = await fetch('/api/goals', {
+        await fetchWithAuth('/api/goals', {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}` 
-            },
             body: JSON.stringify({
                 title: rec.title,
                 category: rec.category,
@@ -71,12 +53,8 @@ export default function Recommendations({ planVersion, onAddFlexibility, onTryTe
             })
         });
 
-        if (response.ok) {
-            toast.success("Goal added successfully!");
-            // Optionally trigger a refresh of GoalTracker here via a callback or context
-        } else {
-            toast.error("Failed to add goal.");
-        }
+        toast.success("Goal added successfully!");
+        // Optionally trigger a refresh of GoalTracker here via a callback or context
     } catch (e) {
         toast.error("Error adding goal.");
     }

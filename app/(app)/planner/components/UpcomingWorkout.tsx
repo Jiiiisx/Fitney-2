@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Calendar, Clock, Zap } from 'lucide-react';
 import { format, parseISO, isFuture, differenceInMinutes, isToday } from 'date-fns';
+import { fetchWithAuth } from "@/app/lib/fetch-helper";
 
 interface UpcomingWorkoutProps {
   planVersion: number;
@@ -24,22 +25,7 @@ export default function UpcomingWorkout({ planVersion }: UpcomingWorkoutProps) {
     const fetchNextWorkout = async () => {
       setLoading(true);
       try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          setNextWorkout(null);
-          return;
-        }
-
-        const response = await fetch('/api/users/profile/active-plan', {
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
-
-        if (!response.ok) {
-          setNextWorkout(null);
-          return;
-        }
-
-        const plan = await response.json();
+        const plan = await fetchWithAuth('/api/users/profile/active-plan');
         
         if (plan && plan.schedule) {
           const upcoming = plan.schedule
