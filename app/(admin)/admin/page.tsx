@@ -19,7 +19,10 @@ import {
     Crown,
     Settings,
     FileText,
-    Users2
+    Users2,
+    Dumbbell,
+    Plus,
+    Image as ImageIcon
 } from "lucide-react";
 import Link from "next/link";
 import { fetchWithAuth } from "@/app/lib/fetch-helper";
@@ -49,15 +52,22 @@ const StatCard = ({ title, value, icon: Icon, color }: any) => (
 );
 
 export default function AdminDashboard() {
-    const [activeTab, setActiveTab] = useState<"overview" | "users" | "community">("overview");
+    const [activeTab, setActiveTab] = useState<"overview" | "users" | "community" | "exercises">("overview");
     const [data, setData] = useState<any>(null);
     const [userList, setUserList] = useState<any[]>([]);
     const [postList, setPostList] = useState<any[]>([]);
     const [groupList, setGroupList] = useState<any[]>([]);
+    const [exerciseList, setExerciseList] = useState<any[]>([]);
+    const [categories, setCategories] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
+    const [globalSearch, setGlobalSearch] = useState("");
+    const [globalResults, setGlobalResults] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [contentLoading, setContentLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Form states for new exercise
+    const [newExercise, setNewExercise] = useState({ name: "", description: "", categoryId: "", imageUrl: "" });
 
     // Fetch Overview Stats
     const fetchStats = async () => {
@@ -101,6 +111,36 @@ export default function AdminDashboard() {
         }
     };
 
+    // Fetch Exercises
+    const fetchExercises = async (query = "") => {
+        setContentLoading(true);
+        try {
+            const [exResult, catResult] = await Promise.all([
+                fetchWithAuth(`/api/admin/exercises?q=${query}`),
+                fetchWithAuth("/api/categories")
+            ]);
+            setExerciseList(exResult);
+            setCategories(catResult);
+        } catch (err) {
+            toast.error("Failed to load exercises");
+        } finally {
+            setContentLoading(false);
+        }
+    };
+
+    // Global Search Logic
+    useEffect(() => {
+        const timer = setTimeout(async () => {
+            if (globalSearch.length > 1) {
+                const results = await fetchWithAuth(`/api/admin/search?q=${globalSearch}`);
+                setGlobalResults(results);
+            } else {
+                setGlobalResults(null);
+            }
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [globalSearch]);
+
     useEffect(() => {
         fetchStats();
     }, []);
@@ -110,6 +150,8 @@ export default function AdminDashboard() {
             fetchUsers(searchQuery);
         } else if (activeTab === "community") {
             fetchCommunityContent();
+        } else if (activeTab === "exercises") {
+            fetchExercises(searchQuery);
         }
     }, [activeTab, searchQuery]);
 
@@ -159,6 +201,32 @@ export default function AdminDashboard() {
         }
     };
 
+    const handleCreateExercise = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            await fetchWithAuth("/api/admin/exercises", {
+                method: "POST",
+                body: JSON.stringify(newExercise)
+            });
+            toast.success("Exercise added");
+            setNewExercise({ name: "", description: "", categoryId: "", imageUrl: "" });
+            fetchExercises();
+        } catch (err) {
+            toast.error("Failed to add exercise");
+        }
+    };
+
+    const handleDeleteExercise = async (id: number) => {
+        if (!confirm("Remove this exercise from database?")) return;
+        try {
+            await fetchWithAuth(`/api/admin/exercises?id=${id}`, { method: "DELETE" });
+            toast.success("Exercise deleted");
+            fetchExercises();
+        } catch (err) {
+            toast.error("Deletion failed");
+        }
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background">
@@ -186,28 +254,31 @@ export default function AdminDashboard() {
     return (
         <div className="flex h-screen bg-muted/30 dark:bg-black overflow-hidden font-poppins">
             {/* Sidebar Navigation */}
-            <aside className="w-72 bg-card border-r border-border hidden lg:flex flex-col">
-                <div className="p-8 border-b border-border/50">
+            <aside className="w-72 bg-card border-r border-border hidden lg:flex flex-col h-screen sticky top-0">
+                <div className="h-20 px-8 border-b border-border/50 flex items-center">
                     <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/30">
-                            <Shield className="w-7 h-7" />
+                        <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/30 shrink-0">
+                            <Shield className="w-6 h-6" />
                         </div>
-                        <div>
-                            <span className="text-2xl font-black tracking-tighter">FITNEY</span>
-                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] -mt-1">Admin Panel</p>
+                        <div className="min-w-0">
+                            <span className="text-xl font-black tracking-tighter block leading-none">FITNEY</span>
+                            <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-[0.2em] mt-0.5">Admin Panel</p>
                         </div>
                     </div>
                 </div>
 
                 <nav className="flex-1 p-4 space-y-2 mt-4">
-                    <button onClick={() => setActiveTab("overview")} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-semibold transition-all ${activeTab === 'overview' ? 'bg-primary text-primary-foreground shadow-xl shadow-primary/20 scale-[1.02]' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+                    <button onClick={() => { setActiveTab("overview"); setSearchQuery(""); }} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-semibold transition-all ${activeTab === 'overview' ? 'bg-primary text-primary-foreground shadow-xl shadow-primary/20 scale-[1.02]' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
                         <LayoutDashboard className="w-5 h-5" /> Dashboard
                     </button>
-                    <button onClick={() => setActiveTab("users")} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-semibold transition-all ${activeTab === 'users' ? 'bg-primary text-primary-foreground shadow-xl shadow-primary/20 scale-[1.02]' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+                    <button onClick={() => { setActiveTab("users"); setSearchQuery(""); }} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-semibold transition-all ${activeTab === 'users' ? 'bg-primary text-primary-foreground shadow-xl shadow-primary/20 scale-[1.02]' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
                         <Users className="w-5 h-5" /> User Directory
                     </button>
-                    <button onClick={() => setActiveTab("community")} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-semibold transition-all ${activeTab === 'community' ? 'bg-primary text-primary-foreground shadow-xl shadow-primary/20 scale-[1.02]' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+                    <button onClick={() => { setActiveTab("community"); setSearchQuery(""); }} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-semibold transition-all ${activeTab === 'community' ? 'bg-primary text-primary-foreground shadow-xl shadow-primary/20 scale-[1.02]' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
                         <MessageSquare className="w-5 h-5" /> Moderation
+                    </button>
+                    <button onClick={() => { setActiveTab("exercises"); setSearchQuery(""); }} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-semibold transition-all ${activeTab === 'exercises' ? 'bg-primary text-primary-foreground shadow-xl shadow-primary/20 scale-[1.02]' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+                        <Dumbbell className="w-5 h-5" /> Exercises
                     </button>
                 </nav>
 
@@ -222,14 +293,49 @@ export default function AdminDashboard() {
             <main className="flex-1 flex flex-col overflow-hidden relative">
                 
                 {/* Global Admin Header */}
-                <header className="h-20 bg-background/80 backdrop-blur-md border-b flex items-center justify-between px-8 sticky top-0 z-20">
+                <header className="h-20 bg-background border-b flex items-center justify-between px-8 sticky top-0 z-20">
                     <div className="relative w-96">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <input 
                             type="text" 
                             placeholder="Global system search..."
+                            value={globalSearch}
+                            onChange={(e) => setGlobalSearch(e.target.value)}
                             className="w-full bg-muted/50 border-none rounded-full pl-12 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/50 transition-all outline-none"
                         />
+                        {/* Global Search Results Dropdown */}
+                        {globalResults && (
+                            <div className="absolute top-full left-0 w-[500px] bg-card border rounded-2xl mt-2 shadow-2xl p-4 space-y-4 max-h-[80vh] overflow-y-auto z-50 animate-in fade-in zoom-in-95">
+                                {globalResults.users.length > 0 && (
+                                    <div>
+                                        <p className="text-[10px] font-black text-muted-foreground uppercase mb-2">Users</p>
+                                        {globalResults.users.map((u: any) => (
+                                            <div key={u.id} className="flex items-center justify-between p-2 hover:bg-muted rounded-xl transition-all cursor-pointer group" onClick={() => { setActiveTab("users"); setSearchQuery(u.username); setGlobalSearch(""); }}>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">{u.username.charAt(0)}</div>
+                                                    <span className="text-sm font-bold">{u.fullName || u.username}</span>
+                                                </div>
+                                                <ExternalLink className="w-3 h-3 opacity-0 group-hover:opacity-100" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                {globalResults.posts.length > 0 && (
+                                    <div>
+                                        <p className="text-[10px] font-black text-muted-foreground uppercase mb-2">Posts</p>
+                                        {globalResults.posts.map((p: any) => (
+                                            <div key={p.id} className="p-2 hover:bg-muted rounded-xl transition-all cursor-pointer group" onClick={() => { setActiveTab("community"); setGlobalSearch(""); }}>
+                                                <p className="text-sm line-clamp-1">{p.content}</p>
+                                                <p className="text-[10px] text-muted-foreground">by {p.authorUsername}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                {globalResults.users.length === 0 && globalResults.posts.length === 0 && globalResults.groups.length === 0 && (
+                                    <p className="text-center text-sm text-muted-foreground py-4">No results found for "{globalSearch}"</p>
+                                )}
+                            </div>
+                        )}
                     </div>
                     <div className="flex items-center gap-4">
                         <div className="text-right hidden sm:block">
@@ -244,16 +350,11 @@ export default function AdminDashboard() {
 
                 {/* Dynamic View Area */}
                 <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-                    <div className="max-w-6xl mx-auto space-y-10 pb-20">
+                    <div className="max-w-[1600px] mx-auto space-y-10 pb-20">
                         
                         {/* VIEW: OVERVIEW */}
                         {activeTab === "overview" && (
                             <div className="space-y-10 animate-in fade-in duration-500">
-                                <div>
-                                    <h1 className="text-4xl font-black tracking-tight">System Status</h1>
-                                    <p className="text-muted-foreground text-lg">Your business at a glance.</p>
-                                </div>
-
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                                     <StatCard title="Active Users" value={data.stats.totalUsers} icon={Users} color="bg-blue-500" />
                                     <StatCard title="Total Posts" value={data.stats.totalPosts} icon={MessageSquare} color="bg-purple-500" />
@@ -302,11 +403,7 @@ export default function AdminDashboard() {
                         {/* VIEW: USER DIRECTORY */}
                         {activeTab === "users" && (
                             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                                    <div>
-                                        <h1 className="text-4xl font-black tracking-tight">User Directory</h1>
-                                        <p className="text-muted-foreground text-lg">Monitor accounts and manage platform permissions.</p>
-                                    </div>
+                                <div className="flex flex-col md:flex-row md:items-end justify-start gap-6">
                                     <div className="relative w-full md:w-96">
                                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                         <input 
@@ -404,14 +501,140 @@ export default function AdminDashboard() {
                             </div>
                         )}
 
+                        {/* VIEW: EXERCISES */}
+                        {activeTab === "exercises" && (
+                            <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <div className="flex flex-col md:flex-row md:items-end justify-start gap-6">
+                                    <div className="flex gap-4">
+                                        <div className="relative w-full md:w-80">
+                                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                            <input 
+                                                type="text" 
+                                                placeholder="Search exercises..."
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                                className="w-full pl-12 pr-4 py-3 rounded-2xl border bg-card focus:ring-4 focus:ring-primary/10 outline-none transition-all shadow-sm"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                                    {/* Add Exercise Form */}
+                                    <div className="bg-card border rounded-[2rem] p-8 shadow-xl h-fit sticky top-28 lg:col-span-1">
+                                        <h3 className="text-xl font-black mb-6 flex items-center gap-2">
+                                            <Plus className="w-5 h-5 text-primary" /> Add New Movement
+                                        </h3>
+                                        <form onSubmit={handleCreateExercise} className="space-y-4">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase text-muted-foreground ml-2">Exercise Name</label>
+                                                <input 
+                                                    required
+                                                    className="w-full bg-muted/50 border-none rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/50 transition-all outline-none"
+                                                    placeholder="e.g. Diamond Pushups"
+                                                    value={newExercise.name}
+                                                    onChange={e => setNewExercise({...newExercise, name: e.target.value})}
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase text-muted-foreground ml-2">Category</label>
+                                                <select 
+                                                    className="w-full bg-muted/50 border-none rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/50 transition-all outline-none"
+                                                    value={newExercise.categoryId}
+                                                    onChange={e => setNewExercise({...newExercise, categoryId: e.target.value})}
+                                                >
+                                                    <option value="">Select Category</option>
+                                                    {categories.map((c: any) => (
+                                                        <option key={c.id} value={c.id}>{c.name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase text-muted-foreground ml-2">Image URL</label>
+                                                <input 
+                                                    className="w-full bg-muted/50 border-none rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/50 transition-all outline-none"
+                                                    placeholder="https://..."
+                                                    value={newExercise.imageUrl}
+                                                    onChange={e => setNewExercise({...newExercise, imageUrl: e.target.value})}
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black uppercase text-muted-foreground ml-2">Instructions</label>
+                                                <textarea 
+                                                    rows={4}
+                                                    className="w-full bg-muted/50 border-none rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/50 transition-all outline-none resize-none"
+                                                    placeholder="Step by step guide..."
+                                                    value={newExercise.description}
+                                                    onChange={e => setNewExercise({...newExercise, description: e.target.value})}
+                                                />
+                                            </div>
+                                            <Button type="submit" className="w-full rounded-2xl py-6 font-bold shadow-lg shadow-primary/20">
+                                                Save Exercise
+                                            </Button>
+                                        </form>
+                                    </div>
+
+                                    {/* Exercise List Table */}
+                                    <div className="lg:col-span-3 bg-card border rounded-[2rem] shadow-xl overflow-hidden">
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full border-collapse">
+                                                <thead>
+                                                    <tr className="bg-muted/50 text-left text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                                                        <th className="px-8 py-6">Exercise</th>
+                                                        <th className="px-8 py-6">Category</th>
+                                                        <th className="px-8 py-6 text-right">Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-border/50">
+                                                    {contentLoading ? (
+                                                        <tr><td colSpan={3} className="py-32 text-center"><Loader2 className="w-12 h-12 animate-spin mx-auto text-primary opacity-50" /></td></tr>
+                                                    ) : exerciseList.length > 0 ? (
+                                                        exerciseList.map((ex: any) => (
+                                                            <tr key={ex.id} className="hover:bg-muted/20 transition-colors group">
+                                                                <td className="px-8 py-6">
+                                                                    <div className="flex items-center gap-4">
+                                                                        <div className="w-14 h-14 rounded-2xl bg-muted overflow-hidden border-2 border-background flex items-center justify-center shrink-0">
+                                                                            {ex.imageUrl ? (
+                                                                                <img src={ex.imageUrl} alt={ex.name} className="w-full h-full object-cover" />
+                                                                            ) : (
+                                                                                <ImageIcon className="w-6 h-6 text-muted-foreground" />
+                                                                            )}
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="font-bold text-foreground leading-tight">{ex.name}</p>
+                                                                            <p className="text-[10px] text-muted-foreground line-clamp-1 mt-1">{ex.description || 'No description provided.'}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-8 py-6">
+                                                                    <span className="text-[10px] px-3 py-1 rounded-lg font-black uppercase bg-primary/10 text-primary border border-primary/20">
+                                                                        {ex.categoryName || 'General'}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="px-8 py-6 text-right">
+                                                                    <button 
+                                                                        onClick={() => handleDeleteExercise(ex.id)}
+                                                                        className="p-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-2xl transition-all"
+                                                                    >
+                                                                        <Trash2 className="w-5 h-5" />
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        ))
+                                                    ) : (
+                                                        <tr><td colSpan={3} className="py-32 text-center text-muted-foreground font-medium italic">No exercises found.</td></tr>
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {/* VIEW: MODERATION */}
                         {activeTab === "community" && (
                             <div className="space-y-10 animate-in fade-in duration-500">
-                                <div>
-                                    <h1 className="text-4xl font-black tracking-tight">Platform Moderation</h1>
-                                    <p className="text-muted-foreground text-lg">Keep the Fitney community safe and engaging.</p>
-                                </div>
-
                                 <Tabs defaultValue="posts" className="w-full">
                                     <TabsList className="bg-muted/50 p-1 rounded-2xl h-14 mb-8">
                                         <TabsTrigger value="posts" className="rounded-xl px-10 h-full font-bold data-[state=active]:bg-card data-[state=active]:shadow-lg flex gap-2">
