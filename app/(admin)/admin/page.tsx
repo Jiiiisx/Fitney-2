@@ -503,10 +503,12 @@ export default function AdminDashboard() {
 
                         {/* VIEW: EXERCISES */}
                         {activeTab === "exercises" && (
-                            <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                <div className="flex flex-col md:flex-row md:items-end justify-start gap-6">
-                                    <div className="flex gap-4">
-                                        <div className="relative w-full md:w-80">
+                            <div className="animate-in fade-in slide-in-from-bottom-1 duration-500">
+                                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+                                    {/* Sticky Sidebar Area */}
+                                    <div className="lg:col-span-1 space-y-6 sticky top-2">
+                                        {/* Search Exercises */}
+                                        <div className="relative w-full">
                                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                             <input 
                                                 type="text" 
@@ -516,62 +518,60 @@ export default function AdminDashboard() {
                                                 className="w-full pl-12 pr-4 py-3 rounded-2xl border bg-card focus:ring-4 focus:ring-primary/10 outline-none transition-all shadow-sm"
                                             />
                                         </div>
-                                    </div>
-                                </div>
 
-                                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                                    {/* Add Exercise Form */}
-                                    <div className="bg-card border rounded-[2rem] p-8 shadow-xl h-fit sticky top-28 lg:col-span-1">
-                                        <h3 className="text-xl font-black mb-6 flex items-center gap-2">
-                                            <Plus className="w-5 h-5 text-primary" /> Add New Movement
-                                        </h3>
-                                        <form onSubmit={handleCreateExercise} className="space-y-4">
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black uppercase text-muted-foreground ml-2">Exercise Name</label>
-                                                <input 
-                                                    required
-                                                    className="w-full bg-muted/50 border-none rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/50 transition-all outline-none"
-                                                    placeholder="e.g. Diamond Pushups"
-                                                    value={newExercise.name}
-                                                    onChange={e => setNewExercise({...newExercise, name: e.target.value})}
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black uppercase text-muted-foreground ml-2">Category</label>
-                                                <select 
-                                                    className="w-full bg-muted/50 border-none rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/50 transition-all outline-none"
-                                                    value={newExercise.categoryId}
-                                                    onChange={e => setNewExercise({...newExercise, categoryId: e.target.value})}
-                                                >
-                                                    <option value="">Select Category</option>
-                                                    {categories.map((c: any) => (
-                                                        <option key={c.id} value={c.id}>{c.name}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black uppercase text-muted-foreground ml-2">Image URL</label>
-                                                <input 
-                                                    className="w-full bg-muted/50 border-none rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/50 transition-all outline-none"
-                                                    placeholder="https://..."
-                                                    value={newExercise.imageUrl}
-                                                    onChange={e => setNewExercise({...newExercise, imageUrl: e.target.value})}
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <label className="text-[10px] font-black uppercase text-muted-foreground ml-2">Instructions</label>
-                                                <textarea 
-                                                    rows={4}
-                                                    className="w-full bg-muted/50 border-none rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/50 transition-all outline-none resize-none"
-                                                    placeholder="Step by step guide..."
-                                                    value={newExercise.description}
-                                                    onChange={e => setNewExercise({...newExercise, description: e.target.value})}
-                                                />
-                                            </div>
-                                            <Button type="submit" className="w-full rounded-2xl py-6 font-bold shadow-lg shadow-primary/20">
-                                                Save Exercise
-                                            </Button>
-                                        </form>
+                                        {/* Add Exercise Form */}
+                                        <div className="bg-card border rounded-[2rem] p-8 shadow-xl">
+                                            <h3 className="text-xl font-black mb-6 flex items-center gap-2">
+                                                <Plus className="w-5 h-5 text-primary" /> Add New Movement
+                                            </h3>
+                                            <form onSubmit={handleCreateExercise} className="space-y-4">
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black uppercase text-muted-foreground ml-2">Exercise Name</label>
+                                                    <input 
+                                                        required
+                                                        className="w-full bg-muted/50 border-none rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/50 transition-all outline-none"
+                                                        placeholder="e.g. Diamond Pushups"
+                                                        value={newExercise.name}
+                                                        onChange={e => setNewExercise({...newExercise, name: e.target.value})}
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black uppercase text-muted-foreground ml-2">Category</label>
+                                                    <select 
+                                                        className="w-full bg-muted/50 border-none rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/50 transition-all outline-none"
+                                                        value={newExercise.categoryId}
+                                                        onChange={e => setNewExercise({...newExercise, categoryId: e.target.value})}
+                                                    >
+                                                        <option value="">Select Category</option>
+                                                        {categories.map((c: any) => (
+                                                            <option key={c.id} value={c.id}>{c.name}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black uppercase text-muted-foreground ml-2">Image URL</label>
+                                                    <input 
+                                                        className="w-full bg-muted/50 border-none rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/50 transition-all outline-none"
+                                                        placeholder="https://..."
+                                                        value={newExercise.imageUrl}
+                                                        onChange={e => setNewExercise({...newExercise, imageUrl: e.target.value})}
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black uppercase text-muted-foreground ml-2">Instructions</label>
+                                                    <textarea 
+                                                        rows={4}
+                                                        className="w-full bg-muted/50 border-none rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/50 transition-all outline-none resize-none"
+                                                        placeholder="Step by step guide..."
+                                                        value={newExercise.description}
+                                                        onChange={e => setNewExercise({...newExercise, description: e.target.value})}
+                                                    />
+                                                </div>
+                                                <Button type="submit" className="w-full rounded-2xl py-6 font-bold shadow-lg shadow-primary/20">
+                                                    Save Exercise
+                                                </Button>
+                                            </form>
+                                        </div>
                                     </div>
 
                                     {/* Exercise List Table */}
