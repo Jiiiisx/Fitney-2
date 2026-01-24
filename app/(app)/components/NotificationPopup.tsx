@@ -14,10 +14,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
+import toast from "react-hot-toast";
 
 interface Notification {
   id: number;
-  type: 'like' | 'comment' | 'follow' | 'system';
+  type: 'like' | 'comment' | 'follow' | 'system' | 'message';
   message: string;
   isRead: boolean;
   createdAt: string;
@@ -35,7 +36,7 @@ export function NotificationPopup() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = async (isFirstLoad = false) => {
     try {
       const res = await fetch("/api/notifications", {
         credentials: 'include'
@@ -43,6 +44,18 @@ export function NotificationPopup() {
 
       if (res.ok) {
         const data = await res.json();
+        
+        // Trigger Toast for new unread notifications
+        if (!isFirstLoad) {
+            const newUnread = data.find((n: Notification) => !n.isRead && !notifications.some(prev => prev.id === n.id));
+            if (newUnread) {
+                toast.success(`${newUnread.sender?.fullName || 'Someone'} ${newUnread.message}`, {
+                    icon: '🔔',
+                    duration: 4000,
+                });
+            }
+        }
+
         setNotifications(data);
       }
     } catch (error) {
@@ -53,9 +66,7 @@ export function NotificationPopup() {
   };
 
   useEffect(() => {
-    fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
+    fetchNotifications(true);
   }, []);
 
   const handleNotificationClick = async (notification: Notification) => {
@@ -102,6 +113,7 @@ export function NotificationPopup() {
       case 'like': return <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />;
       case 'comment': return <MessageSquare className="w-4 h-4 text-blue-500 fill-blue-500" />;
       case 'follow': return <UserPlus className="w-4 h-4 text-green-500" />;
+      case 'message': return <MessageSquare className="w-4 h-4 text-amber-500 fill-amber-500" />;
       default: return <Bell className="w-4 h-4 text-primary" />;
     }
   };

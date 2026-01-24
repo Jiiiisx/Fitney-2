@@ -15,8 +15,9 @@ import {
   uuid,
   varchar,
   json,
+  type AnyPgColumn,
 } from 'drizzle-orm/pg-core';
-import { sql, type AnyColumn } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 
 // Enums defined from CHECK constraints or clear value lists in the SQL schema
 export const goalCategoryEnum = pgEnum('goal_category', ['weekly', 'long_term']);
@@ -254,7 +255,7 @@ export const postComments = pgTable('post_comments', {
   id: serial('id').primaryKey(),
   postId: integer('post_id').notNull().references(() => posts.id, { onDelete: 'cascade' }),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  parentId: integer('parent_id').references((): AnyColumn => postComments.id, { onDelete: 'cascade' }),
+  parentId: integer('parent_id').references((): AnyPgColumn => postComments.id, { onDelete: 'cascade' }),
   content: text('content').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });

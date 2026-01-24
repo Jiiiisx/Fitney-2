@@ -106,6 +106,22 @@ export function useGroupMembers(groupId: number | null) {
   };
 }
 
+// Direct Messages Hook
+export function useDirectMessages(friendId: string | null) {
+  const { data, error, isLoading, mutate } = useSWR(
+    friendId ? `/api/community/messages/direct/${friendId}` : null,
+    fetcher,
+    { refreshInterval: 3000 } // Poll every 3 seconds for real-time feel
+  );
+
+  return {
+    messages: data || [],
+    isLoading,
+    isError: error,
+    mutate,
+  };
+}
+
 // --- ACTIONS ---
 
 export async function kickMember(groupId: number, userId: string) {
@@ -124,6 +140,28 @@ export async function kickMember(groupId: number, userId: string) {
   } catch (error: any) {
     console.error(error);
     toast.error(error.message || "Failed to kick member");
+    throw error;
+  }
+}
+
+export async function addMember(groupId: number, userId: string) {
+  try {
+    const res = await fetch(`/api/community/groups/${groupId}/members`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
+
+    if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to add member");
+    }
+
+    toast.success("Member added!");
+    return true;
+  } catch (error: any) {
+    console.error(error);
+    toast.error(error.message || "Failed to add member");
     throw error;
   }
 }

@@ -216,7 +216,7 @@ const LeftSidebar = () => {
                 ) : friends && friends.length > 0 ? (
                     <div className="space-y-3">
                         {friends.slice(0, 3).map((friend: any) => (
-                            <Link href={`/community/profile/${friend.id}`} key={friend.id} className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 rounded-lg transition-colors group">
+                            <Link href={`/community/messages/${friend.id}`} key={friend.id} className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 rounded-lg transition-colors group">
                                 <div className="relative">
                                     {friend.imageUrl ? (
                                         <img src={friend.imageUrl} alt={friend.username} className="w-9 h-9 rounded-full object-cover border border-border" />

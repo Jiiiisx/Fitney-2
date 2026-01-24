@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Send, Loader2, User, Info, Trash2, MoreVertical } from "lucide-react";
+import { ArrowLeft, Send, Loader2, User, Info, Phone, Video, Trash2, MoreVertical } from "lucide-react";
 import useSWR from "swr";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import GroupDetailModal from "../../components/GroupDetailModal";
+import { useDirectMessages } from "../../hooks/useCommunity";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -18,33 +18,47 @@ const fetcher = (url: string) => {
     return fetch(url, { credentials: 'include' }).then(res => res.json());
 };
 
-export default function GroupChatPage() {
+export default function DirectChatPage() {
     const params = useParams();
     const router = useRouter();
-
-    // Pastikan ID adalah number jika database id group adalah integer
-    const groupId = params?.id ? Number(params.id) : null;
+    const friendId = params?.id as string;
 
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+    const [input, setInput] = useState("");
+    const [sending, setSending] = useState(false);
+    const [isTyping, setIsTyping] = useState(false);
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const lastTypingSent = useRef<number>(0);
 
-    // Fetch specific group details directly
-    // Note: API endpoint for single group might need to be verified or created if missing.
-    // Assuming GET /api/community/groups/[id] exists or filtering list if not.
-    // Let's try to fetch list and find for now to match previous logic, but cleaner.
-    // BETTER: Use proper endpoint. I'll assume standard REST: /api/community/groups/[id]
-    const { data: groupData, error: groupError } = useSWR(
-        groupId ? `/api/community/groups/${groupId}` : null,
+    // Fetch friend profile
+    const { data: friend, error: friendError } = useSWR(
+        friendId ? `/api/community/users/${friendId}` : null,
         fetcher
     );
 
-    // Fallback logic if API returns array or error
-    // If your API returns single object, great.
+    // Fetch Typing Status
+    const { data: typers } = useSWR(
+        friendId ? `/api/community/messages/typing?targetId=${currentUserId}&type=direct` : null,
+        fetcher,
+        { refreshInterval: 2000 }
+    );
 
-    const [input, setInput] = useState("");
-    const [sending, setSending] = useState(false);
-    const scrollRef = useRef<HTMLDivElement>(null);
+    // Fetch Messages using our hook
+    const { messages, mutate, isLoading } = useDirectMessages(friendId);
 
-    // Decode Token
+    // Send typing signal
+    useEffect(() => {
+        if (input.trim() && Date.now() - lastTypingSent.current > 3000) {
+            lastTypingSent.current = Date.now();
+            fetch('/api/community/messages/typing', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ targetId: friendId, type: 'direct', name: 'Someone' })
+            }).catch(() => {});
+        }
+    }, [input, friendId]);
+
+    // Get current user ID
     useEffect(() => {
         fetch('/api/users/me', { credentials: 'include' })
             .then(res => res.ok ? res.json() : null)
@@ -54,13 +68,6 @@ export default function GroupChatPage() {
             .catch(err => console.error("Error fetching current user", err));
     }, []);
 
-    // Fetch Messages
-    const { data: messages, mutate } = useSWR(
-        groupId ? `/api/community/groups/${groupId}/messages` : null,
-        fetcher,
-        { refreshInterval: 3000 }
-    );
-
     useEffect(() => {
         if (scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -69,14 +76,14 @@ export default function GroupChatPage() {
 
     const handleSend = async (e?: React.FormEvent) => {
         e?.preventDefault();
-        if (!input.trim() || !groupId) return;
+        if (!input.trim() || !friendId) return;
 
         const tempContent = input;
         setInput("");
         setSending(true);
 
         try {
-            await fetch(`/api/community/groups/${groupId}/messages`, {
+            await fetch(`/api/community/messages/direct/${friendId}`, {
                 method: "POST",
                 credentials: 'include',
                 headers: {
@@ -96,7 +103,7 @@ export default function GroupChatPage() {
     const handleDeleteMessage = async (messageId: number) => {
         if (!confirm("Delete this message?")) return;
         try {
-            await fetch(`/api/community/groups/${groupId}/messages/${messageId}`, {
+            await fetch(`/api/community/messages/direct/delete/${messageId}`, {
                 method: "DELETE",
                 credentials: 'include'
             });
@@ -106,80 +113,86 @@ export default function GroupChatPage() {
         }
     };
 
-    if (groupError) return <div className="p-8 text-center text-red-500">Error loading group.</div>;
-    if (!groupId) return <div className="p-8 text-center">Invalid Group ID</div>;
-
-    const groupName = groupData?.name || "Group Chat";
-    const groupImage = groupData?.imageUrl;
+    if (friendError) return <div className="p-8 text-center text-red-500">Error loading chat.</div>;
+    if (!friendId) return <div className="p-8 text-center">Invalid User ID</div>;
 
     return (
         <div className="flex flex-col h-full bg-background rounded-xl border border-border shadow-sm overflow-hidden">
             {/* Header */}
-            <div className="flex items-center gap-3 p-4 border-b border-border bg-card z-10 shadow-sm flex-shrink-0">
-                <Link
-                    href="/community"
-                    className="p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground hover:text-foreground"
-                >
-                    <ArrowLeft className="w-5 h-5" />
-                </Link>
+            <div className="flex items-center justify-between p-4 border-b border-border bg-card z-10 shadow-sm flex-shrink-0">
+                <div className="flex items-center gap-3">
+                    <Link
+                        href="/community"
+                        className="p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground hover:text-foreground"
+                    >
+                        <ArrowLeft className="w-5 h-5" />
+                    </Link>
 
-                {/* Only show modal trigger if group data is loaded */}
-                {groupData ? (
-                    <GroupDetailModal group={groupData}>
-                        <div className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 -my-2 rounded-lg transition-colors flex-grow">
-                            {groupImage ? (
-                                <img src={groupImage} className="w-10 h-10 rounded-full object-cover" />
+                    {friend ? (
+                        <Link href={`/community/profile/${friend.id}`} className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 -my-2 rounded-lg transition-colors">
+                            {friend.imageUrl ? (
+                                <img src={friend.imageUrl} className="w-10 h-10 rounded-full object-cover" />
                             ) : (
                                 <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
-                                    {groupName?.charAt(0)}
+                                    {(friend.fullName || friend.username).charAt(0)}
                                 </div>
                             )}
                             <div>
-                                <h2 className="font-bold text-lg leading-tight flex items-center gap-2">
-                                    {groupName}
-                                    <Info className="w-3 h-3 text-muted-foreground" />
+                                <h2 className="font-bold text-base leading-tight">
+                                    {friend.fullName || friend.username}
                                 </h2>
-                                <p className="text-xs text-muted-foreground">Tap for info</p>
+                                {typers && typers.length > 0 ? (
+                                    <p className="text-[10px] text-primary animate-pulse font-bold italic">typing...</p>
+                                ) : (
+                                    <p className="text-[10px] text-green-500 font-medium">Online</p>
+                                )}
                             </div>
+                        </Link>
+                    ) : (
+                        <div className="flex items-center gap-2">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span className="text-sm font-semibold">Loading...</span>
                         </div>
-                    </GroupDetailModal>
-                ) : (
-                    <div className="flex items-center gap-2">
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        <span className="font-semibold">Loading...</span>
-                    </div>
-                )}
+                    )}
+                </div>
+
+                {/* Top Right Actions */}
+                <div className="flex items-center gap-1">
+                    <button className="p-2.5 hover:bg-muted rounded-full text-muted-foreground transition-colors">
+                        <Phone className="w-5 h-5" />
+                    </button>
+                    <button className="p-2.5 hover:bg-muted rounded-full text-muted-foreground transition-colors">
+                        <Video className="w-5 h-5" />
+                    </button>
+                    <button className="p-2.5 hover:bg-muted rounded-full text-muted-foreground transition-colors">
+                        <Info className="w-5 h-5" />
+                    </button>
+                </div>
             </div>
 
             {/* Messages Area */}
-            <div ref={scrollRef} className="flex-grow overflow-y-auto p-4 space-y-4 bg-muted/10">
-                {!messages ? (
+            <div ref={scrollRef} className="flex-grow overflow-y-auto p-4 space-y-4 bg-muted/5">
+                {isLoading && messages.length === 0 ? (
                     <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>
                 ) : !Array.isArray(messages) || messages.length === 0 ? (
                     <div className="text-center py-20 text-muted-foreground">
-                        <p>No messages yet.</p>
-                        <p className="text-sm">Be the first to say hello!</p>
+                        <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                             <User className="w-8 h-8 opacity-20" />
+                        </div>
+                        <p className="font-medium">No messages yet.</p>
+                        <p className="text-xs">Start a conversation with {friend?.fullName || 'your friend'}.</p>
                     </div>
                 ) : (
                     messages.map((msg: any) => {
-                        const isMe = msg.userId === currentUserId;
+                        const isMe = msg.senderId === currentUserId;
                         const isDeleted = msg.content === "_DELETED_";
 
                         return (
                             <div key={msg.id} className={`flex gap-3 ${isMe ? 'flex-row-reverse' : ''}`}>
-                                <div className="w-8 h-8 rounded-full bg-muted flex-shrink-0 flex items-center justify-center overflow-hidden border border-border mt-1">
-                                    {msg.user?.imageUrl ? (
-                                        <img src={msg.user.imageUrl} className="w-full h-full object-cover" />
-                                    ) : (
-                                        <User className="w-4 h-4 text-muted-foreground" />
-                                    )}
-                                </div>
-                                <div className={`max-w-[70%] p-3 rounded-xl shadow-sm text-sm break-words overflow-visible relative group/msg ${isMe
+                                <div className={`max-w-[75%] p-3 rounded-2xl shadow-sm text-sm break-words overflow-visible relative group/msg ${isMe
                                         ? 'bg-primary text-primary-foreground rounded-tr-none'
                                         : 'bg-card text-foreground border border-border rounded-tl-none'
                                     } ${isDeleted ? 'opacity-60 bg-muted/50 text-muted-foreground italic' : ''}`}>
-                                    
-                                    {!isMe && <p className="text-xs font-bold mb-1 opacity-80">{msg.user.fullName || msg.user.username}</p>}
                                     
                                     <p className="leading-relaxed whitespace-pre-wrap flex items-center gap-2">
                                         {isDeleted ? (
@@ -189,12 +202,12 @@ export default function GroupChatPage() {
                                             </>
                                         ) : msg.content}
                                     </p>
-                                    
+
                                     <div className="flex items-center justify-end gap-1 mt-1">
-                                        <span className="text-[10px] opacity-60">
+                                        <span className="text-[10px] opacity-60 text-right">
                                             {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </span>
-                                        
+
                                         {isMe && !isDeleted && (
                                             <div className="flex-shrink-0">
                                                 <DropdownMenu>

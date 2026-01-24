@@ -11,9 +11,10 @@ import {
 } from "@/components/ui/popover";
 import { NotificationPopup } from "./NotificationPopup";
 import OnboardingModal from "./OnboardingModal";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { fetchWithAuth } from "@/app/lib/fetch-helper";
+import toast from "react-hot-toast";
 
 interface UserProfile {
   fullName: string;
@@ -62,6 +63,8 @@ const Header = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [level, setLevel] = useState(1); // State for user level
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const lastNotifId = useRef<number | null>(null);
 
   const fetchUser = useCallback(async () => {
     try {
@@ -85,10 +88,41 @@ const Header = () => {
     }
   }, []);
 
+  // GLOBAL NOTIFICATION POLLING
+  const checkNotifications = useCallback(async (isFirst = false) => {
+    try {
+      const res = await fetch("/api/notifications");
+      if (res.ok) {
+        const data = await res.json();
+        const unread = data.filter((n: any) => !n.isRead);
+        setUnreadCount(unread.length);
+
+        if (!isFirst && unread.length > 0) {
+          const newest = unread[0];
+          if (newest.id !== lastNotifId.current) {
+            lastNotifId.current = newest.id;
+            toast.success(`${newest.sender?.fullName || 'System'}: ${newest.message}`, {
+              icon: '🔔',
+              duration: 5000,
+              position: 'top-right'
+            });
+          }
+        } else if (isFirst && unread.length > 0) {
+          lastNotifId.current = unread[0].id;
+        }
+      }
+    } catch (e) { }
+  }, []);
+
   useEffect(() => {
     fetchUser();
     fetchLevel();
-  }, [fetchUser, fetchLevel]);
+    
+    // Start notification polling
+    checkNotifications(true);
+    const interval = setInterval(() => checkNotifications(false), 5000);
+    return () => clearInterval(interval);
+  }, [fetchUser, fetchLevel, checkNotifications]);
 
   const handleLogout = async () => {
     try {
@@ -161,8 +195,13 @@ const Header = () => {
             </Link>
             <Popover>
               <PopoverTrigger asChild>
-                <button className="p-4 rounded-full hover:bg-muted/50">
+                <button className="p-4 rounded-full hover:bg-muted/50 relative">
                   <Bell size={24} className="text-muted-foreground" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-3 right-3 bg-red-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full border-2 border-card">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
                 </button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0 border-0 shadow-2xl" align="end">

@@ -39,3 +39,46 @@ export async function GET(
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
+
+// POST: Tambah anggota baru
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ groupId: string }> }
+) {
+  try {
+    const auth = await verifyAuth(req);
+    if (auth.error) return auth.error;
+
+    const { groupId } = await params;
+    const groupIdInt = parseInt(groupId);
+    const { userId } = await req.json(); // ID user yang mau ditambahkan
+
+    if (isNaN(groupIdInt) || !userId) {
+      return NextResponse.json({ error: "Invalid Data" }, { status: 400 });
+    }
+
+    // 1. Cek apakah user sudah ada di grup
+    const existingMember = await db
+        .select()
+        .from(userGroups)
+        .where(and(eq(userGroups.groupId, groupIdInt), eq(userGroups.userId, userId)))
+        .limit(1);
+
+    if (existingMember.length > 0) {
+        return NextResponse.json({ error: "User already in group" }, { status: 400 });
+    }
+
+    // 2. Tambahkan Member
+    await db.insert(userGroups).values({
+        userId: userId,
+        groupId: groupIdInt,
+        isAdmin: false, // Default member biasa
+    });
+
+    return NextResponse.json({ message: "Member added successfully" }, { status: 201 });
+
+  } catch (error) {
+    console.error("ADD_MEMBER_ERROR", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
