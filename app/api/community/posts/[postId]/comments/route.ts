@@ -55,54 +55,55 @@ export async function POST(
     const { postId } = await params;
     const postIdInt = parseInt(postId);
     const body = await req.json();
-    const { content } = body;
+    const { content, parentId } = body;
 
     if (isNaN(postIdInt)) {
       return NextResponse.json({ error: "Invalid Post ID" }, { status: 400 });
     }
 
     if (!content || content.trim() === "") {
-        return NextResponse.json({ error: "Comment content is required" }, { status: 400 });
+      return NextResponse.json({ error: "Comment content is required" }, { status: 400 });
     }
 
     // Ambil info post untuk tau siapa pemiliknya
     const post = await db.query.posts.findFirst({
-        where: eq(posts.id, postIdInt)
+      where: eq(posts.id, postIdInt)
     });
 
     // Insert komentar baru
     const newComment = await db.insert(postComments).values({
-        postId: postIdInt,
-        userId: auth.user.userId,
-        content: content.trim(),
+      postId: postIdInt,
+      userId: auth.user.userId,
+      parentId: parentId || null,
+      content: content.trim(),
     }).returning();
 
     // Fetch user info untuk dikembalikan ke frontend
     const user = await db.query.users.findFirst({
-        where: (users, { eq }) => eq(users.id, auth.user.userId),
-        columns: {
-            id: true,
-            username: true,
-            fullName: true,
-            imageUrl: true,
-        }
+      where: (users, { eq }) => eq(users.id, auth.user.userId),
+      columns: {
+        id: true,
+        username: true,
+        fullName: true,
+        imageUrl: true,
+      }
     });
 
     // KIRIM NOTIFIKASI
     if (post && post.userId !== auth.user.userId) {
-        await createNotification({
-            recipientId: post.userId,
-            senderId: auth.user.userId,
-            type: 'comment',
-            resourceId: postIdInt,
-            message: "commented on your post",
-            linkUrl: `/community/posts/${postIdInt}`
-        });
+      await createNotification({
+        recipientId: post.userId,
+        senderId: auth.user.userId,
+        type: 'comment',
+        resourceId: postIdInt,
+        message: "commented on your post",
+        linkUrl: `/community/posts/${postIdInt}`
+      });
     }
 
     return NextResponse.json({
-        ...newComment[0],
-        user
+      ...newComment[0],
+      user
     }, { status: 201 });
 
   } catch (error) {

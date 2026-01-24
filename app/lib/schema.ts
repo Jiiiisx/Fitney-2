@@ -14,8 +14,9 @@ import {
   uniqueIndex,
   uuid,
   varchar,
+  json,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
+import { sql, type AnyPgColumn } from 'drizzle-orm';
 
 // Enums defined from CHECK constraints or clear value lists in the SQL schema
 export const goalCategoryEnum = pgEnum('goal_category', ['weekly', 'long_term']);
@@ -147,7 +148,7 @@ export const workoutLogs = pgTable('workout_logs', {
   distanceKm: numeric('distance_km', { precision: 10, scale: 2 }),
 }, (table) => {
   return {
-    workoutLogsUserDateIdx: index('workout_logs_user_date_idx').on(table.userId,table.date),
+    workoutLogsUserDateIdx: index('workout_logs_user_date_idx').on(table.userId, table.date),
   };
 });
 
@@ -199,8 +200,28 @@ export const posts = pgTable('posts', {
   id: serial('id').primaryKey(),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   content: text('content'),
-  imageUrl: varchar('image_url', { length: 255 }),
+  images: json('images').$type<string[]>().default([]),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+});
+
+export const stories = pgTable('stories', {
+  id: serial('id').primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  mediaUrl: varchar('media_url', { length: 255 }).notNull(),
+  mediaType: varchar('media_type', { length: 50 }).default('image'), // image, video
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+});
+
+export const savedPosts = pgTable('saved_posts', {
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  postId: integer('post_id').notNull().references(() => posts.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, (table) => {
+  return {
+    pk: primaryKey({ columns: [table.userId, table.postId] }),
+  };
 });
 
 // HASHTAGS
@@ -233,6 +254,7 @@ export const postComments = pgTable('post_comments', {
   id: serial('id').primaryKey(),
   postId: integer('post_id').notNull().references(() => posts.id, { onDelete: 'cascade' }),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  parentId: integer('parent_id').references((): AnyPgColumn => postComments.id, { onDelete: 'cascade' }),
   content: text('content').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
@@ -314,7 +336,7 @@ export const sleepLogs = pgTable('sleep_logs', {
   qualityRating: integer('quality_rating'), // CHECK constraint handled by application logic or a raw SQL check
   notes: text('notes'),
 }, (table) => ({
-    qualityCheck: sql`CHECK (${table.qualityRating} >= 1 AND ${table.qualityRating} <= 5)`
+  qualityCheck: sql`CHECK (${table.qualityRating} >= 1 AND ${table.qualityRating} <= 5)`
 }));
 
 // Water Intake
@@ -390,173 +412,187 @@ export const communityEvents = pgTable('community_events', {
 import { relations } from 'drizzle-orm';
 
 export const usersRelations = relations(users, ({ one, many }) => ({
-	userProfile: one(userProfiles, { fields: [users.id], references: [userProfiles.userId] }),
-	userSettings: one(userSettings, { fields: [users.id], references: [userSettings.userId] }),
-	userStreak: one(userStreaks, { fields: [users.id], references: [userStreaks.userId] }),
-	posts: many(posts),
-	userPlans: many(userPlans),
-	workoutLogs: many(workoutLogs),
-	foodLogs: many(foodLogs),
-	userGoals: many(userGoals),
-	bodyMeasurements: many(bodyMeasurements),
-	sleepLogs: many(sleepLogs),
-	waterLogs: many(waterLogs),
-	notifications: many(notifications),
-	userAchievements: many(userAchievements),
-	followers: many(followers, { relationName: 'followers' }),
-	following: many(followers, { relationName: 'following' }),
-	postLikes: many(postLikes),
-	postComments: many(postComments),
-    userGroups: many(userGroups),
-    createdGroups: many(groups),
-    sentMessages: many(directMessages, { relationName: 'sentMessages' }),
-    receivedMessages: many(directMessages, { relationName: 'receivedMessages' }),
+  userProfile: one(userProfiles, { fields: [users.id], references: [userProfiles.userId] }),
+  userSettings: one(userSettings, { fields: [users.id], references: [userSettings.userId] }),
+  userStreak: one(userStreaks, { fields: [users.id], references: [userStreaks.userId] }),
+  posts: many(posts),
+  userPlans: many(userPlans),
+  workoutLogs: many(workoutLogs),
+  foodLogs: many(foodLogs),
+  userGoals: many(userGoals),
+  bodyMeasurements: many(bodyMeasurements),
+  sleepLogs: many(sleepLogs),
+  waterLogs: many(waterLogs),
+  notifications: many(notifications),
+  userAchievements: many(userAchievements),
+  followers: many(followers, { relationName: 'followers' }),
+  following: many(followers, { relationName: 'following' }),
+  postLikes: many(postLikes),
+  postComments: many(postComments),
+  userGroups: many(userGroups),
+  createdGroups: many(groups),
+  sentMessages: many(directMessages, { relationName: 'sentMessages' }),
+  receivedMessages: many(directMessages, { relationName: 'receivedMessages' }),
+  stories: many(stories),
+  savedPosts: many(savedPosts),
 }));
 
 export const directMessagesRelations = relations(directMessages, ({ one }) => ({
-	sender: one(users, { fields: [directMessages.senderId], references: [users.id], relationName: 'sentMessages' }),
-	receiver: one(users, { fields: [directMessages.receiverId], references: [users.id], relationName: 'receivedMessages' }),
+  sender: one(users, { fields: [directMessages.senderId], references: [users.id], relationName: 'sentMessages' }),
+  receiver: one(users, { fields: [directMessages.receiverId], references: [users.id], relationName: 'receivedMessages' }),
 }));
 
 export const userProfilesRelations = relations(userProfiles, ({ one }) => ({
-	user: one(users, { fields: [userProfiles.userId], references: [users.id] }),
+  user: one(users, { fields: [userProfiles.userId], references: [users.id] }),
 }));
 
 export const userSettingsRelations = relations(userSettings, ({ one }) => ({
-	user: one(users, { fields: [userSettings.userId], references: [users.id] }),
+  user: one(users, { fields: [userSettings.userId], references: [users.id] }),
 }));
 
 export const userStreaksRelations = relations(userStreaks, ({ one }) => ({
-	user: one(users, { fields: [userStreaks.userId], references: [users.id] }),
+  user: one(users, { fields: [userStreaks.userId], references: [users.id] }),
 }));
 
 export const categoriesRelations = relations(categories, ({ many }) => ({
-	exercises: many(exercises),
+  exercises: many(exercises),
 }));
 
 export const exercisesRelations = relations(exercises, ({ one, many }) => ({
-	category: one(categories, { fields: [exercises.categoryId], references: [categories.id] }),
-	programDayExercises: many(programDayExercises),
-	userPlanDayExercises: many(userPlanDayExercises),
+  category: one(categories, { fields: [exercises.categoryId], references: [categories.id] }),
+  programDayExercises: many(programDayExercises),
+  userPlanDayExercises: many(userPlanDayExercises),
 }));
 
 export const workoutProgramsRelations = relations(workoutPrograms, ({ many }) => ({
-	programDays: many(programDays),
-	userPlans: many(userPlans),
+  programDays: many(programDays),
+  userPlans: many(userPlans),
 }));
 
 export const programDaysRelations = relations(programDays, ({ one, many }) => ({
-	program: one(workoutPrograms, { fields: [programDays.programId], references: [workoutPrograms.id] }),
-	programDayExercises: many(programDayExercises),
+  program: one(workoutPrograms, { fields: [programDays.programId], references: [workoutPrograms.id] }),
+  programDayExercises: many(programDayExercises),
 }));
 
 export const programDayExercisesRelations = relations(programDayExercises, ({ one }) => ({
-	programDay: one(programDays, { fields: [programDayExercises.programDayId], references: [programDays.id] }),
-	exercise: one(exercises, { fields: [programDayExercises.exerciseId], references: [exercises.id] }),
+  programDay: one(programDays, { fields: [programDayExercises.programDayId], references: [programDays.id] }),
+  exercise: one(exercises, { fields: [programDayExercises.exerciseId], references: [exercises.id] }),
 }));
 
 export const userPlansRelations = relations(userPlans, ({ one, many }) => ({
-	user: one(users, { fields: [userPlans.userId], references: [users.id] }),
-	sourceProgram: one(workoutPrograms, { fields: [userPlans.sourceProgramId], references: [workoutPrograms.id] }),
-	userPlanDays: many(userPlanDays),
+  user: one(users, { fields: [userPlans.userId], references: [users.id] }),
+  sourceProgram: one(workoutPrograms, { fields: [userPlans.sourceProgramId], references: [workoutPrograms.id] }),
+  userPlanDays: many(userPlanDays),
 }));
 
 export const userPlanDaysRelations = relations(userPlanDays, ({ one, many }) => ({
-	userPlan: one(userPlans, { fields: [userPlanDays.userPlanId], references: [userPlans.id] }),
-	userPlanDayExercises: many(userPlanDayExercises),
+  userPlan: one(userPlans, { fields: [userPlanDays.userPlanId], references: [userPlans.id] }),
+  userPlanDayExercises: many(userPlanDayExercises),
 }));
 
 export const userPlanDayExercisesRelations = relations(userPlanDayExercises, ({ one }) => ({
-	userPlanDay: one(userPlanDays, { fields: [userPlanDayExercises.userPlanDayId], references: [userPlanDays.id] }),
-	exercise: one(exercises, { fields: [userPlanDayExercises.exerciseId], references: [exercises.id] }),
+  userPlanDay: one(userPlanDays, { fields: [userPlanDayExercises.userPlanDayId], references: [userPlanDays.id] }),
+  exercise: one(exercises, { fields: [userPlanDayExercises.exerciseId], references: [exercises.id] }),
 }));
 
 export const workoutLogsRelations = relations(workoutLogs, ({ one }) => ({
-	user: one(users, { fields: [workoutLogs.userId], references: [users.id] }),
+  user: one(users, { fields: [workoutLogs.userId], references: [users.id] }),
 }));
 
 export const foodsRelations = relations(foods, ({ many }) => ({
-	foodLogs: many(foodLogs),
+  foodLogs: many(foodLogs),
 }));
 
 export const foodLogsRelations = relations(foodLogs, ({ one }) => ({
-	user: one(users, { fields: [foodLogs.userId], references: [users.id] }),
-	food: one(foods, { fields: [foodLogs.foodId], references: [foods.id] }),
+  user: one(users, { fields: [foodLogs.userId], references: [users.id] }),
+  food: one(foods, { fields: [foodLogs.foodId], references: [foods.id] }),
 }));
 
 export const userGoalsRelations = relations(userGoals, ({ one }) => ({
-	user: one(users, { fields: [userGoals.userId], references: [users.id] }),
+  user: one(users, { fields: [userGoals.userId], references: [users.id] }),
 }));
 
 export const followersRelations = relations(followers, ({ one }) => ({
-	user: one(users, { fields: [followers.userId], references: [users.id], relationName: 'followers' }),
-	follower: one(users, { fields: [followers.followerId], references: [users.id], relationName: 'following' }),
+  user: one(users, { fields: [followers.userId], references: [users.id], relationName: 'followers' }),
+  follower: one(users, { fields: [followers.followerId], references: [users.id], relationName: 'following' }),
 }));
 
 export const postsRelations = relations(posts, ({ one, many }) => ({
-	user: one(users, { fields: [posts.userId], references: [users.id] }),
-	likes: many(postLikes),
-	comments: many(postComments),
-	hashtags: many(postHashtags),
+  user: one(users, { fields: [posts.userId], references: [users.id] }),
+  likes: many(postLikes),
+  comments: many(postComments),
+  hashtags: many(postHashtags),
+  savedBy: many(savedPosts),
 }));
 
 export const postLikesRelations = relations(postLikes, ({ one }) => ({
-	post: one(posts, { fields: [postLikes.postId], references: [posts.id] }),
-	user: one(users, { fields: [postLikes.userId], references: [users.id] }),
+  post: one(posts, { fields: [postLikes.postId], references: [posts.id] }),
+  user: one(users, { fields: [postLikes.userId], references: [users.id] }),
 }));
 
-export const postCommentsRelations = relations(postComments, ({ one }) => ({
-	post: one(posts, { fields: [postComments.postId], references: [posts.id] }),
-	user: one(users, { fields: [postComments.userId], references: [users.id] }),
+export const postCommentsRelations = relations(postComments, ({ one, many }) => ({
+  post: one(posts, { fields: [postComments.postId], references: [posts.id] }),
+  user: one(users, { fields: [postComments.userId], references: [users.id] }),
+  parent: one(postComments, { fields: [postComments.parentId], references: [postComments.id], relationName: 'replies' }),
+  replies: many(postComments, { relationName: 'replies' }),
 }));
 
 export const hashtagsRelations = relations(hashtags, ({ many }) => ({
-	posts: many(postHashtags),
+  posts: many(postHashtags),
 }));
 
 export const postHashtagsRelations = relations(postHashtags, ({ one }) => ({
-	post: one(posts, { fields: [postHashtags.postId], references: [posts.id] }),
-	hashtag: one(hashtags, { fields: [postHashtags.hashtagId], references: [hashtags.id] }),
+  post: one(posts, { fields: [postHashtags.postId], references: [posts.id] }),
+  hashtag: one(hashtags, { fields: [postHashtags.hashtagId], references: [hashtags.id] }),
 }));
 
 export const groupsRelations = relations(groups, ({ one, many }) => ({
-	createdBy: one(users, { fields: [groups.createdBy], references: [users.id] }),
-	members: many(userGroups),
-    messages: many(groupMessages),
+  createdBy: one(users, { fields: [groups.createdBy], references: [users.id] }),
+  members: many(userGroups),
+  messages: many(groupMessages),
 }));
 
 export const userGroupsRelations = relations(userGroups, ({ one }) => ({
-	user: one(users, { fields: [userGroups.userId], references: [users.id] }),
-	group: one(groups, { fields: [userGroups.groupId], references: [groups.id] }),
+  user: one(users, { fields: [userGroups.userId], references: [users.id] }),
+  group: one(groups, { fields: [userGroups.groupId], references: [groups.id] }),
+}));
+
+export const storiesRelations = relations(stories, ({ one }) => ({
+  user: one(users, { fields: [stories.userId], references: [users.id] }),
+}));
+
+export const savedPostsRelations = relations(savedPosts, ({ one }) => ({
+  user: one(users, { fields: [savedPosts.userId], references: [users.id] }),
+  post: one(posts, { fields: [savedPosts.postId], references: [posts.id] }),
 }));
 
 export const groupMessagesRelations = relations(groupMessages, ({ one }) => ({
-	group: one(groups, { fields: [groupMessages.groupId], references: [groups.id] }),
-	user: one(users, { fields: [groupMessages.userId], references: [users.id] }),
+  group: one(groups, { fields: [groupMessages.groupId], references: [groups.id] }),
+  user: one(users, { fields: [groupMessages.userId], references: [users.id] }),
 }));
 
 
 export const bodyMeasurementsRelations = relations(bodyMeasurements, ({ one }) => ({
-	user: one(users, { fields: [bodyMeasurements.userId], references: [users.id] }),
+  user: one(users, { fields: [bodyMeasurements.userId], references: [users.id] }),
 }));
 
 export const sleepLogsRelations = relations(sleepLogs, ({ one }) => ({
-	user: one(users, { fields: [sleepLogs.userId], references: [users.id] }),
+  user: one(users, { fields: [sleepLogs.userId], references: [users.id] }),
 }));
 
 export const waterLogsRelations = relations(waterLogs, ({ one }) => ({
-	user: one(users, { fields: [waterLogs.userId], references: [users.id] }),
+  user: one(users, { fields: [waterLogs.userId], references: [users.id] }),
 }));
 
 export const notificationsRelations = relations(notifications, ({ one }) => ({
-	user: one(users, { fields: [notifications.userId], references: [users.id] }),
+  user: one(users, { fields: [notifications.userId], references: [users.id] }),
 }));
 
 export const achievementsRelations = relations(achievements, ({ many }) => ({
-	userAchievements: many(userAchievements),
+  userAchievements: many(userAchievements),
 }));
 
 export const userAchievementsRelations = relations(userAchievements, ({ one }) => ({
-	user: one(users, { fields: [userAchievements.userId], references: [users.id] }),
-	achievement: one(achievements, { fields: [userAchievements.achievementId], references: [achievements.id] }),
+  user: one(users, { fields: [userAchievements.userId], references: [users.id] }),
+  achievement: one(achievements, { fields: [userAchievements.achievementId], references: [achievements.id] }),
 }));

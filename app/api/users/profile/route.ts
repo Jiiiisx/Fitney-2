@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   try {
     const auth = await verifyAuth(req);
     if (auth.error || !verifyAuth) {
-      return auth.error || NextResponse.json({ error: 'Unauthorized'}, { status: 401});
+      return auth.error || NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const userId = auth.user.userId;
 
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
       .where(eq(users.id, userId));
 
     if (userResult.length === 0) {
-      return new NextResponse(JSON.stringify({ message: 'User not found' }), {status: 404});
+      return new NextResponse(JSON.stringify({ message: 'User not found' }), { status: 404 });
     }
 
     const userData = userResult[0];
@@ -53,6 +53,7 @@ export async function GET(req: NextRequest) {
       : null;
 
     const profile = {
+      id: userId,
       fullName: userData.fullname || '',
       email: userData.email || '',
       dob: formattedDob || '',
@@ -65,9 +66,9 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(profile);
 
-  } catch(error) {
+  } catch (error) {
     console.error('API_GET_USER_PROFILE_ERROR', error);
-    return new NextResponse(JSON.stringify({ message: 'Internal Server Error'}), {status: 500})
+    return new NextResponse(JSON.stringify({ message: 'Internal Server Error' }), { status: 500 })
   }
 }
 
@@ -90,52 +91,52 @@ export async function PUT(req: NextRequest) {
       })
       .where(eq(users.id, userId));
 
-      const today = new Date();
-      const todayStr = format(today, 'yyyy-MM-dd');
-      const existingMeasurement = await db.select()
-        .from(bodyMeasurements)
-        .where(
-          and(
-            eq(bodyMeasurements.userId, userId),
-            eq(bodyMeasurements.date, todayStr)
-          )
+    const today = new Date();
+    const todayStr = format(today, 'yyyy-MM-dd');
+    const existingMeasurement = await db.select()
+      .from(bodyMeasurements)
+      .where(
+        and(
+          eq(bodyMeasurements.userId, userId),
+          eq(bodyMeasurements.date, todayStr)
         )
-        .limit(1);
+      )
+      .limit(1);
 
-      if (existingMeasurement.length > 0) {
-        await db.update(bodyMeasurements)
+    if (existingMeasurement.length > 0) {
+      await db.update(bodyMeasurements)
         .set({
           heightCm: height ? String(height) : null,
           weightKg: weight ? String(weight) : null,
         })
         .where(eq(bodyMeasurements.id, existingMeasurement[0].id));
-      } else {
-        await db.insert(bodyMeasurements).values({
-          userId: userId,
-          date: todayStr,
-          heightCm: height ? String(height) : null,
-          weightKg: weight ? String(weight) : null,
-        });
-      }
+    } else {
+      await db.insert(bodyMeasurements).values({
+        userId: userId,
+        date: todayStr,
+        heightCm: height ? String(height) : null,
+        weightKg: weight ? String(weight) : null,
+      });
+    }
 
-      await db.insert(userSettings)
-        .values({
-          userId: userId,
-          hasCompletedOnboarding: true,
-          theme: 'system',
-          measurementUnits: 'metric',
-          emailNotifications: true,
-          pushNotifications: true
-        })
-        .onConflictDoUpdate({
-          target: userSettings.userId,
-          set: { hasCompletedOnboarding: true }
-        })
+    await db.insert(userSettings)
+      .values({
+        userId: userId,
+        hasCompletedOnboarding: true,
+        theme: 'system',
+        measurementUnits: 'metric',
+        emailNotifications: true,
+        pushNotifications: true
+      })
+      .onConflictDoUpdate({
+        target: userSettings.userId,
+        set: { hasCompletedOnboarding: true }
+      })
 
-      return NextResponse.json({ message: "Profile updated succesfully"});
+    return NextResponse.json({ message: "Profile updated succesfully" });
 
   } catch (error) {
     console.error("API_PUT_USER_PROFILE_ERROR", error);
-    return new NextResponse(JSON.stringify({ message: "Internal Server Error"}), { status: 500 });
+    return new NextResponse(JSON.stringify({ message: "Internal Server Error" }), { status: 500 });
   }
 }

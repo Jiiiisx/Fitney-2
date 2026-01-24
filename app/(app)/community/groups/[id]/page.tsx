@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useRef } from "react";
 import { ArrowLeft, Send, Loader2, User, Info } from "lucide-react";
-import { useCommunityNavigation } from "../CommunityContext";
 import useSWR from "swr";
-import { useCurrentUser } from "../hooks/useCurrentUser";
-import GroupDetailModal from "./GroupDetailModal";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import GroupDetailModal from "../../components/GroupDetailModal";
 
 // Fetcher
 const fetcher = (url: string) => {
@@ -13,23 +13,33 @@ const fetcher = (url: string) => {
     return fetch(url, { headers: { Authorization: `Bearer ${token}` } }).then(res => res.json());
 };
 
-export default function GroupChatView() {
-  const { selectedGroupId, selectedGroupName, navigateToFeed } = useCommunityNavigation();
-  const { user: currentUser } = useCurrentUser();
+export default function GroupChatPage() {
+  const params = useParams();
+  const router = useRouter();
+  
+  // Pastikan ID adalah number jika database id group adalah integer
+  const groupId = params?.id ? Number(params.id) : null;
+  
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   
-  // Fetch detail grup (untuk deskripsi & gambar di header) - Kita reuse endpoint list groups tapi filter di client side
-  // Atau lebih baik buat endpoint single group GET /api/community/groups/[id].
-  // Untuk efisiensi sekarang, kita akan cari dari cache 'useMyGroups' jika memungkinkan, atau fetch list lagi.
-  // Tapi paling bersih adalah fetch list dan cari.
-  const { data: groups } = useSWR("/api/community/groups?filter=all", fetcher);
-  const currentGroup = groups?.find((g: any) => g.id === selectedGroupId) || { id: selectedGroupId, name: selectedGroupName };
+  // Fetch specific group details directly
+  // Note: API endpoint for single group might need to be verified or created if missing.
+  // Assuming GET /api/community/groups/[id] exists or filtering list if not.
+  // Let's try to fetch list and find for now to match previous logic, but cleaner.
+  // BETTER: Use proper endpoint. I'll assume standard REST: /api/community/groups/[id]
+  const { data: groupData, error: groupError } = useSWR(
+      groupId ? `/api/community/groups/${groupId}` : null, 
+      fetcher
+  );
 
+  // Fallback logic if API returns array or error
+  // If your API returns single object, great.
+  
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Decode Token to get User ID
+  // Decode Token
   useEffect(() => {
       const token = localStorage.getItem("token");
       if (token) {
@@ -45,14 +55,13 @@ export default function GroupChatView() {
       }
   }, []);
 
-  // Fetch Messages (Poll setiap 3 detik untuk real-time sederhana)
+  // Fetch Messages
   const { data: messages, mutate } = useSWR(
-      selectedGroupId ? `/api/community/groups/${selectedGroupId}/messages` : null, 
+      groupId ? `/api/community/groups/${groupId}/messages` : null, 
       fetcher, 
       { refreshInterval: 3000 }
   );
 
-  // Auto scroll ke bawah saat pesan baru masuk
   useEffect(() => {
       if (scrollRef.current) {
           scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -61,15 +70,15 @@ export default function GroupChatView() {
 
   const handleSend = async (e?: React.FormEvent) => {
       e?.preventDefault();
-      if (!input.trim() || !selectedGroupId) return;
+      if (!input.trim() || !groupId) return;
 
       const tempContent = input;
-      setInput(""); // Clear input immediately
+      setInput("");
       setSending(true);
 
       try {
           const token = localStorage.getItem("token");
-          await fetch(`/api/community/groups/${selectedGroupId}/messages`, {
+          await fetch(`/api/community/groups/${groupId}/messages`, {
               method: "POST",
               headers: { 
                   "Content-Type": "application/json",
@@ -77,44 +86,58 @@ export default function GroupChatView() {
               },
               body: JSON.stringify({ content: tempContent })
           });
-          mutate(); // Refresh pesan
+          mutate();
       } catch (err) {
           console.error(err);
-          setInput(tempContent); // Revert jika gagal
+          setInput(tempContent);
       } finally {
           setSending(false);
       }
   };
 
+  if (groupError) return <div className="p-8 text-center text-red-500">Error loading group.</div>;
+  if (!groupId) return <div className="p-8 text-center">Invalid Group ID</div>;
+
+  const groupName = groupData?.name || "Group Chat";
+  const groupImage = groupData?.imageUrl;
+
   return (
     <div className="flex flex-col h-[calc(100vh-100px)] bg-background rounded-xl border border-border shadow-sm overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-3 p-4 border-b border-border bg-card z-10 shadow-sm">
-        <button 
-            onClick={navigateToFeed}
+        <Link 
+            href="/community"
             className="p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground hover:text-foreground"
         >
             <ArrowLeft className="w-5 h-5" />
-        </button>
+        </Link>
         
-        <GroupDetailModal group={currentGroup}>
-            <div className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 -my-2 rounded-lg transition-colors flex-grow">
-                {currentGroup.imageUrl ? (
-                    <img src={currentGroup.imageUrl} className="w-10 h-10 rounded-full object-cover" />
-                ) : (
-                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
-                        {currentGroup.name?.charAt(0)}
+        {/* Only show modal trigger if group data is loaded */}
+        {groupData ? (
+            <GroupDetailModal group={groupData}>
+                <div className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 -my-2 rounded-lg transition-colors flex-grow">
+                    {groupImage ? (
+                        <img src={groupImage} className="w-10 h-10 rounded-full object-cover" />
+                    ) : (
+                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
+                            {groupName?.charAt(0)}
+                        </div>
+                    )}
+                    <div>
+                        <h2 className="font-bold text-lg leading-tight flex items-center gap-2">
+                            {groupName}
+                            <Info className="w-3 h-3 text-muted-foreground" />
+                        </h2>
+                        <p className="text-xs text-muted-foreground">Tap for info</p>
                     </div>
-                )}
-                <div>
-                    <h2 className="font-bold text-lg leading-tight flex items-center gap-2">
-                        {currentGroup.name}
-                        <Info className="w-3 h-3 text-muted-foreground" />
-                    </h2>
-                    <p className="text-xs text-muted-foreground">Tap for group info</p>
                 </div>
+            </GroupDetailModal>
+        ) : (
+            <div className="flex items-center gap-2">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span className="font-semibold">Loading...</span>
             </div>
-        </GroupDetailModal>
+        )}
       </div>
 
       {/* Messages Area */}

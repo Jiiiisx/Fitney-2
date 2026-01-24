@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, MapPin, Calendar, UserPlus, UserCheck, MessageCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useCommunityNavigation } from "../CommunityContext";
-import PostCard from "./PostCard";
+import { useParams, useRouter } from "next/navigation";
+import PostCard from "../../components/PostCard";
 import toast from "react-hot-toast";
 
 type UserProfile = {
@@ -27,18 +27,44 @@ type UserProfile = {
   posts: any[];
 };
 
-export default function UserProfileView() {
-  const { selectedUser, setActiveView } = useCommunityNavigation();
+export default function UserProfilePage() {
+  const params = useParams();
+  const router = useRouter();
+  const userId = params?.userId as string;
+  
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Helper untuk mendapatkan current user ID dari token (untuk PostCard)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
   useEffect(() => {
-    if (!selectedUser) return;
+    // Decode user ID from token safely
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const base64Url = token.split(".")[1];
+        const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+        const jsonPayload = decodeURIComponent(
+          window.atob(base64).split("").map(c => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2)).join("")
+        );
+        const payload = JSON.parse(jsonPayload);
+        if (payload.sub) {
+          setCurrentUserId(payload.sub);
+        }
+      } catch (e) {
+        console.error("Error decoding token", e);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!userId) return;
 
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch(`/api/community/users/${selectedUser}/profile`, {
+        const res = await fetch(`/api/community/users/${userId}/profile`, {
             headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) {
@@ -52,7 +78,7 @@ export default function UserProfileView() {
       }
     };
     fetchProfile();
-  }, [selectedUser]);
+  }, [userId]);
 
   const handleFollow = async () => {
     if (!profile) return;
@@ -79,10 +105,7 @@ export default function UserProfileView() {
   };
 
   const handleMessage = () => {
-      // For now, simpler implementation: just switch view or show modal? 
-      // Plan: Switch to 'direct_chat' view and pass the user details.
       toast("Chat feature coming soon!", { icon: "💬" });
-      // In next iteration, I will implement the ChatView
   };
 
   if (loading) {
@@ -97,7 +120,7 @@ export default function UserProfileView() {
     <div className="space-y-6">
       {/* Header / Nav */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => setActiveView("find_friends")}>
+        <Button variant="ghost" size="icon" onClick={() => router.back()}>
             <ArrowLeft className="h-5 w-5" />
         </Button>
         <h2 className="text-xl font-bold">Profile</h2>
@@ -128,10 +151,13 @@ export default function UserProfileView() {
             </div>
 
             <div className="flex gap-2">
-                 <Button onClick={handleFollow} variant={profile.isFollowing ? "outline" : "default"}>
-                    {profile.isFollowing ? <UserCheck className="mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4" />}
-                    {profile.isFollowing ? "Following" : "Follow"}
-                 </Button>
+                 {/* Don't show follow button on own profile */}
+                 {currentUserId !== profile.user.id && (
+                     <Button onClick={handleFollow} variant={profile.isFollowing ? "outline" : "default"}>
+                        {profile.isFollowing ? <UserCheck className="mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4" />}
+                        {profile.isFollowing ? "Following" : "Follow"}
+                     </Button>
+                 )}
                  <Button variant="secondary" size="icon" onClick={handleMessage}>
                     <MessageCircle className="h-4 w-4" />
                  </Button>
@@ -163,16 +189,24 @@ export default function UserProfileView() {
                  No posts yet.
              </div>
          ) : (
-             profile.posts.map(post => (
-                 <PostCard key={post.id} post={{
-                     ...post,
-                     user: { // Hydrate user for post card as API structure might differ slightly
-                         id: profile.user.id,
-                         username: profile.user.username,
-                         fullName: profile.user.fullName,
-                         imageUrl: profile.user.imageUrl
-                     }
-                 }} />
+             profile.posts.map((post: any) => (
+                 <PostCard 
+                    key={post.id} 
+                    post={{
+                        ...post,
+                        user: { 
+                            id: profile.user.id, // Ensure user object is structured correctly for PostCard
+                            username: profile.user.username,
+                            fullName: profile.user.fullName,
+                            imageUrl: profile.user.imageUrl,
+                            name: profile.user.fullName || profile.user.username
+                        },
+                        likesCount: post.likesCount || 0, // Fallback defaults
+                        commentsCount: post.commentsCount || 0,
+                        isLiked: post.isLiked || false
+                    }} 
+                    currentUserId={currentUserId}
+                />
              ))
          )}
       </div>

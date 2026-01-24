@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/app/lib/db";
 import { posts, followers } from "@/app/lib/schema";
 import { verifyAuth } from "@/app/lib/auth";
-import { desc, eq, inArray, and } from "drizzle-orm";
+import { desc, eq, inArray, and, lt, sql } from "drizzle-orm";
 
 export async function GET(req: NextRequest) {
   try {
@@ -11,57 +11,49 @@ export async function GET(req: NextRequest) {
 
     const currentUserId = auth.user.userId;
 
-    // Ambil parameter filter dari URL
+    // URL params for infinite scroll
     const { searchParams } = new URL(req.url);
     const filter = searchParams.get("filter");
+    const cursor = searchParams.get("cursor"); // Date string ISO
 
     // Tentukan kondisi WHERE
-    let whereCondition = undefined;
-    
+    let whereCondition: any = undefined;
+    const conditions = [];
+
+    // Pagination specific
+    if (cursor) {
+      conditions.push(lt(posts.createdAt, new Date(cursor)));
+    }
+
     if (filter === "mine") {
-      // Jika filter 'mine', hanya ambil post milik user yang login
-      whereCondition = eq(posts.userId, currentUserId);
+      conditions.push(eq(posts.userId, currentUserId));
     } else if (filter === "friends") {
       // 1. Get users I follow
       const myFollowing = await db
         .select({ id: followers.userId }) // The user being followed
         .from(followers)
         .where(eq(followers.followerId, currentUserId));
-      
+
       const myFollowingIds = myFollowing.map(f => f.id);
+      myFollowingIds.push(currentUserId); // Include my own posts
 
       if (myFollowingIds.length === 0) {
-        return NextResponse.json([]); // No friends/following, empty feed
+        return NextResponse.json({ posts: [], nextCursor: null });
       }
 
-      // 2. Get users following me (from the list I already follow - intersection)
-      const mutualFriends = await db
-        .select({ id: followers.followerId }) // The follower (them)
-        .from(followers)
-        .where(
-          and(
-            eq(followers.userId, currentUserId), // They are following me
-            inArray(followers.followerId, myFollowingIds) // AND I am following them
-          )
-        );
-
-      const mutualFriendIds = mutualFriends.map(f => f.id);
-
-      // Include my own posts in "friends" feed or strict only friends? 
-      // Usually "Friends Feed" includes self. Let's add self.
-      mutualFriendIds.push(currentUserId);
-
-      if (mutualFriendIds.length === 0) {
-         return NextResponse.json([]);
-      }
-
-      whereCondition = inArray(posts.userId, mutualFriendIds);
+      // Simplified: Show posts from anyone I follow (Instagram style)
+      conditions.push(inArray(posts.userId, myFollowingIds));
     }
 
+    if (conditions.length > 0) {
+      whereCondition = and(...conditions);
+    }
+
+    const limit = 10;
     const feed = await db.query.posts.findMany({
-      where: whereCondition, // Terapkan filter di sini
+      where: whereCondition,
       orderBy: [desc(posts.createdAt)],
-      limit: 20, 
+      limit: limit + 1, // Fetch +1 to check if next page exists
       with: {
         user: {
           columns: {
@@ -70,16 +62,28 @@ export async function GET(req: NextRequest) {
             imageUrl: true,
           }
         },
-        likes: true, 
+        likes: true,
         comments: true,
+        savedBy: {
+          where: (savedPosts, { eq }) => eq(savedPosts.userId, currentUserId),
+        }
       }
     });
+
+    let nextCursor = null;
+    if (feed.length > limit) {
+      const nextItem = feed.pop(); // Remove the extra item
+      if (nextItem && nextItem.createdAt) { // Check if nextItem and createdAt are defined
+        nextCursor = nextItem.createdAt.toISOString();
+      }
+    }
 
     const formattedFeed = feed.map(post => ({
       id: post.id,
       userId: post.userId,
       content: post.content,
-      imageUrl: post.imageUrl,
+      images: post.images || [], // Handle JSON
+      // Backward compat if needed, but we removed imageUrl column
       createdAt: post.createdAt,
       user: {
         name: post.user.fullName || post.user.username,
@@ -88,10 +92,14 @@ export async function GET(req: NextRequest) {
       },
       likesCount: post.likes.length,
       commentsCount: post.comments.length,
-      isLiked: post.likes.some(like => like.userId === currentUserId)
+      isLiked: post.likes.some(like => like.userId === currentUserId),
+      isSaved: post.savedBy && post.savedBy.length > 0,
     }));
 
-    return NextResponse.json(formattedFeed);
+    return NextResponse.json({
+      posts: formattedFeed,
+      nextCursor
+    });
 
   } catch (error) {
     console.error("GET_FEED_ERROR", error);

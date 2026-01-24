@@ -1,8 +1,9 @@
 import useSWR, { mutate } from "swr";
+import useSWRInfinite from "swr/infinite";
 import toast from "react-hot-toast";
 
 // Fetcher function standar
-const fetcher = (url: string) => {
+export const fetcher = (url: string) => {
   const token = localStorage.getItem("token");
   return fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
@@ -17,19 +18,30 @@ const fetcher = (url: string) => {
 export type FeedFilter = "all" | "mine" | "friends";
 
 export function useCommunityFeed(filter: FeedFilter = "all") {
-  // Key SWR bergantung pada filter, jadi cache terpisah
-  const url = `/api/community/feed?filter=${filter}`;
-  
-  const { data, error, isLoading, mutate } = useSWR(url, fetcher, {
-    refreshInterval: 60000, 
+  const getKey = (pageIndex: number, previousPageData: any) => {
+    if (pageIndex === 0) return `/api/community/feed?filter=${filter}`;
+    if (!previousPageData || !previousPageData.nextCursor) return null;
+    return `/api/community/feed?filter=${filter}&cursor=${previousPageData.nextCursor}`;
+  };
+
+  const { data, error, isLoading, size, setSize, mutate } = useSWRInfinite(getKey, fetcher, {
+    refreshInterval: 0, // Disable polling for infinite scroll for now or keep it? Better manual refresh or strict optimistic
+    revalidateFirstPage: false,
     revalidateOnFocus: false,
   });
 
+  const posts = data ? data.flatMap((page: any) => page.posts) : [];
+  const isLoadingMore = isLoading || (size > 0 && data && typeof data[size - 1] === "undefined");
+  const isReachingEnd = data && data[data.length - 1]?.nextCursor === null;
+
   return {
-    posts: data || [],
-    isLoading,
+    posts,
+    isLoading: isLoading && !data, // Initial load
     isError: error,
     mutate,
+    loadMore: () => setSize(size + 1),
+    isLoadingMore,
+    isReachingEnd,
   };
 }
 
@@ -38,6 +50,28 @@ export function useSuggestions() {
 
   return {
     suggestions: data || [],
+    isLoading,
+    isError: error,
+    mutate,
+  };
+}
+
+export function useStories() {
+  const { data, error, isLoading, mutate } = useSWR("/api/community/stories", fetcher);
+
+  return {
+    stories: data || [],
+    isLoading,
+    isError: error,
+    mutate,
+  };
+}
+
+export function useFriends() {
+  const { data, error, isLoading, mutate } = useSWR("/api/community/friends", fetcher);
+
+  return {
+    friends: data || [],
     isLoading,
     isError: error,
     mutate,
@@ -81,8 +115,8 @@ export async function kickMember(groupId: number, userId: string) {
     });
 
     if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Failed to kick member");
+      const err = await res.json();
+      throw new Error(err.error || "Failed to kick member");
     }
 
     toast.success("Member removed from group");
@@ -99,9 +133,9 @@ export async function createGroup(name: string, description: string, imageUrl?: 
   try {
     const res = await fetch(`/api/community/groups`, {
       method: "POST",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}` 
+        Authorization: `Bearer ${token}`
       },
       body: JSON.stringify({ name, description, imageUrl }),
     });
@@ -114,7 +148,7 @@ export async function createGroup(name: string, description: string, imageUrl?: 
       mutate("/api/community/groups?filter=all"),
       mutate("/api/community/groups?filter=created")
     ]);
-    
+
     return await res.json();
   } catch (error) {
     console.error(error);
@@ -139,7 +173,7 @@ export async function deleteGroup(groupId: number) {
       mutate("/api/community/groups?filter=all"),
       mutate("/api/community/groups?filter=created")
     ]);
-    
+
     return true;
   } catch (error) {
     console.error(error);
@@ -155,9 +189,9 @@ export async function likePost(postId: number) {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
     });
-    
+
     if (!res.ok) throw new Error("Failed to like post");
-    
+
     const data = await res.json();
     return data;
   } catch (error) {
@@ -167,16 +201,16 @@ export async function likePost(postId: number) {
   }
 }
 
-export async function createComment(postId: number, content: string) {
+export async function createComment(postId: number, content: string, parentId?: number) {
   const token = localStorage.getItem("token");
   try {
     const res = await fetch(`/api/community/posts/${postId}/comments`, {
       method: "POST",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}` 
+        Authorization: `Bearer ${token}`
       },
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({ content, parentId }),
     });
 
     if (!res.ok) throw new Error("Failed to post comment");
@@ -189,10 +223,49 @@ export async function createComment(postId: number, content: string) {
   }
 }
 
+export async function deleteComment(postId: number, commentId: number) {
+  const token = localStorage.getItem("token");
+  try {
+    const res = await fetch(`/api/community/posts/${postId}/comments/${commentId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!res.ok) throw new Error("Failed to delete comment");
+
+    toast.success("Comment deleted");
+    return true;
+  } catch (error) {
+    console.error(error);
+    toast.error("Failed to delete comment");
+    throw error;
+  }
+}
+
+export async function savePost(postId: number) {
+  const token = localStorage.getItem("token");
+  try {
+    const res = await fetch(`/api/community/posts/${postId}/save`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!res.ok) throw new Error("Failed to save post");
+
+    const data = await res.json();
+    toast.success(data.message || "Post saved successfully!");
+    return data;
+  } catch (error) {
+    console.error(error);
+    toast.error("Failed to save post");
+    throw error;
+  }
+}
+
 export async function fetchComments(postId: number) {
   const token = localStorage.getItem("token");
   const res = await fetch(`/api/community/posts/${postId}/comments`, {
-      headers: { Authorization: `Bearer ${token}` },
+    headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error("Failed to fetch comments");
   return await res.json();
@@ -211,7 +284,7 @@ export async function uploadImage(file: File) {
     });
 
     if (!res.ok) throw new Error("Failed to upload image");
-    
+
     const data = await res.json();
     return data.url;
   } catch (error) {
@@ -221,16 +294,40 @@ export async function uploadImage(file: File) {
   }
 }
 
-export async function createPost(content: string, imageUrl?: string) {
+export async function createStory(mediaUrl: string) {
+  const token = localStorage.getItem("token");
+  try {
+    const res = await fetch(`/api/community/stories`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ mediaUrl }),
+    });
+
+    if (!res.ok) throw new Error("Failed to create story");
+
+    toast.success("Story uploaded!");
+    mutate("/api/community/stories");
+    return await res.json();
+  } catch (error) {
+    console.error(error);
+    toast.error("Failed to upload story");
+    throw error;
+  }
+}
+
+export async function createPost(content: string, images: string[] = []) {
   const token = localStorage.getItem("token");
   try {
     const res = await fetch(`/api/community/posts`, {
       method: "POST",
-      headers: { 
+      headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}` 
+        Authorization: `Bearer ${token}`
       },
-      body: JSON.stringify({ content, imageUrl }),
+      body: JSON.stringify({ content, images }),
     });
 
     if (!res.ok) throw new Error("Failed to create post");
@@ -240,10 +337,9 @@ export async function createPost(content: string, imageUrl?: string) {
     // SWR mutate global key matching:
     // Idealnya kita revalidate semua key yang start with /api/community/feed
     // Tapi simpelnya kita hit spesifik
-    mutate("/api/community/feed?filter=all"); 
-    mutate("/api/community/feed?filter=mine"); 
-    mutate("/api/community/feed?filter=friends");
-    
+    // Invalidate all feed keys roughly
+    mutate((key) => typeof key === 'string' && key.startsWith('/api/community/feed'), undefined, { revalidate: true });
+
     return await res.json();
   } catch (error) {
     console.error(error);
@@ -263,15 +359,15 @@ export async function followUser(userId: string) {
     if (!res.ok) throw new Error("Failed to follow user");
 
     const data = await res.json();
-    
+
     if (data.following) {
-        toast.success("Berhasil mengikuti pengguna");
+      toast.success("Berhasil mengikuti pengguna");
     } else {
-        toast.success("Berhasil berhenti mengikuti");
+      toast.success("Berhasil berhenti mengikuti");
     }
 
     mutate("/api/community/friends/suggestions");
-    
+
     return data;
   } catch (error) {
     console.error(error);

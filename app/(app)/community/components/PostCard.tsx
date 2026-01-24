@@ -1,7 +1,6 @@
-"use client";
-
-import { useState } from "react";
-import { Heart, MessageSquare, Share2, MoreHorizontal, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { useState, useEffect } from "react";
+import { Heart, MessageSquare, Share2, MoreHorizontal, Trash2, Bookmark, ChevronLeft, ChevronRight } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import toast from "react-hot-toast";
 import {
@@ -10,15 +9,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { likePost } from "../hooks/useCommunity";
+import { likePost, savePost } from "../hooks/useCommunity";
 import CommentSection from "./CommentSection";
-import { useCommunityNavigation } from "../CommunityContext";
 
 interface PostData {
   id: number;
   userId: string;
   content: string;
-  imageUrl?: string;
+  images: string[];
   createdAt: string;
   user: {
     name: string;
@@ -28,26 +26,27 @@ interface PostData {
   likesCount: number;
   commentsCount: number;
   isLiked: boolean;
+  isSaved: boolean;
 }
 
 // Helper untuk merender text dengan hashtag clickable
 const renderContentWithHashtags = (text: string) => {
-    if (!text) return null;
-    
-    // Regex untuk mencari hashtag (#word)
-    // Penjelasan: Mencari karakter '#' diikuti huruf/angka/underscore
-    const parts = text.split(/(#\w+)/g);
+  if (!text) return null;
 
-    return parts.map((part, index) => {
-        if (part.startsWith('#')) {
-            return (
-                <span key={index} className="text-primary font-semibold hover:underline cursor-pointer">
-                    {part}
-                </span>
-            );
-        }
-        return part;
-    });
+  // Regex untuk mencari hashtag (#word)
+  // Penjelasan: Mencari karakter '#' diikuti huruf/angka/underscore
+  const parts = text.split(/(#\w+)/g);
+
+  return parts.map((part, index) => {
+    if (part.startsWith('#')) {
+      return (
+        <span key={index} className="text-primary font-semibold hover:underline cursor-pointer">
+          {part}
+        </span>
+      );
+    }
+    return part;
+  });
 };
 
 export default function PostCard({
@@ -60,9 +59,25 @@ export default function PostCard({
   onDelete?: (id: number) => void;
 }) {
   const [post, setPost] = useState(initialPost);
-  const [isLiking, setIsLike] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isLiking, setIsLiking] = useState(false);
   const [showComments, setShowComments] = useState(false);
-  const { setSelectedUser, setActiveView } = useCommunityNavigation();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => { setIsMounted(true); }, []);
+
+  // Carousel Navigation
+  const nextImage = () => {
+    if (post.images && currentImageIndex < post.images.length - 1) {
+      setCurrentImageIndex(prev => prev + 1);
+    }
+  };
+
+  const prevImage = () => {
+    if (currentImageIndex > 0) {
+      setCurrentImageIndex(prev => prev - 1);
+    }
+  };
 
   // Helper untuk format tanggal aman
   const formatDate = (dateString: string) => {
@@ -71,14 +86,6 @@ export default function PostCard({
     } catch (e) {
       return "just now";
     }
-  };
-
-  const handleUserClick = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      if (post.userId) {
-          setSelectedUser(post.userId);
-          setActiveView("user_profile");
-      }
   };
 
   const handleLike = async () => {
@@ -91,7 +98,7 @@ export default function PostCard({
       isLiked: !p.isLiked,
       likesCount: p.isLiked ? p.likesCount - 1 : p.likesCount + 1,
     }));
-    setIsLike(true);
+    setIsLiking(true);
 
     try {
       await likePost(post.id);
@@ -100,38 +107,51 @@ export default function PostCard({
       // Revert if failed
       setPost(prevPost);
     } finally {
-      setIsLike(false);
+      setIsLiking(false);
+    }
+  };
+
+  const handleSave = async () => {
+    const prevPost = { ...post };
+    // Optimistic
+    setPost(p => ({ ...p, isSaved: !p.isSaved }));
+
+    try {
+      await savePost(post.id);
+      // Toast handled in hook
+    } catch (error) {
+      setPost(prevPost); // Revert
     }
   };
 
   const handleDeleteClick = async () => {
-      // Logic delete akan ditangani di parent atau hook terpisah jika perlu
-      // Untuk sekarang, kita asumsikan props onDelete menangani API call juga
-      // atau kita buat API call disini
-      if (!confirm("Are you sure you want to delete this post?")) return;
-      
-      try {
-          const token = localStorage.getItem("token");
-          const res = await fetch(`/api/community/posts/${post.id}`, { // Pastikan route ini ada
-              method: "DELETE",
-              headers: { Authorization: `Bearer ${token}` }
-          });
-          
-          if (res.ok) {
-              toast.success("Post deleted");
-              if (onDelete) onDelete(post.id);
-          } else {
-              toast.error("Failed to delete post");
-          }
-      } catch(e) {
-          toast.error("Error deleting post");
+    // Logic delete akan ditangani di parent atau hook terpisah jika perlu
+    // Untuk sekarang, kita asumsikan props onDelete menangani API call juga
+    // atau kita buat API call disini
+    if (!confirm("Are you sure you want to delete this post?")) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`/api/community/posts/${post.id}`, { // Pastikan route ini ada
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (res.ok) {
+        toast.success("Post deleted");
+        if (onDelete) onDelete(post.id);
+      } else {
+        toast.error("Failed to delete post");
       }
+    } catch (e) {
+      toast.error("Error deleting post");
+    }
   };
 
   return (
     <div className="bg-card p-5 rounded-xl border border-border shadow-sm mb-6 relative group transition-all hover:shadow-md">
       {/* Delete Menu (Only for owner) */}
-      {currentUserId === post.userId && (
+      {isMounted && currentUserId === post.userId && (
         <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -153,7 +173,7 @@ export default function PostCard({
       )}
 
       {/* Post Header */}
-      <div className="flex items-center mb-4 cursor-pointer" onClick={handleUserClick}>
+      <Link href={`/community/profile/${post.userId}`} className="flex items-center mb-4 cursor-pointer group/user">
         {post.user.avatar ? (
           <img
             src={post.user.avatar}
@@ -168,46 +188,80 @@ export default function PostCard({
           </div>
         )}
         <div>
-          <p className="font-bold text-foreground text-sm hover:underline">{post.user.name}</p>
+          <p className="font-bold text-foreground text-sm group-hover/user:underline">{post.user.name}</p>
           <p className="text-xs text-muted-foreground">
             {formatDate(post.createdAt)}
           </p>
         </div>
-      </div>
+      </Link>
 
       {/* Post Content */}
       <div className="text-foreground text-base mb-4 whitespace-pre-wrap break-words leading-relaxed">
         {renderContentWithHashtags(post.content)}
       </div>
-      
-      {post.imageUrl && (
-        <img
-          src={post.imageUrl}
-          alt="Post content"
-          className="mt-3 rounded-lg w-full object-cover max-h-96 border border-border bg-muted"
-        />
+
+      {/* Multi-Image Carousel */}
+      {post.images && post.images.length > 0 && (
+        <div className="mt-3 relative group/carousel">
+          <div className="overflow-hidden rounded-lg border border-border bg-muted max-h-96 flex items-center justify-center">
+            <img
+              src={post.images[currentImageIndex]}
+              alt={`Post content ${currentImageIndex + 1}`}
+              className="w-full h-full object-contain max-h-96"
+            />
+          </div>
+
+          {/* Navigation Buttons */}
+          {post.images.length > 1 && (
+            <>
+              {currentImageIndex > 0 && (
+                <button
+                  onClick={(e) => { e.preventDefault(); prevImage(); }}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-1 rounded-full opacity-0 group-hover/carousel:opacity-100 transition-opacity hover:bg-black/70"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+              )}
+              {currentImageIndex < post.images.length - 1 && (
+                <button
+                  onClick={(e) => { e.preventDefault(); nextImage(); }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 text-white p-1 rounded-full opacity-0 group-hover/carousel:opacity-100 transition-opacity hover:bg-black/70"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              )}
+
+              {/* Dots Indicator */}
+              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex space-x-1.5">
+                {post.images.map((_, idx) => (
+                  <div
+                    key={idx}
+                    className={`w-1.5 h-1.5 rounded-full shadow-sm transition-all ${idx === currentImageIndex ? 'bg-white scale-125' : 'bg-white/50'}`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </div>
       )}
 
       {/* Post Actions */}
       <div className="flex items-center justify-between text-muted-foreground mt-4 pt-4 border-t border-border">
         <button
           onClick={handleLike}
-          className={`flex items-center space-x-2 transition-colors duration-300 group ${
-            post.isLiked ? "text-red-500" : "hover:text-red-500"
-          }`}
+          className={`flex items-center space-x-2 transition-colors duration-300 group ${post.isLiked ? "text-red-500" : "hover:text-red-500"
+            }`}
         >
           <Heart
-            className={`w-5 h-5 group-hover:scale-110 transition-transform ${
-              post.isLiked ? "fill-current" : ""
-            }`}
+            className={`w-5 h-5 group-hover:scale-110 transition-transform ${post.isLiked ? "fill-current" : ""
+              }`}
           />
           <span className="font-medium text-sm">{post.likesCount}</span>
         </button>
         <button
           onClick={() => setShowComments(!showComments)}
-          className={`flex items-center space-x-2 hover:text-blue-500 transition-colors duration-300 group ${
-            showComments ? "text-blue-500" : ""
-          }`}
+          className={`flex items-center space-x-2 hover:text-blue-500 transition-colors duration-300 group ${showComments ? "text-blue-500" : ""
+            }`}
         >
           <MessageSquare className="w-5 h-5 group-hover:scale-110 transition-transform" />
           <span className="font-medium text-sm">{post.commentsCount}</span>
@@ -215,13 +269,21 @@ export default function PostCard({
         <button className="flex items-center space-x-2 hover:text-green-500 transition-colors duration-300 group">
           <Share2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
         </button>
+        <button
+          onClick={handleSave}
+          className={`flex items-center space-x-2 transition-colors duration-300 group ${post.isSaved ? "text-primary" : "hover:text-primary"
+            }`}
+        >
+          <Bookmark className={`w-5 h-5 group-hover:scale-110 transition-transform ${post.isSaved ? "fill-current" : ""}`} />
+        </button>
       </div>
 
       {/* Comments Section */}
       {showComments && (
-        <CommentSection 
-            postId={post.id} 
-            onCommentAdded={() => setPost(p => ({ ...p, commentsCount: p.commentsCount + 1 }))}
+        <CommentSection
+          postId={post.id}
+          postOwnerId={post.userId}
+          onCommentAdded={() => setPost(p => ({ ...p, commentsCount: p.commentsCount + 1 }))}
         />
       )}
     </div>
