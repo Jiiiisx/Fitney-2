@@ -20,23 +20,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const syncHistory = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-
-      const promise = fetch('/api/planner/sync-history', { 
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+      // Just fire and forget - cookie handled automatically
+      const promise = fetch('/api/planner/sync-history', {
+        method: 'POST'
       });
 
-      toast.promise(promise, {
-        loading: 'Checking for past workouts to sync...',
-        success: (res) => {
-          // We can inspect the response if we want.
-          // For now, let's assume success means it worked or there was nothing to sync.
-          return 'History is up to date!';
-        },
-        error: 'Could not sync history.',
-      });
+      // We only show toast if it actually does something meaningful or on error?
+      // Existing logic showed promise toast. Let's keep it but without token check blocking it.
+      // However, if not logged in, it will 401. 
+      // Ideally we check if we are possibly logged in. 
+      // For now, let's wrap in a try/catch or just let it run.
+      // If 401, the toast might error.
+
+      // Let's simplified it to be less intrusive on public pages if any.
+      // But this layout is for (app) which is protected? 
+      // If user isn't logged in, they shouldn't be here or middleware redirects.
     };
 
     // Delay sync slightly to allow main app to render

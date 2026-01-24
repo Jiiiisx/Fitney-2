@@ -1,4 +1,5 @@
-import { NextResponse  } from "next/server";
+import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { db } from '@/app/lib/db';
 import { users } from '@/app/lib/schema';
 import bcrypt from 'bcryptjs';
@@ -10,7 +11,7 @@ export async function POST(req: Request) {
     const { identifier, password } = await req.json();
 
     if (!identifier || !password) {
-      return NextResponse.json({ error: 'Missing identifier or password'}, { status: 400 });
+      return NextResponse.json({ error: 'Missing identifier or password' }, { status: 400 });
     }
 
     const userResult = await db
@@ -19,7 +20,7 @@ export async function POST(req: Request) {
       .where(or(eq(users.email, identifier), eq(users.username, identifier)));
 
     if (userResult.length === 0) {
-      return NextResponse.json({ error : 'Invalid credentials '}, { status: 401 });
+      return NextResponse.json({ error: 'Invalid credentials ' }, { status: 401 });
     }
 
     const user = userResult[0];
@@ -41,9 +42,19 @@ export async function POST(req: Request) {
 
     const { passwordHash, ...userWithoutPassword } = user;
 
-    return NextResponse.json({ user: userWithoutPassword, token })
+    // Set HttpOnly Cookie
+    const cookieStore = await cookies();
+    cookieStore.set('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 86400, // 1 day in seconds
+      path: '/',
+    });
+
+    return NextResponse.json({ user: userWithoutPassword });
   } catch (error) {
     console.error('LOGIN_ERROR', error);
-    return NextResponse.json({ error: 'Internal Server Down'}, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Down' }, { status: 500 });
   }
 }

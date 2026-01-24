@@ -67,7 +67,7 @@ const StatsSidebar = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [quote, setQuote] = useState("Continue your journey to achieve your target!");
   const [greeting, setGreeting] = useState("Hello");
 
@@ -81,37 +81,26 @@ const StatsSidebar = () => {
     const fetchData = async () => {
       setLoading(true);
       setError(null);
-      const token = localStorage.getItem("token");
-
-      if (!token) {
-        // Jika tidak ada token, jangan set error yang mengganggu UI, cukup loading false
-        // setError("Authentication token not found.");
-        setLoading(false);
-        return;
-      }
 
       try {
-        const headers = { 'Authorization': `Bearer ${token}` };
-        
         // Fetch user profile untuk nama
-        const userRes = await fetch('/api/users/profile', { headers });
+        const userRes = await fetch('/api/users/profile');
         if (userRes.ok) {
-            const userData = await userRes.json();
-            // Ambil nama depan saja agar tidak kepanjangan
-            const fullName = userData.full_name || userData.username || "User";
-            setUserName(fullName.split(' ')[0]);
+          const userData = await userRes.json();
+          // Ambil nama depan saja agar tidak kepanjangan
+          const fullName = userData.full_name || userData.username || "User";
+          setUserName(fullName.split(' ')[0]);
         }
 
         // Fetch stats
-        const statsRes = await fetch('/api/stats/sidebar', { headers });
+        const statsRes = await fetch('/api/stats/sidebar');
         if (statsRes.ok) {
-             const statsData = await statsRes.json();
-             setStats(statsData);
+          const statsData = await statsRes.json();
+          setStats(statsData);
         }
 
       } catch (err: any) {
         console.error("Failed to fetch sidebar data", err);
-        // Silent error is better for UX in sidebar
       } finally {
         setLoading(false);
       }
@@ -137,8 +126,8 @@ const StatsSidebar = () => {
       </div>
 
       <div className="flex flex-col items-center text-center">
-        <CircularProgress 
-          percentage={stats.progressPercentage} 
+        <CircularProgress
+          percentage={stats.progressPercentage}
           level={stats.level}
         />
         <h3 className="mt-4 text-xl font-bold text-foreground">
@@ -160,8 +149,8 @@ const StatsSidebar = () => {
       </div>
 
       <div className="w-full">
-         <h4 className="text-sm font-semibold text-muted-foreground mb-4 uppercase tracking-wider">Quick Actions</h4>
-         <DynamicQuickActions />
+        <h4 className="text-sm font-semibold text-muted-foreground mb-4 uppercase tracking-wider">Quick Actions</h4>
+        <DynamicQuickActions />
       </div>
     </div>
   );

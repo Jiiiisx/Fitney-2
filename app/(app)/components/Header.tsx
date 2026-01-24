@@ -63,11 +63,8 @@ const Header = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   const fetchUser = useCallback(async () => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      const res = await fetch('/api/users/profile', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+    try {
+      const res = await fetch('/api/users/profile');
       if (res.ok) {
         const userData = await res.json();
         setUser(userData);
@@ -75,20 +72,21 @@ const Header = () => {
           setShowOnboarding(true);
         }
       }
+    } catch (error) {
+      console.error("Profile fetch error", error);
     }
   }, []);
 
   // Fetch gamification stats
   const fetchLevel = useCallback(async () => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      const res = await fetch('/api/users/gamification-stats', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+    try {
+      const res = await fetch('/api/users/gamification-stats');
       if (res.ok) {
         const gamificationData = await res.json();
         setLevel(gamificationData.level);
       }
+    } catch (error) {
+      console.error("Stats fetch error", error);
     }
   }, []);
 
@@ -97,9 +95,15 @@ const Header = () => {
     fetchLevel();
   }, [fetchUser, fetchLevel]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    router.push("/login");
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      router.push("/login");
+      router.refresh(); // Refresh to clear server component cache if any
+    } catch (error) {
+      console.error("Logout failed", error);
+      router.push("/login");
+    }
   };
 
   const handleOnboardingComplete = useCallback(() => {
@@ -137,11 +141,10 @@ const Header = () => {
               <Link
                 key={item.label}
                 href={item.href}
-                className={`relative px-6 py-3 text-lg font-semibold rounded-full transition-colors duration-300 z-10 ${
-                  pathname === item.href
-                    ? "text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
+                className={`relative px-6 py-3 text-lg font-semibold rounded-full transition-colors duration-300 z-10 ${pathname === item.href
+                  ? "text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+                  }`}
               >
                 {item.label}
                 {pathname === item.href && (
@@ -171,7 +174,7 @@ const Header = () => {
                 <NotificationPopup />
               </PopoverContent>
             </Popover>
-            
+
             <Popover>
               <PopoverTrigger asChild>
                 <div className="relative">
@@ -203,6 +206,7 @@ const Header = () => {
         </div>
       </header>
     </>
-  );};
+  );
+};
 
 export default Header;

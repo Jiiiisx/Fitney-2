@@ -42,6 +42,11 @@ export default function MainFeed() {
     mutate();
   };
 
+  // Deduplicate posts based on ID to prevent "same key" error
+  const uniquePosts = posts
+    ? Array.from(new Map(posts.map((p: any) => [p.id, p])).values())
+    : [];
+
   return (
     <div className="max-w-2xl mx-auto pb-20">
       <StoryTray />
@@ -97,9 +102,9 @@ export default function MainFeed() {
         <div className="flex justify-center py-10">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
-      ) : posts && posts.length > 0 ? (
+      ) : uniquePosts && uniquePosts.length > 0 ? (
         <div className="space-y-6">
-          {posts.map((post: any) => (
+          {uniquePosts.map((post: any) => (
             <PostCard
               key={post.id}
               post={post}
@@ -128,7 +133,7 @@ export default function MainFeed() {
             </div>
           )}
 
-          {isReachingEnd && posts.length > 5 && (
+          {isReachingEnd && uniquePosts.length > 5 && (
             <div className="text-center py-8 text-muted-foreground text-sm">
               You've reached the end of the line! 🚀
             </div>

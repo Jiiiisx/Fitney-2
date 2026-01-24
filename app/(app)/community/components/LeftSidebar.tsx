@@ -46,16 +46,15 @@ const LeftSidebar = () => {
     useEffect(() => {
         const fetchProfile = async () => {
             try {
-                const token = localStorage.getItem("token");
-                if (!token) return;
-
-                const res = await fetch("/api/users/profile", {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
+                const res = await fetch("/api/users/profile");
+                // Fetch automatically uses cookie relative to domain
 
                 if (res.ok) {
                     const data = await res.json();
                     setProfile(data);
+                } else if (res.status === 401) {
+                    // Token expired or missing cookie - optional: redirect?
+                    // router.push("/login");
                 }
             } catch (e) {
                 console.error("Failed to fetch profile sidebar", e);

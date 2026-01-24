@@ -107,11 +107,9 @@ export function useGroupMembers(groupId: number | null) {
 // --- ACTIONS ---
 
 export async function kickMember(groupId: number, userId: string) {
-  const token = localStorage.getItem("token");
   try {
     const res = await fetch(`/api/community/groups/${groupId}/members/${userId}`, {
       method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
     });
 
     if (!res.ok) {
@@ -129,13 +127,11 @@ export async function kickMember(groupId: number, userId: string) {
 }
 
 export async function createGroup(name: string, description: string, imageUrl?: string) {
-  const token = localStorage.getItem("token");
   try {
     const res = await fetch(`/api/community/groups`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
       },
       body: JSON.stringify({ name, description, imageUrl }),
     });
@@ -158,11 +154,9 @@ export async function createGroup(name: string, description: string, imageUrl?: 
 }
 
 export async function deleteGroup(groupId: number) {
-  const token = localStorage.getItem("token");
   try {
     const res = await fetch(`/api/community/groups/${groupId}`, {
       method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
     });
 
     if (!res.ok) throw new Error("Failed to delete group");
@@ -183,11 +177,9 @@ export async function deleteGroup(groupId: number) {
 }
 
 export async function likePost(postId: number) {
-  const token = localStorage.getItem("token");
   try {
     const res = await fetch(`/api/community/posts/${postId}/like`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
     });
 
     if (!res.ok) throw new Error("Failed to like post");
@@ -202,13 +194,11 @@ export async function likePost(postId: number) {
 }
 
 export async function createComment(postId: number, content: string, parentId?: number) {
-  const token = localStorage.getItem("token");
   try {
     const res = await fetch(`/api/community/posts/${postId}/comments`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
       },
       body: JSON.stringify({ content, parentId }),
     });
@@ -224,11 +214,9 @@ export async function createComment(postId: number, content: string, parentId?: 
 }
 
 export async function deleteComment(postId: number, commentId: number) {
-  const token = localStorage.getItem("token");
   try {
     const res = await fetch(`/api/community/posts/${postId}/comments/${commentId}`, {
       method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
     });
 
     if (!res.ok) throw new Error("Failed to delete comment");
@@ -243,11 +231,9 @@ export async function deleteComment(postId: number, commentId: number) {
 }
 
 export async function savePost(postId: number) {
-  const token = localStorage.getItem("token");
   try {
     const res = await fetch(`/api/community/posts/${postId}/save`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
     });
 
     if (!res.ok) throw new Error("Failed to save post");
@@ -263,23 +249,18 @@ export async function savePost(postId: number) {
 }
 
 export async function fetchComments(postId: number) {
-  const token = localStorage.getItem("token");
-  const res = await fetch(`/api/community/posts/${postId}/comments`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const res = await fetch(`/api/community/posts/${postId}/comments`);
   if (!res.ok) throw new Error("Failed to fetch comments");
   return await res.json();
 }
 
 export async function uploadImage(file: File) {
-  const token = localStorage.getItem("token");
   const formData = new FormData();
   formData.append("file", file);
 
   try {
     const res = await fetch("/api/upload", {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
       body: formData,
     });
 
@@ -295,13 +276,11 @@ export async function uploadImage(file: File) {
 }
 
 export async function createStory(mediaUrl: string) {
-  const token = localStorage.getItem("token");
   try {
     const res = await fetch(`/api/community/stories`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
       },
       body: JSON.stringify({ mediaUrl }),
     });
@@ -319,13 +298,11 @@ export async function createStory(mediaUrl: string) {
 }
 
 export async function createPost(content: string, images: string[] = []) {
-  const token = localStorage.getItem("token");
   try {
     const res = await fetch(`/api/community/posts`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
       },
       body: JSON.stringify({ content, images }),
     });
@@ -349,11 +326,9 @@ export async function createPost(content: string, images: string[] = []) {
 }
 
 export async function followUser(userId: string) {
-  const token = localStorage.getItem("token");
   try {
     const res = await fetch(`/api/community/users/${userId}/follow`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
     });
 
     if (!res.ok) throw new Error("Failed to follow user");

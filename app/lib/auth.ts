@@ -33,12 +33,19 @@ export async function getUserFromToken(token: string): Promise<UserPayload | nul
 }
 
 export async function verifyAuth(req: NextRequest): Promise<{ user: UserPayload; error: null } | { user: null; error: Response }> {
-  const token = req.headers.get('authorization')?.split(' ')[1];
+  let token = req.cookies.get('token')?.value;
+
+  if (!token) {
+    const authHeader = req.headers.get('authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    }
+  }
 
   if (!token) {
     return { user: null, error: new Response(JSON.stringify({ error: 'Unauthorized: No token provided' }), { status: 401 }) };
   }
-  
+
   const user = await getUserFromToken(token);
 
   if (!user) {
