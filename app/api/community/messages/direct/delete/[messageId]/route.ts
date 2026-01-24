@@ -1,3 +1,4 @@
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/app/lib/db";
 import { directMessages, hiddenDirectMessages } from "@/app/lib/schema";
 import { verifyAuth } from "@/app/lib/auth";
