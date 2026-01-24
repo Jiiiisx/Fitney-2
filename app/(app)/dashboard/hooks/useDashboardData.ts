@@ -2,13 +2,8 @@ import useSWR from 'swr';
 import { DashboardData } from '@/app/lib/types/api';
 
 const fetcher = async (url: string) => {
-  const token = localStorage.getItem("token");
-  if (!token) {
-    throw new Error("No token found");
-  }
-
   const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` }
+    credentials: 'include', // Send cookies automatically
   });
 
   if (!res.ok) {

@@ -43,11 +43,8 @@ export default function GoalTimeline() {
   useEffect(() => {
     const fetchStreak = async () => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) return;
-
         const res = await fetch("/api/goals/streak", {
-          headers: { Authorization: `Bearer ${token}` }
+          credentials: 'include'
         });
 
         if (res.ok) {
@@ -66,32 +63,32 @@ export default function GoalTimeline() {
 
   return (
     <div className="bg-card p-5 rounded-2xl border shadow-sm h-full flex flex-col justify-between">
-        <div className="text-center mb-4">
-            <p className="font-semibold text-lg">
-            <span className="text-green-500 text-2xl font-bold mr-1">{completedWeeks}</span> 
-            Week Streak!
-            </p>
-            <p className="text-xs text-muted-foreground">Keep the flame alive 🔥</p>
-        </div>
-        
-        <div className="flex items-center justify-between relative px-2">
-          {/* Timeline line */}
-          <div className="absolute top-1/2 left-2 right-2 h-1 bg-muted -translate-y-1/2 -z-0 rounded-full">
-            <div className="h-full bg-green-500 rounded-full" style={{width: `${(completedWeeks / (weeks.length - 1)) * 100}%`, transition: 'width 0.4s ease'}}></div>
-          </div>
+      <div className="text-center mb-4">
+        <p className="font-semibold text-lg">
+          <span className="text-green-500 text-2xl font-bold mr-1">{completedWeeks}</span>
+          Week Streak!
+        </p>
+        <p className="text-xs text-muted-foreground">Keep the flame alive 🔥</p>
+      </div>
 
-          {weeks.map((week, index) => {
-            const config = statusConfig[week.status as keyof typeof statusConfig] || statusConfig.pending;
-            return (
-              <div key={index} className="z-10 flex flex-col items-center gap-1 bg-card p-1 rounded-full">
-                <div className={`w-8 h-8 flex items-center justify-center rounded-full shadow-sm ring-2 ring-background ${config.bg}`}>
-                  {config.icon}
-                </div>
-                <span className={`text-[10px] font-bold uppercase ${config.text}`}>{week.week}</span>
-              </div>
-            );
-          })}
+      <div className="flex items-center justify-between relative px-2">
+        {/* Timeline line */}
+        <div className="absolute top-1/2 left-2 right-2 h-1 bg-muted -translate-y-1/2 -z-0 rounded-full">
+          <div className="h-full bg-green-500 rounded-full" style={{ width: `${(completedWeeks / (weeks.length - 1)) * 100}%`, transition: 'width 0.4s ease' }}></div>
         </div>
+
+        {weeks.map((week, index) => {
+          const config = statusConfig[week.status as keyof typeof statusConfig] || statusConfig.pending;
+          return (
+            <div key={index} className="z-10 flex flex-col items-center gap-1 bg-card p-1 rounded-full">
+              <div className={`w-8 h-8 flex items-center justify-center rounded-full shadow-sm ring-2 ring-background ${config.bg}`}>
+                {config.icon}
+              </div>
+              <span className={`text-[10px] font-bold uppercase ${config.text}`}>{week.week}</span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -125,16 +125,12 @@ export default function PostCard({
   };
 
   const handleDeleteClick = async () => {
-    // Logic delete akan ditangani di parent atau hook terpisah jika perlu
-    // Untuk sekarang, kita asumsikan props onDelete menangani API call juga
-    // atau kita buat API call disini
     if (!confirm("Are you sure you want to delete this post?")) return;
 
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`/api/community/posts/${post.id}`, { // Pastikan route ini ada
+      const res = await fetch(`/api/community/posts/${post.id}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` }
+        credentials: 'include', // Send cookies automatically
       });
 
       if (res.ok) {

@@ -13,10 +13,8 @@ export default function CompleteProfileBanner() {
   useEffect(() => {
     const checkProfile = async () => {
       try {
-        const token = localStorage.getItem("token");
-
         const res = await fetch("/api/users/profile", {
-          headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include'
         });
 
         if (res.ok) {
@@ -44,13 +42,13 @@ export default function CompleteProfileBanner() {
   return (
     <Card className='bg-gradient-to-r from-blue-600 to-indigo-700 border-none shadow-md mb-8 overflow-hidden relative'>
       <div className='absolute top-0 right-0 p-8 opacity-10 pointer-events-none'>
-        <Sparkles className='w-40 h-40 text-white'/>
+        <Sparkles className='w-40 h-40 text-white' />
       </div>
 
       <CardContent className='p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative z-10'>
         <div className='space-y-2 text-white'>
           <h3 className='text-xl font-bold flex items-center gap-2'>
-            <Sparkles className='w-5 h-5 text-yellow-300'/>
+            <Sparkles className='w-5 h-5 text-yellow-300' />
             Lengkapi Profil Anda!
           </h3>
           <p className='text-blue-100 max-w-lg'>
@@ -65,7 +63,7 @@ export default function CompleteProfileBanner() {
             className='whitespace-nowrap bg-white text-blue-700 hover:bg-blue-50 font-semibold shadow-sm'
           >
             Lengkapi Sekarang
-            <ArrowRight className='w-4 h-4 ml-2'/>
+            <ArrowRight className='w-4 h-4 ml-2' />
           </Button>
         </Link>
       </CardContent>

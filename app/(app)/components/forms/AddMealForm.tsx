@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { 
-  Search, 
-  Utensils, 
-  ChevronRight, 
-  Flame, 
-  CheckCircle2, 
-  ArrowLeft, 
-  Loader2 
+import {
+  Search,
+  Utensils,
+  ChevronRight,
+  Flame,
+  CheckCircle2,
+  ArrowLeft,
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,9 +53,8 @@ export default function AddMealForm({ onCompleted }: { onCompleted?: () => void 
       }
       setLoading(true);
       try {
-        const token = localStorage.getItem("token");
         const res = await fetch(`/api/nutrition/foods/search?q=${encodeURIComponent(query)}`, {
-          headers: { Authorization: `Bearer ${token}` }
+          credentials: 'include'
         });
         const data = await res.json();
         if (Array.isArray(data)) setResults(data);
@@ -84,12 +83,11 @@ export default function AddMealForm({ onCompleted }: { onCompleted?: () => void 
 
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem("token");
       const res = await fetch("/api/nutrition/log", {
         method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+        credentials: 'include',
+        headers: {
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           foodId: selectedFood.id,
@@ -137,16 +135,16 @@ export default function AddMealForm({ onCompleted }: { onCompleted?: () => void 
           {step === "search" ? "What did you eat?" : "Meal Details"}
         </DialogTitle>
         <DialogDescription>
-          {step === "search" 
-            ? "Search for food to add to your daily log." 
+          {step === "search"
+            ? "Search for food to add to your daily log."
             : `How much ${selectedFood?.name} did you have?`}
         </DialogDescription>
       </DialogHeader>
 
       {step === "search" ? (
         <Command className="rounded-lg border shadow-sm" shouldFilter={false}>
-          <CommandInput 
-            placeholder="Search food (e.g. Chicken, Rice)..." 
+          <CommandInput
+            placeholder="Search food (e.g. Chicken, Rice)..."
             value={query}
             onValueChange={setQuery}
             className="text-base"
@@ -187,69 +185,69 @@ export default function AddMealForm({ onCompleted }: { onCompleted?: () => void 
         </Command>
       ) : (
         <div className="space-y-6">
-           {/* Summary Card */}
-           <div className="bg-muted/50 p-4 rounded-xl border border-border flex items-center justify-between">
-              <div>
-                <h4 className="font-semibold text-lg">{selectedFood?.name}</h4>
-                <div className="flex gap-3 text-xs text-muted-foreground mt-1">
-                  <span className="flex items-center"><Flame className="w-3 h-3 mr-1 text-orange-500"/> {macros.cal} kcal</span>
-                  <span>P: {macros.p}g</span>
-                  <span>C: {macros.c}g</span>
-                  <span>F: {macros.f}g</span>
-                </div>
+          {/* Summary Card */}
+          <div className="bg-muted/50 p-4 rounded-xl border border-border flex items-center justify-between">
+            <div>
+              <h4 className="font-semibold text-lg">{selectedFood?.name}</h4>
+              <div className="flex gap-3 text-xs text-muted-foreground mt-1">
+                <span className="flex items-center"><Flame className="w-3 h-3 mr-1 text-orange-500" /> {macros.cal} kcal</span>
+                <span>P: {macros.p}g</span>
+                <span>C: {macros.c}g</span>
+                <span>F: {macros.f}g</span>
               </div>
-              <div className="text-right">
-                <span className="text-2xl font-bold text-primary">{macros.cal}</span>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Calories</p>
-              </div>
-           </div>
+            </div>
+            <div className="text-right">
+              <span className="text-2xl font-bold text-primary">{macros.cal}</span>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Calories</p>
+            </div>
+          </div>
 
-           {/* Input Section */}
-           <div className="space-y-3">
-             <Label htmlFor="serving">Serving Size (grams)</Label>
-             <div className="relative">
-               <Input 
-                  id="serving" 
-                  type="number" 
-                  value={servingSize} 
-                  onChange={(e) => setServingSize(e.target.value)}
-                  className="pl-4 pr-12 text-lg h-12"
-                  autoFocus
-               />
-               <span className="absolute right-4 top-3 text-muted-foreground text-sm font-medium">g</span>
-             </div>
-             
-             {/* Quick Portions (Optional UX enhancement) */}
-             <div className="flex gap-2">
-               {[50, 100, 200, 300].map(amt => (
-                 <Button 
-                    key={amt} 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex-1 text-xs h-8"
-                    onClick={() => setServingSize(amt.toString())}
-                 >
-                   {amt}g
-                 </Button>
-               ))}
-             </div>
-           </div>
+          {/* Input Section */}
+          <div className="space-y-3">
+            <Label htmlFor="serving">Serving Size (grams)</Label>
+            <div className="relative">
+              <Input
+                id="serving"
+                type="number"
+                value={servingSize}
+                onChange={(e) => setServingSize(e.target.value)}
+                className="pl-4 pr-12 text-lg h-12"
+                autoFocus
+              />
+              <span className="absolute right-4 top-3 text-muted-foreground text-sm font-medium">g</span>
+            </div>
 
-           <Button 
-              className="w-full h-11 text-base font-semibold" 
-              onClick={handleSubmit}
-              disabled={isSubmitting || !servingSize}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Logging...
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="mr-2 h-5 w-5" /> Log Meal
-                </>
-              )}
-           </Button>
+            {/* Quick Portions (Optional UX enhancement) */}
+            <div className="flex gap-2">
+              {[50, 100, 200, 300].map(amt => (
+                <Button
+                  key={amt}
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 text-xs h-8"
+                  onClick={() => setServingSize(amt.toString())}
+                >
+                  {amt}g
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          <Button
+            className="w-full h-11 text-base font-semibold"
+            onClick={handleSubmit}
+            disabled={isSubmitting || !servingSize}
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Logging...
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="mr-2 h-5 w-5" /> Log Meal
+              </>
+            )}
+          </Button>
         </div>
       )}
     </div>

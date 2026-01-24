@@ -37,11 +37,8 @@ export default function AddFoodModal({ isOpen, onClose, onFoodAdded }: AddFoodMo
   const performSearch = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("token"); // Ambil token
       const res = await fetch(`/api/nutrition/foods/search?q=${query}`, {
-        headers: {
-          Authorization: `Bearer ${token}` // Sertakan token di header
-        }
+        credentials: 'include'
       });
       if (res.ok) {
         const data = await res.json();
@@ -59,12 +56,11 @@ export default function AddFoodModal({ isOpen, onClose, onFoodAdded }: AddFoodMo
 
     setSubmitting(true);
     try {
-      const token = localStorage.getItem("token");
       const res = await fetch("/api/nutrition/log", {
         method: "POST",
+        credentials: 'include',
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           foodId: selectedFood.id,
@@ -115,21 +111,21 @@ export default function AddFoodModal({ isOpen, onClose, onFoodAdded }: AddFoodMo
 
             <div className="max-h-[300px] overflow-y-auto space-y-2">
               {loading && <div className="flex justify-center p-4"><Loader2 className="animate-spin h-6 w-6 text-primary" /></div>}
-              
+
               {!loading && results.length === 0 && query.length >= 2 && (
                 <div className="text-center p-4 text-sm text-muted-foreground">No food found.</div>
               )}
 
               {results.map((food) => (
-                <div 
-                  key={food.id} 
+                <div
+                  key={food.id}
                   className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted cursor-pointer transition-colors"
                   onClick={() => setSelectedFood(food)}
                 >
                   <div>
                     <p className="font-medium">{food.name}</p>
                     <p className="text-xs text-muted-foreground">
-                        {food.caloriesPer100g} kcal / 100g
+                      {food.caloriesPer100g} kcal / 100g
                     </p>
                   </div>
                   <Plus className="h-4 w-4 text-muted-foreground" />
@@ -141,30 +137,30 @@ export default function AddFoodModal({ isOpen, onClose, onFoodAdded }: AddFoodMo
           // STEP 2: INPUT DETAILS
           <div className="space-y-4">
             <div className="p-3 bg-muted rounded-lg mb-4">
-               <p className="font-bold">{selectedFood.name}</p>
-               <div className="text-xs text-muted-foreground flex gap-3 mt-1">
-                 <span>Cal: {selectedFood.caloriesPer100g}</span>
-                 <span>P: {selectedFood.proteinPer100g}</span>
-                 <span>C: {selectedFood.carbsPer100g}</span>
-                 <span>F: {selectedFood.fatPer100g}</span>
-               </div>
+              <p className="font-bold">{selectedFood.name}</p>
+              <div className="text-xs text-muted-foreground flex gap-3 mt-1">
+                <span>Cal: {selectedFood.caloriesPer100g}</span>
+                <span>P: {selectedFood.proteinPer100g}</span>
+                <span>C: {selectedFood.carbsPer100g}</span>
+                <span>F: {selectedFood.fatPer100g}</span>
+              </div>
             </div>
 
             <div className="space-y-2">
               <Label>Serving Size (grams)</Label>
-              <Input 
-                type="number" 
-                value={servingSize} 
-                onChange={(e) => setServingSize(e.target.value)} 
+              <Input
+                type="number"
+                value={servingSize}
+                onChange={(e) => setServingSize(e.target.value)}
               />
             </div>
 
             <DialogFooter className="flex-col sm:flex-row gap-2 mt-4">
-                <Button variant="outline" onClick={() => setSelectedFood(null)} disabled={submitting}>Back</Button>
-                <Button onClick={handleSubmit} disabled={submitting}>
-                    {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Add Log
-                </Button>
+              <Button variant="outline" onClick={() => setSelectedFood(null)} disabled={submitting}>Back</Button>
+              <Button onClick={handleSubmit} disabled={submitting}>
+                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Add Log
+              </Button>
             </DialogFooter>
           </div>
         )}

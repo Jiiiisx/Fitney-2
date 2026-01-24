@@ -38,9 +38,8 @@ export default function FindFriendsPage() {
   useEffect(() => {
     const fetchFollowing = async () => {
       try {
-        const token = localStorage.getItem("token");
         const res = await fetch(`/api/community/users/following`, {
-          headers: { Authorization: `Bearer ${token}` }
+          credentials: 'include'
         });
         if (res.ok) {
           const data = await res.json();
@@ -68,9 +67,8 @@ export default function FindFriendsPage() {
       const fetchRecommendations = async () => {
         setLoadingRecs(true);
         try {
-          const token = localStorage.getItem("token");
           const res = await fetch(`/api/community/users/recommendations`, {
-            headers: { Authorization: `Bearer ${token}` }
+            credentials: 'include'
           });
           if (res.ok) {
             const data = await res.json();
@@ -101,9 +99,8 @@ export default function FindFriendsPage() {
   const performSearch = async () => {
     setLoadingSearch(true);
     try {
-      const token = localStorage.getItem("token");
       const res = await fetch(`/api/community/users/search?q=${query}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        credentials: 'include'
       });
       if (res.ok) {
         const data = await res.json();
@@ -119,10 +116,9 @@ export default function FindFriendsPage() {
   const handleFollowToggle = async (e: React.MouseEvent, user: UserResult) => {
     e.stopPropagation();
     try {
-      const token = localStorage.getItem("token");
       const res = await fetch(`/api/community/users/${user.id}/follow`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` }
+        credentials: 'include'
       });
 
       if (res.ok) {

@@ -25,9 +25,8 @@ export default function AddWaterForm({ onCompleted }: { onCompleted?: () => void
   useEffect(() => {
     const fetchWater = async () => {
       try {
-        const token = localStorage.getItem("token");
         const res = await fetch("/api/nutrition/water", {
-          headers: { Authorization: `Bearer ${token}` }
+          credentials: 'include'
         });
         if (res.ok) {
           const data = await res.json();
@@ -55,14 +54,13 @@ export default function AddWaterForm({ onCompleted }: { onCompleted?: () => void
     setSubmitting(true);
 
     try {
-      const token = localStorage.getItem("token");
       const newTotal = currentAmount + addAmount;
-      
+
       const res = await fetch("/api/nutrition/water", {
         method: "POST",
-        headers: { 
-          "Content-Type": "application/json", 
-          Authorization: `Bearer ${token}`
+        credentials: 'include',
+        headers: {
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           amountMl: newTotal,
@@ -96,16 +94,16 @@ export default function AddWaterForm({ onCompleted }: { onCompleted?: () => void
       <div className="py-6 space-y-6">
         {/* Current Status */}
         <div className="flex flex-col items-center justify-center space-y-1">
-           {loading ? (
-             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-           ) : (
-             <>
-               <span className="text-sm text-muted-foreground">Today's Total</span>
-               <span className="text-3xl font-bold text-sky-600 dark:text-sky-400">
-                 {currentAmount} <span className="text-lg text-muted-foreground font-normal">ml</span>
-               </span>
-             </>
-           )}
+          {loading ? (
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          ) : (
+            <>
+              <span className="text-sm text-muted-foreground">Today's Total</span>
+              <span className="text-3xl font-bold text-sky-600 dark:text-sky-400">
+                {currentAmount} <span className="text-lg text-muted-foreground font-normal">ml</span>
+              </span>
+            </>
+          )}
         </div>
 
         {/* Presets */}
@@ -116,8 +114,8 @@ export default function AddWaterForm({ onCompleted }: { onCompleted?: () => void
               onClick={() => handlePresetClick(preset.amount)}
               className={cn(
                 "flex flex-col items-center justify-center p-3 rounded-xl border transition-all hover:bg-sky-50 dark:hover:bg-sky-900/20",
-                addAmount === preset.amount 
-                  ? "border-sky-500 bg-sky-50 dark:bg-sky-900/20 ring-1 ring-sky-500" 
+                addAmount === preset.amount
+                  ? "border-sky-500 bg-sky-50 dark:bg-sky-900/20 ring-1 ring-sky-500"
                   : "border-border bg-card"
               )}
             >
@@ -133,15 +131,15 @@ export default function AddWaterForm({ onCompleted }: { onCompleted?: () => void
 
         {/* Custom Input */}
         <div className="space-y-3">
-           <Label className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Custom Amount</Label>
-           <div className="flex items-center space-x-3">
+          <Label className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Custom Amount</Label>
+          <div className="flex items-center space-x-3">
             <Button variant="outline" size="icon" onClick={() => adjustAmount(-50)} className="h-10 w-10 shrink-0">
               <Minus className="h-4 w-4" />
             </Button>
             <div className="relative flex-1">
-              <Input 
-                type="number" 
-                value={addAmount} 
+              <Input
+                type="number"
+                value={addAmount}
                 onChange={(e) => setAddAmount(Number(e.target.value))}
                 className="text-center text-lg h-10 font-medium"
               />
@@ -154,7 +152,7 @@ export default function AddWaterForm({ onCompleted }: { onCompleted?: () => void
         </div>
 
         {/* Submit Action */}
-        <Button 
+        <Button
           className="w-full h-11 bg-sky-600 hover:bg-sky-700 text-white shadow-md shadow-sky-200 dark:shadow-none"
           onClick={handleSubmit}
           disabled={submitting || loading || addAmount <= 0}

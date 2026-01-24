@@ -41,11 +41,8 @@ export default function AppearanceSettings() {
   useEffect(() => {
     async function fetchSettings() {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) return;
-
         const res = await fetch("/api/users/settings", {
-          headers: { Authorization: `Bearer ${token}` }
+          credentials: 'include'
         });
 
         if (res.ok) {
@@ -60,7 +57,7 @@ export default function AppearanceSettings() {
         setLoading(false);
       }
     }
-    
+
     // Load local font size preference
     const savedSize = localStorage.getItem("font-size") || "text-size-md";
     handleFontSizeChange(savedSize, false); // Don't save to DB, just apply class
@@ -70,14 +67,11 @@ export default function AppearanceSettings() {
 
   const updateSettings = async (updates: any) => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-
       await fetch("/api/users/settings", {
         method: "PATCH",
+        credentials: 'include',
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          "Content-Type": "application/json"
         },
         body: JSON.stringify(updates)
       });
@@ -102,7 +96,7 @@ export default function AppearanceSettings() {
     document.documentElement.classList.remove("text-size-sm", "text-size-md", "text-size-lg");
     document.documentElement.classList.add(size);
     if (saveToLocal) {
-        localStorage.setItem("font-size", size);
+      localStorage.setItem("font-size", size);
     }
     setFontSize(size);
   };
@@ -114,7 +108,7 @@ export default function AppearanceSettings() {
   ];
 
   if (loading) {
-      return <div className="p-8 text-center text-muted-foreground">Loading settings...</div>;
+    return <div className="p-8 text-center text-muted-foreground">Loading settings...</div>;
   }
 
   return (
@@ -128,11 +122,10 @@ export default function AppearanceSettings() {
             <button
               key={t.name}
               onClick={() => handleThemeChange(t.name)}
-              className={`p-4 rounded-lg border-2 transition-colors flex flex-col items-center justify-center gap-2 ${
-                theme === t.name
+              className={`p-4 rounded-lg border-2 transition-colors flex flex-col items-center justify-center gap-2 ${theme === t.name
                   ? "border-primary bg-primary/10"
                   : "border-border bg-muted/50 hover:border-muted-foreground"
-              }`}
+                }`}
             >
               <t.icon className="w-7 h-7 text-muted-foreground" />
               <span className="font-semibold text-sm text-foreground">{t.label}</span>
@@ -146,41 +139,39 @@ export default function AppearanceSettings() {
         description="Choose your preferred system of measurement for weight and height."
       >
         <div className="grid grid-cols-2 gap-4">
-            <button
-              onClick={() => handleUnitChange("metric")}
-              className={`p-4 rounded-lg border-2 transition-colors flex flex-col items-center justify-center gap-2 ${
-                units === "metric"
-                  ? "border-primary bg-primary/10"
-                  : "border-border bg-muted/50 hover:border-muted-foreground"
+          <button
+            onClick={() => handleUnitChange("metric")}
+            className={`p-4 rounded-lg border-2 transition-colors flex flex-col items-center justify-center gap-2 ${units === "metric"
+                ? "border-primary bg-primary/10"
+                : "border-border bg-muted/50 hover:border-muted-foreground"
               }`}
-            >
-              <div className="flex gap-2">
-                 <Weight className="w-5 h-5" />
-                 <Ruler className="w-5 h-5" />
-              </div>
-              <div className="text-center">
-                  <span className="block font-semibold text-sm text-foreground">Metric</span>
-                  <span className="text-xs text-muted-foreground">kg, cm, ml</span>
-              </div>
-            </button>
+          >
+            <div className="flex gap-2">
+              <Weight className="w-5 h-5" />
+              <Ruler className="w-5 h-5" />
+            </div>
+            <div className="text-center">
+              <span className="block font-semibold text-sm text-foreground">Metric</span>
+              <span className="text-xs text-muted-foreground">kg, cm, ml</span>
+            </div>
+          </button>
 
-            <button
-              onClick={() => handleUnitChange("imperial")}
-              className={`p-4 rounded-lg border-2 transition-colors flex flex-col items-center justify-center gap-2 ${
-                units === "imperial"
-                  ? "border-primary bg-primary/10"
-                  : "border-border bg-muted/50 hover:border-muted-foreground"
+          <button
+            onClick={() => handleUnitChange("imperial")}
+            className={`p-4 rounded-lg border-2 transition-colors flex flex-col items-center justify-center gap-2 ${units === "imperial"
+                ? "border-primary bg-primary/10"
+                : "border-border bg-muted/50 hover:border-muted-foreground"
               }`}
-            >
-               <div className="flex gap-2">
-                 <Weight className="w-5 h-5" />
-                 <Ruler className="w-5 h-5" />
-              </div>
-              <div className="text-center">
-                  <span className="block font-semibold text-sm text-foreground">Imperial</span>
-                  <span className="text-xs text-muted-foreground">lbs, ft/in, oz</span>
-              </div>
-            </button>
+          >
+            <div className="flex gap-2">
+              <Weight className="w-5 h-5" />
+              <Ruler className="w-5 h-5" />
+            </div>
+            <div className="text-center">
+              <span className="block font-semibold text-sm text-foreground">Imperial</span>
+              <span className="text-xs text-muted-foreground">lbs, ft/in, oz</span>
+            </div>
+          </button>
         </div>
       </SettingsCard>
 

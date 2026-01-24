@@ -13,29 +13,15 @@ export default function MainFeed() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    // Decode user ID from token safely
-    const token = localStorage.getItem("token");
-    if (token) {
-      try {
-        const base64Url = token.split(".")[1];
-        const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-        const jsonPayload = decodeURIComponent(
-          window
-            .atob(base64)
-            .split("")
-            .map(function (c) {
-              return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
-            })
-            .join("")
-        );
-        const payload = JSON.parse(jsonPayload);
-        if (payload.sub) {
-          setCurrentUserId(payload.sub);
+    // Fetch current user ID from API (cookie-based auth)
+    fetch('/api/users/me', { credentials: 'include' })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.userId) {
+          setCurrentUserId(data.userId);
         }
-      } catch (e) {
-        console.error("Error decoding token", e);
-      }
-    }
+      })
+      .catch(err => console.error("Error fetching current user", err));
   }, []);
 
   const handleDeletePost = (deletedId: number) => {

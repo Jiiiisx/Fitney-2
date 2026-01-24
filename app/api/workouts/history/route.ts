@@ -1,13 +1,20 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/app/lib/db";
 import { workoutLogs } from "@/app/lib/schema";
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
+import { verifyAuth } from "@/app/lib/auth";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    // Verify authentication
+    const auth = await verifyAuth(req);
+    if (auth.error) return auth.error;
+
+    // Fetch only current user's workout history
     const historyData = await db
       .select()
       .from(workoutLogs)
+      .where(eq(workoutLogs.userId, auth.user.userId))
       .orderBy(desc(workoutLogs.date));
 
     const formattedHistory = historyData.map(log => ({
@@ -21,7 +28,7 @@ export async function GET() {
 
     return NextResponse.json(formattedHistory);
 
-  } catch(error) {
+  } catch (error) {
     console.error("Error fetching workout history from DB:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }

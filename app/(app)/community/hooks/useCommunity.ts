@@ -2,11 +2,10 @@ import useSWR, { mutate } from "swr";
 import useSWRInfinite from "swr/infinite";
 import toast from "react-hot-toast";
 
-// Fetcher function standar
+// Fetcher function standar (cookie-based)
 export const fetcher = (url: string) => {
-  const token = localStorage.getItem("token");
   return fetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
+    credentials: 'include', // Send cookies automatically
   }).then((res) => {
     if (!res.ok) throw new Error("Failed to fetch");
     return res.json();

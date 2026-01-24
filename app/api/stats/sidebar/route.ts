@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/app/lib/db';
-import { getUserFromToken } from '@/app/lib/auth';
+import { verifyAuth } from '@/app/lib/auth';
 import { users, workoutLogs } from '@/app/lib/schema';
 import { eq, and, gte, lte, sql } from 'drizzle-orm';
 import { subDays, startOfDay } from 'date-fns';
@@ -9,20 +9,13 @@ const getXpForLevel = (level: number): number => {
   return 1000 * level;
 };
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
-    const token = req.headers.get('Authorization')?.split(' ')[1];
-    if (!token) {
-      return NextResponse.json ({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const user = await getUserFromToken(token);
-    if (!user || !user.userId) {
-      return NextResponse.json({ error: 'Invalid token or user not found'}, { status: 401 });
-    }
+    const auth = await verifyAuth(req);
+    if (auth.error) return auth.error;
 
     const userProfile = await db.query.users.findFirst({
-      where: eq(users.id, user.userId),
+      where: eq(users.id, auth.user.userId),
       columns: {
         level: true,
         xp: true,
@@ -44,34 +37,34 @@ export async function GET(req: Request) {
 
     // Current Week Count
     const currentWeekRes = await db
-        .select({ count: sql<number>`count(*)` })
-        .from(workoutLogs)
-        .where(
-            and(
-                eq(workoutLogs.userId, user.userId),
-                gte(workoutLogs.date, lastWeekStart)
-            )
-        );
+      .select({ count: sql<number>`count(*)` })
+      .from(workoutLogs)
+      .where(
+        and(
+          eq(workoutLogs.userId, auth.user.userId),
+          gte(workoutLogs.date, lastWeekStart)
+        )
+      );
     const currentWeekCount = Number(currentWeekRes[0].count);
 
     // Previous Week Count
     const prevWeekRes = await db
-        .select({ count: sql<number>`count(*)` })
-        .from(workoutLogs)
-        .where(
-            and(
-                eq(workoutLogs.userId, user.userId),
-                gte(workoutLogs.date, prevWeekStart),
-                lte(workoutLogs.date, prevWeekEnd)
-            )
-        );
+      .select({ count: sql<number>`count(*)` })
+      .from(workoutLogs)
+      .where(
+        and(
+          eq(workoutLogs.userId, auth.user.userId),
+          gte(workoutLogs.date, prevWeekStart),
+          lte(workoutLogs.date, prevWeekEnd)
+        )
+      );
     const prevWeekCount = Number(prevWeekRes[0].count);
 
     let consistencyChange = 0;
     if (prevWeekCount === 0) {
-        consistencyChange = currentWeekCount > 0 ? 100 : 0;
+      consistencyChange = currentWeekCount > 0 ? 100 : 0;
     } else {
-        consistencyChange = Math.round(((currentWeekCount - prevWeekCount) / prevWeekCount) * 100);
+      consistencyChange = Math.round(((currentWeekCount - prevWeekCount) / prevWeekCount) * 100);
     }
 
     const statsData = {

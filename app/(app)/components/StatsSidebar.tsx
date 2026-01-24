@@ -84,7 +84,9 @@ const StatsSidebar = () => {
 
       try {
         // Fetch user profile untuk nama
-        const userRes = await fetch('/api/users/profile');
+        const userRes = await fetch('/api/users/profile', {
+          credentials: 'include'
+        });
         if (userRes.ok) {
           const userData = await userRes.json();
           // Ambil nama depan saja agar tidak kepanjangan
@@ -93,7 +95,9 @@ const StatsSidebar = () => {
         }
 
         // Fetch stats
-        const statsRes = await fetch('/api/stats/sidebar');
+        const statsRes = await fetch('/api/stats/sidebar', {
+          credentials: 'include'
+        });
         if (statsRes.ok) {
           const statsData = await statsRes.json();
           setStats(statsData);

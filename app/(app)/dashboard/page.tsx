@@ -13,7 +13,7 @@ import WorkoutBreakdown from "../components/WorkoutBreakdown";
 import CompleteProfileBanner from "../components/CompleteProfileBanner";
 import DashboardInsight from "../components/DashboardInsight";
 // Pastikan toast di-import jika digunakan, atau hapus jika tidak
-import toast from "react-hot-toast"; 
+import toast from "react-hot-toast";
 
 // Interface yang lebih fleksibel agar cocok dengan respons API dan props komponen
 interface DashboardData {
@@ -42,23 +42,15 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const token = localStorage.getItem("token");
-        // Tambahkan handling jika token tidak ada
-        if (!token) {
-            console.log("No token found");
-            setLoading(false);
-            return;
-        }
-
         const res = await fetch("/api/stats/dashboard", {
-          headers: { Authorization: `Bearer ${token}` }
+          credentials: 'include'
         });
 
         if (res.ok) {
           const result = await res.json();
           setData(result);
         } else {
-            console.error("API Error:", res.status);
+          console.error("API Error:", res.status);
         }
       } catch (error) {
         console.error("Failed to fetch dashboard data", error);
@@ -85,22 +77,22 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 h-full">
         {/* Main Content Area (Scrollable) */}
         <div className="lg:col-span-2 space-y-8 overflow-y-auto p-8 scrollbar-hide">
-          <CompleteProfileBanner/>
+          <CompleteProfileBanner />
 
           <TodaysPlanBanner stats={safeStats} plan={safeTodaysPlan} isLoading={loading} />
-          
-          <GamificationStreak streak={safeStreak} isLoading={loading}/>
-          
+
+          <GamificationStreak streak={safeStreak} isLoading={loading} />
+
           <DailyGoals stats={safeStats} />
-          
+
           <RecentActivityList workouts={safeRecent} isLoading={loading} />
-          
+
           <ProgressCharts weeklyData={safeWeekly} isLoading={loading} />
-          
+
           {/* Mengirimkan data breakdown ke komponen */}
           <WorkoutBreakdown stats={safeBreakdown} isLoading={loading} />
-          
-          <UpgradeBanner/>
+
+          <UpgradeBanner />
         </div>
 
         {/* Stats Sidebar (Scrollable) */}

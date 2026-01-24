@@ -25,9 +25,8 @@ export default function FriendsListPage() {
     useEffect(() => {
         const fetchFriends = async () => {
             try {
-                const token = localStorage.getItem("token");
                 const res = await fetch(`/api/community/friends`, {
-                    headers: { Authorization: `Bearer ${token}` }
+                    credentials: 'include'
                 });
                 if (res.ok) {
                     const data = await res.json();

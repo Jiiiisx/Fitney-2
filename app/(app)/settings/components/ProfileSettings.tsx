@@ -41,12 +41,12 @@ const SettingsCard = ({
 );
 
 const InputWithIcon = ({ icon, ...props }: { icon: React.ReactNode } & React.ComponentProps<typeof Input>) => (
-    <div className="relative">
-        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-            {icon}
-        </div>
-        <Input className="pl-10" {...props} />
+  <div className="relative">
+    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+      {icon}
     </div>
+    <Input className="pl-10" {...props} />
+  </div>
 );
 
 
@@ -67,15 +67,8 @@ export default function ProfileSettings() {
     const fetchProfile = async () => {
       setIsLoading(true);
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          console.error("No token found");
-          setIsLoading(false);
-          return;
-        }
-
         const response = await fetch('/api/users/profile', {
-          headers: { 'Authorization': `Bearer ${token}` }
+          credentials: 'include'
         });
 
         if (response.ok) {
@@ -103,21 +96,15 @@ export default function ProfileSettings() {
   const handleSelectChange = (id: string, value: string) => {
     setProfile(prev => ({ ...prev, [id]: value }));
   };
-  
+
   const handleUpdateProfile = async () => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        toast.error("You are not looged in!");
-        return;
-      }
-
       const res = await fetch("/api/users/profile", {
         method: "PUT",
+        credentials: 'include',
         headers: {
-          "Content-type": "application/json",
-          Authorization: `Bearer ${token}`,
+          "Content-type": "application/json"
         },
         body: JSON.stringify({
           fullName: profile.fullName,
@@ -128,7 +115,7 @@ export default function ProfileSettings() {
         }),
       });
 
-      if(!res.ok) {
+      if (!res.ok) {
         throw new Error("Failed to update profile");
       }
 
@@ -143,7 +130,7 @@ export default function ProfileSettings() {
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if(!file) return;
+    if (!file) return;
 
     if (!file.type.startsWith("image/")) {
       alert("Please upload an image file");
@@ -156,13 +143,9 @@ export default function ProfileSettings() {
     setIsLoading(true);
 
     try {
-      const token = localStorage.getItem("token");
-
       const res = await fetch("/api/users/profile/photo", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`
-        },
+        credentials: 'include',
         body: formData,
       });
 
@@ -190,13 +173,13 @@ export default function ProfileSettings() {
         isLoading={isLoading}
       >
         <div className="flex items-center gap-6">
-          <input 
-              type="file" 
-              ref={fileInputRef} 
-              className="hidden" 
-              accept="image/*"
-              onChange={handleImageUpload}
-              aria-label="Upload profile picture"
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            accept="image/*"
+            onChange={handleImageUpload}
+            aria-label="Upload profile picture"
           />
           <img
             src={profile.imageUrl || "/assets/Testimonial/michael-b.jpg"}
@@ -204,13 +187,13 @@ export default function ProfileSettings() {
             className="w-20 h-20 rounded-full border-2 p-1 object-cover"
           />
           <div className="flex gap-2">
-            <Button 
-                variant="outline" 
-                disabled={isLoading}
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
+            <Button
+              variant="outline"
+              disabled={isLoading}
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
             >
-                Change
+              Change
             </Button>
             <Button variant="ghost" className="text-destructive hover:bg-destructive/10 hover:text-destructive" disabled={isLoading}>Remove</Button>
           </div>
@@ -228,13 +211,13 @@ export default function ProfileSettings() {
             <Label htmlFor="dob" className="font-medium">Date of Birth</Label>
             <InputWithIcon icon={<Calendar size={16} />} id="dob" type="date" value={profile.dob} onChange={handleInputChange} />
           </div>
-           <div className="space-y-2">
+          <div className="space-y-2">
             <Label htmlFor="gender" className="font-medium">Gender</Label>
             <Select value={profile.gender} onValueChange={(value) => handleSelectChange('gender', value)} disabled={isLoading}>
               <SelectTrigger className="w-full">
                 <div className="flex items-center gap-3 ml-1">
-                   <PersonStanding size={16} className="text-muted-foreground" />
-                   <SelectValue placeholder="Select gender" />
+                  <PersonStanding size={16} className="text-muted-foreground" />
+                  <SelectValue placeholder="Select gender" />
                 </div>
               </SelectTrigger>
               <SelectContent>
