@@ -9,8 +9,9 @@ import NotificationSettings from "./components/NotificationSettings";
 import { Progress } from "@/components/ui/progress"; // Import Progress component
 
 const ProfileSettings = dynamic(() => import('./components/ProfileSettings'), { ssr: false });
+const SupportSettings = dynamic(() => import('./components/SupportSettings'), { ssr: false });
 
-type SettingsTab = "profile" | "appearance" | "notifications";
+type SettingsTab = "profile" | "appearance" | "notifications" | "support";
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>("notifications");
@@ -46,6 +47,8 @@ export default function SettingsPage() {
         return <AppearanceSettings />;
       case "notifications":
         return <NotificationSettings />;
+      case "support":
+        return <SupportSettings />;
       default:
         return <div className="text-foreground">Select a category</div>;
     }

@@ -399,6 +399,19 @@ export const notifications = pgTable('notifications', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
 
+// Reports (NEW)
+export const reports = pgTable('reports', {
+  id: serial('id').primaryKey(),
+  reporterId: uuid('reporter_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  targetType: varchar('target_type', { length: 50 }).notNull(), // 'post', 'comment', 'user'
+  targetId: varchar('target_id', { length: 255 }).notNull(), // ID of the reported resource
+  reason: text('reason').notNull(),
+  status: varchar('status', { length: 50 }).default('pending').notNull(), // 'pending', 'resolved', 'dismissed'
+  adminNotes: text('admin_notes'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+});
+
 // Gamification/Achievements
 export const achievements = pgTable('achievements', {
   id: serial('id').primaryKey(),
@@ -633,6 +646,10 @@ export const waterLogsRelations = relations(waterLogs, ({ one }) => ({
 
 export const notificationsRelations = relations(notifications, ({ one }) => ({
   user: one(users, { fields: [notifications.userId], references: [users.id] }),
+}));
+
+export const reportsRelations = relations(reports, ({ one }) => ({
+  reporter: one(users, { fields: [reports.reporterId], references: [users.id] }),
 }));
 
 export const achievementsRelations = relations(achievements, ({ many }) => ({

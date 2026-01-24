@@ -22,7 +22,14 @@ import {
     Users2,
     Dumbbell,
     Plus,
-    Image as ImageIcon
+    Image as ImageIcon,
+    Utensils,
+    Zap,
+    Beef,
+    Wheat,
+    Droplets,
+    AlertTriangle,
+    CheckCircle2
 } from "lucide-react";
 import Link from "next/link";
 import { fetchWithAuth } from "@/app/lib/fetch-helper";
@@ -52,12 +59,14 @@ const StatCard = ({ title, value, icon: Icon, color }: any) => (
 );
 
 export default function AdminDashboard() {
-    const [activeTab, setActiveTab] = useState<"overview" | "users" | "community" | "exercises">("overview");
+    const [activeTab, setActiveTab] = useState<"overview" | "users" | "community" | "exercises" | "nutrition">("overview");
     const [data, setData] = useState<any>(null);
     const [userList, setUserList] = useState<any[]>([]);
     const [postList, setPostList] = useState<any[]>([]);
     const [groupList, setGroupList] = useState<any[]>([]);
+    const [reportList, setReportList] = useState<any[]>([]);
     const [exerciseList, setExerciseList] = useState<any[]>([]);
+    const [foodList, setFoodList] = useState<any[]>([]);
     const [categories, setCategories] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [globalSearch, setGlobalSearch] = useState("");
@@ -66,8 +75,9 @@ export default function AdminDashboard() {
     const [contentLoading, setContentLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Form states for new exercise
+    // Form states
     const [newExercise, setNewExercise] = useState({ name: "", description: "", categoryId: "", imageUrl: "" });
+    const [newFood, setNewFood] = useState({ name: "", calories: "", protein: "", carbs: "", fat: "" });
 
     // Fetch Overview Stats
     const fetchStats = async () => {
@@ -98,16 +108,39 @@ export default function AdminDashboard() {
     const fetchCommunityContent = async () => {
         setContentLoading(true);
         try {
-            const [posts, groups] = await Promise.all([
+            // Menggunakan Promise.allSettled agar jika satu gagal, yang lain tetap jalan
+            const results = await Promise.allSettled([
                 fetchWithAuth("/api/admin/community/posts"),
-                fetchWithAuth("/api/admin/community/groups")
+                fetchWithAuth("/api/admin/community/groups"),
+                fetchWithAuth("/api/admin/community/reports")
             ]);
-            setPostList(posts);
-            setGroupList(groups);
+            
+            if (results[0].status === 'fulfilled') setPostList(results[0].value);
+            else console.error("Posts fetch failed:", results[0].reason);
+
+            if (results[1].status === 'fulfilled') setGroupList(results[1].value);
+            else console.error("Groups fetch failed:", results[1].reason);
+
+            if (results[2].status === 'fulfilled') setReportList(results[2].value);
+            else console.error("Reports fetch failed:", results[2].reason);
+
         } catch (err) {
             toast.error("Failed to load community content");
         } finally {
             setContentLoading(false);
+        }
+    };
+
+    const handleResolveReport = async (reportId: number, status: string) => {
+        try {
+            await fetchWithAuth("/api/admin/community/reports", {
+                method: "PATCH",
+                body: JSON.stringify({ id: reportId, status })
+            });
+            toast.success(`Report marked as ${status}`);
+            fetchCommunityContent();
+        } catch (err) {
+            toast.error("Action failed");
         }
     };
 
@@ -123,6 +156,19 @@ export default function AdminDashboard() {
             setCategories(catResult);
         } catch (err) {
             toast.error("Failed to load exercises");
+        } finally {
+            setContentLoading(false);
+        }
+    };
+
+    // Fetch Foods
+    const fetchFoods = async (query = "") => {
+        setContentLoading(true);
+        try {
+            const result = await fetchWithAuth(`/api/admin/foods?q=${query}`);
+            setFoodList(result);
+        } catch (err) {
+            toast.error("Failed to load foods");
         } finally {
             setContentLoading(false);
         }
@@ -152,6 +198,8 @@ export default function AdminDashboard() {
             fetchCommunityContent();
         } else if (activeTab === "exercises") {
             fetchExercises(searchQuery);
+        } else if (activeTab === "nutrition") {
+            fetchFoods(searchQuery);
         }
     }, [activeTab, searchQuery]);
 
@@ -227,6 +275,32 @@ export default function AdminDashboard() {
         }
     };
 
+    const handleCreateFood = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            await fetchWithAuth("/api/admin/foods", {
+                method: "POST",
+                body: JSON.stringify(newFood)
+            });
+            toast.success("Food item added");
+            setNewFood({ name: "", calories: "", protein: "", carbs: "", fat: "" });
+            fetchFoods();
+        } catch (err) {
+            toast.error("Failed to add food");
+        }
+    };
+
+    const handleDeleteFood = async (id: number) => {
+        if (!confirm("Delete this food item?")) return;
+        try {
+            await fetchWithAuth(`/api/admin/foods?id=${id}`, { method: "DELETE" });
+            toast.success("Food item removed");
+            fetchFoods();
+        } catch (err) {
+            toast.error("Deletion failed");
+        }
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background">
@@ -279,6 +353,9 @@ export default function AdminDashboard() {
                     </button>
                     <button onClick={() => { setActiveTab("exercises"); setSearchQuery(""); }} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-semibold transition-all ${activeTab === 'exercises' ? 'bg-primary text-primary-foreground shadow-xl shadow-primary/20 scale-[1.02]' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
                         <Dumbbell className="w-5 h-5" /> Exercises
+                    </button>
+                    <button onClick={() => { setActiveTab("nutrition"); setSearchQuery(""); }} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-semibold transition-all ${activeTab === 'nutrition' ? 'bg-primary text-primary-foreground shadow-xl shadow-primary/20 scale-[1.02]' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+                        <Utensils className="w-5 h-5" /> Nutrition
                     </button>
                 </nav>
 
@@ -403,20 +480,26 @@ export default function AdminDashboard() {
                         {/* VIEW: USER DIRECTORY */}
                         {activeTab === "users" && (
                             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                <div className="flex flex-col md:flex-row md:items-end justify-start gap-6">
-                                    <div className="relative w-full md:w-96">
-                                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                                        <input 
-                                            type="text" 
-                                            placeholder="Filter by name, email, role..."
-                                            value={searchQuery}
-                                            onChange={(e) => setSearchQuery(e.target.value)}
-                                            className="w-full pl-12 pr-4 py-3 rounded-2xl border bg-card focus:ring-4 focus:ring-primary/10 outline-none transition-all shadow-sm"
-                                        />
-                                    </div>
-                                </div>
-
                                 <div className="bg-card border rounded-[2rem] shadow-xl shadow-muted/50 overflow-hidden">
+                                    {/* Table Toolbar */}
+                                    <div className="p-6 border-b border-border/50 bg-muted/5 flex items-center justify-between">
+                                        <div className="relative w-full md:w-96">
+                                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                            <input 
+                                                type="text" 
+                                                placeholder="Filter by name, email, role..."
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                                className="w-full pl-12 pr-4 py-2.5 rounded-xl border bg-background focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm"
+                                            />
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest bg-muted px-3 py-1 rounded-lg">
+                                                {userList.length} Total Users
+                                            </span>
+                                        </div>
+                                    </div>
+
                                     <div className="overflow-x-auto">
                                         <table className="w-full border-collapse">
                                             <thead>
@@ -632,6 +715,172 @@ export default function AdminDashboard() {
                             </div>
                         )}
 
+                        {/* VIEW: NUTRITION */}
+                        {activeTab === "nutrition" && (
+                            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+                                    {/* Sticky Sidebar Area */}
+                                    <div className="lg:col-span-1 space-y-6 sticky top-8">
+                                        {/* Search Foods */}
+                                        <div className="relative w-full">
+                                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                            <input 
+                                                type="text" 
+                                                placeholder="Search food database..."
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                                className="w-full pl-12 pr-4 py-3 rounded-2xl border bg-card focus:ring-4 focus:ring-primary/10 outline-none transition-all shadow-sm"
+                                            />
+                                        </div>
+
+                                        {/* Add Food Form */}
+                                        <div className="bg-card border rounded-[2rem] p-8 shadow-xl">
+                                            <h3 className="text-xl font-black mb-6 flex items-center gap-2">
+                                                <Plus className="w-5 h-5 text-primary" /> New Food Entry
+                                            </h3>
+                                            <form onSubmit={handleCreateFood} className="space-y-4">
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-black uppercase text-muted-foreground ml-2">Food Name</label>
+                                                    <input 
+                                                        required
+                                                        className="w-full bg-muted/50 border-none rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/50 transition-all outline-none"
+                                                        placeholder="e.g. Chicken Breast"
+                                                        value={newFood.name}
+                                                        onChange={e => setNewFood({...newFood, name: e.target.value})}
+                                                    />
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="space-y-2">
+                                                        <label className="text-[10px] font-black uppercase text-muted-foreground ml-2">Calories (100g)</label>
+                                                        <div className="relative">
+                                                            <Zap className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-yellow-500" />
+                                                            <input 
+                                                                type="number"
+                                                                required
+                                                                className="w-full bg-muted/50 border-none rounded-xl pl-9 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/50 outline-none"
+                                                                placeholder="0"
+                                                                value={newFood.calories}
+                                                                onChange={e => setNewFood({...newFood, calories: e.target.value})}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <label className="text-[10px] font-black uppercase text-muted-foreground ml-2">Protein (g)</label>
+                                                        <div className="relative">
+                                                            <Beef className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-red-500" />
+                                                            <input 
+                                                                type="number"
+                                                                required
+                                                                className="w-full bg-muted/50 border-none rounded-xl pl-9 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/50 outline-none"
+                                                                placeholder="0"
+                                                                value={newFood.protein}
+                                                                onChange={e => setNewFood({...newFood, protein: e.target.value})}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="space-y-2">
+                                                        <label className="text-[10px] font-black uppercase text-muted-foreground ml-2">Carbs (g)</label>
+                                                        <div className="relative">
+                                                            <Wheat className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-orange-500" />
+                                                            <input 
+                                                                type="number"
+                                                                required
+                                                                className="w-full bg-muted/50 border-none rounded-xl pl-9 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/50 outline-none"
+                                                                placeholder="0"
+                                                                value={newFood.carbs}
+                                                                onChange={e => setNewFood({...newFood, carbs: e.target.value})}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <label className="text-[10px] font-black uppercase text-muted-foreground ml-2">Fat (g)</label>
+                                                        <div className="relative">
+                                                            <Droplets className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-blue-500" />
+                                                            <input 
+                                                                type="number"
+                                                                required
+                                                                className="w-full bg-muted/50 border-none rounded-xl pl-9 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/50 outline-none"
+                                                                placeholder="0"
+                                                                value={newFood.fat}
+                                                                onChange={e => setNewFood({...newFood, fat: e.target.value})}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <Button type="submit" className="w-full rounded-2xl py-6 font-bold shadow-lg shadow-primary/20">
+                                                    Save to Database
+                                                </Button>
+                                            </form>
+                                        </div>
+                                    </div>
+
+                                    {/* Food List Table */}
+                                    <div className="lg:col-span-3 bg-card border rounded-[2rem] shadow-xl overflow-hidden">
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full border-collapse">
+                                                <thead>
+                                                    <tr className="bg-muted/50 text-left text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                                                        <th className="px-8 py-6">Food Item</th>
+                                                        <th className="px-8 py-6">Calories</th>
+                                                        <th className="px-8 py-6">P / C / F (100g)</th>
+                                                        <th className="px-8 py-6 text-right">Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-border/50">
+                                                    {contentLoading ? (
+                                                        <tr><td colSpan={4} className="py-32 text-center"><Loader2 className="w-12 h-12 animate-spin mx-auto text-primary opacity-50" /></td></tr>
+                                                    ) : foodList.length > 0 ? (
+                                                        foodList.map((food: any) => (
+                                                            <tr key={food.id} className="hover:bg-muted/20 transition-colors group">
+                                                                <td className="px-8 py-6">
+                                                                    <p className="font-bold text-foreground leading-tight">{food.name}</p>
+                                                                    <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-tighter">Per 100g serving</p>
+                                                                </td>
+                                                                <td className="px-8 py-6">
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className="text-sm font-black">{Math.round(food.caloriesPer100g)}</span>
+                                                                        <span className="text-[10px] font-bold text-muted-foreground uppercase">kcal</span>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-8 py-6">
+                                                                    <div className="flex gap-4">
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                                                                            <span className="text-xs font-bold">{Math.round(food.proteinPer100g)}g</span>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                                                                            <span className="text-xs font-bold">{Math.round(food.carbsPer100g)}g</span>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                                                                            <span className="text-xs font-bold">{Math.round(food.fatPer100g)}g</span>
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="px-8 py-6 text-right">
+                                                                    <button 
+                                                                        onClick={() => handleDeleteFood(food.id)}
+                                                                        className="p-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-2xl transition-all"
+                                                                    >
+                                                                        <Trash2 className="w-5 h-5" />
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        ))
+                                                    ) : (
+                                                        <tr><td colSpan={4} className="py-32 text-center text-muted-foreground font-medium italic">No food items found.</td></tr>
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {/* VIEW: MODERATION */}
                         {activeTab === "community" && (
                             <div className="space-y-10 animate-in fade-in duration-500">
@@ -643,34 +892,114 @@ export default function AdminDashboard() {
                                         <TabsTrigger value="groups" className="rounded-xl px-10 h-full font-bold data-[state=active]:bg-card data-[state=active]:shadow-lg flex gap-2">
                                             <Users2 className="w-4 h-4" /> Active Groups
                                         </TabsTrigger>
+                                        <TabsTrigger value="reports" className="rounded-xl px-10 h-full font-bold data-[state=active]:bg-card data-[state=active]:shadow-lg flex gap-2">
+                                            <AlertTriangle className="w-4 h-4 text-red-500" /> User Reports
+                                        </TabsTrigger>
                                     </TabsList>
 
-                                    <TabsContent value="posts" className="space-y-6 outline-none">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            {postList.map((post: any) => (
-                                                <div key={post.id} className="bg-card border rounded-3xl p-6 shadow-sm hover:shadow-md transition-all relative group">
-                                                    <button 
-                                                        onClick={() => handleDeletePost(post.id)}
-                                                        className="absolute top-4 right-4 p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full opacity-0 group-hover:opacity-100 transition-all"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
-                                                    <div className="flex items-center gap-3 mb-4">
-                                                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-black text-primary uppercase">
-                                                            {post.authorUsername?.charAt(0)}
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-xs font-bold">{post.authorName || 'Deleted User'}</p>
-                                                            <p className="text-[10px] text-muted-foreground">{format(new Date(post.createdAt), "MMM d, HH:mm")}</p>
-                                                        </div>
-                                                    </div>
-                                                    <p className="text-sm text-foreground/80 line-clamp-3 leading-relaxed mb-4 italic">"{post.content || 'Media content'}"</p>
-                                                    <div className="flex justify-end">
-                                                        <span className="text-[10px] font-black uppercase text-muted-foreground bg-muted px-2 py-0.5 rounded tracking-widest">Post ID: #{post.id}</span>
-                                                    </div>
-                                                </div>
-                                            ))}
+                                    <TabsContent value="reports" className="space-y-6 outline-none">
+                                        <div className="bg-card border rounded-[2rem] shadow-xl shadow-muted/50 overflow-hidden">
+                                            <table className="w-full">
+                                                <thead>
+                                                    <tr className="bg-muted/50 text-left text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                                                        <th className="px-8 py-6">Target</th>
+                                                        <th className="px-8 py-6">Reason</th>
+                                                        <th className="px-8 py-6">Reporter</th>
+                                                        <th className="px-8 py-6">Status</th>
+                                                        <th className="px-8 py-6 text-right">Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-border/50">
+                                                    {reportList.length > 0 ? (
+                                                        reportList.map((report: any) => (
+                                                            <tr key={report.id} className="hover:bg-muted/30 transition-colors">
+                                                                <td className="px-8 py-6">
+                                                                    <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-muted border border-border">
+                                                                        {report.targetType} #{report.targetId}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="px-8 py-6">
+                                                                    <p className="text-sm font-medium text-foreground max-w-xs line-clamp-2">{report.reason}</p>
+                                                                </td>
+                                                                <td className="px-8 py-6">
+                                                                    <p className="text-sm font-bold text-foreground">{report.reporterName || report.reporterUsername}</p>
+                                                                </td>
+                                                                <td className="px-8 py-6">
+                                                                    <span className={`text-[10px] px-3 py-1 rounded-lg font-black uppercase border ${
+                                                                        report.status === 'pending' 
+                                                                            ? 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20' 
+                                                                            : 'bg-green-500/10 text-green-600 border-green-500/20'
+                                                                    }`}>
+                                                                        {report.status}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="px-8 py-6 text-right">
+                                                                    {report.status === 'pending' && (
+                                                                        <div className="flex justify-end gap-2">
+                                                                            <button 
+                                                                                onClick={() => handleResolveReport(report.id, "resolved")}
+                                                                                className="p-2 text-green-600 hover:bg-green-500/10 rounded-xl transition-all"
+                                                                                title="Mark as Resolved"
+                                                                            >
+                                                                                <CheckCircle2 className="w-5 h-5" />
+                                                                            </button>
+                                                                            <button 
+                                                                                onClick={() => handleResolveReport(report.id, "dismissed")}
+                                                                                className="p-2 text-muted-foreground hover:bg-muted rounded-xl transition-all"
+                                                                                title="Dismiss Report"
+                                                                            >
+                                                                                <Trash2 className="w-5 h-5" />
+                                                                            </button>
+                                                                        </div>
+                                                                    )}
+                                                                </td>
+                                                            </tr>
+                                                        ))
+                                                    ) : (
+                                                        <tr><td colSpan={5} className="py-32 text-center text-muted-foreground font-medium italic">All quiet! No active reports.</td></tr>
+                                                    )}
+                                                </tbody>
+                                            </table>
                                         </div>
+                                    </TabsContent>
+
+                                    <TabsContent value="posts" className="space-y-6 outline-none">
+                                        {contentLoading ? (
+                                            <div className="py-32 text-center">
+                                                <Loader2 className="w-12 h-12 animate-spin mx-auto text-primary opacity-50" />
+                                                <p className="text-muted-foreground mt-4 font-medium">Fetching community posts...</p>
+                                            </div>
+                                        ) : postList.length > 0 ? (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                {postList.map((post: any) => (
+                                                    <div key={post.id} className="bg-card border rounded-3xl p-6 shadow-sm hover:shadow-md transition-all relative group">
+                                                        <button 
+                                                            onClick={() => handleDeletePost(post.id)}
+                                                            className="absolute top-4 right-4 p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full opacity-0 group-hover:opacity-100 transition-all"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                        <div className="flex items-center gap-3 mb-4">
+                                                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-black text-primary uppercase">
+                                                                {post.authorUsername?.charAt(0)}
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-xs font-bold">{post.authorName || post.authorUsername || 'Deleted User'}</p>
+                                                                <p className="text-[10px] text-muted-foreground">{format(new Date(post.createdAt), "MMM d, HH:mm")}</p>
+                                                            </div>
+                                                        </div>
+                                                        <p className="text-sm text-foreground/80 line-clamp-3 leading-relaxed mb-4 italic">"{post.content || 'Media content'}"</p>
+                                                        <div className="flex justify-end">
+                                                            <span className="text-[10px] font-black uppercase text-muted-foreground bg-muted px-2 py-0.5 rounded tracking-widest">Post ID: #{post.id}</span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="py-32 text-center border-2 border-dashed rounded-[2rem]">
+                                                <p className="text-muted-foreground font-medium italic">No community posts found.</p>
+                                            </div>
+                                        )}
                                     </TabsContent>
 
                                     <TabsContent value="groups" className="space-y-6 outline-none">

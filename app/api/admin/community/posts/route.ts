@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/app/lib/db";
-import { posts, users } from "@/app/lib/schema";
+import { posts } from "@/app/lib/schema";
 import { verifyAdmin } from "@/app/lib/auth";
 import { eq, desc } from "drizzle-orm";
 
@@ -9,20 +9,31 @@ export async function GET(req: NextRequest) {
     const auth = await verifyAdmin(req);
     if (auth.error) return auth.error;
 
-    const allPosts = await db
-      .select({
-        id: posts.id,
-        content: posts.content,
-        createdAt: posts.createdAt,
-        authorName: users.fullName,
-        authorUsername: users.username,
-      })
-      .from(posts)
-      .leftJoin(users, eq(posts.userId, users.id))
-      .orderBy(desc(posts.createdAt))
-      .limit(200);
+    // Menggunakan db.query agar konsisten dengan API Feed utama
+    const allPosts = await db.query.posts.findMany({
+      orderBy: [desc(posts.createdAt)],
+      limit: 200,
+      with: {
+        user: {
+          columns: {
+            username: true,
+            fullName: true,
+          }
+        }
+      }
+    });
 
-    return NextResponse.json(allPosts);
+    // Format agar sesuai dengan yang diharapkan frontend
+    const formattedPosts = allPosts.map(post => ({
+      id: post.id,
+      content: post.content,
+      createdAt: post.createdAt,
+      authorName: post.user?.fullName,
+      authorUsername: post.user?.username,
+    }));
+
+    console.log(`Admin API: Fetched ${formattedPosts.length} posts`);
+    return NextResponse.json(formattedPosts);
   } catch (error) {
     console.error("ADMIN_GET_POSTS_ERROR", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

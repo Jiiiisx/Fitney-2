@@ -1,8 +1,8 @@
 "use client";
 
-import { User, Palette, Bell } from "lucide-react";
+import { User, Palette, Bell, LifeBuoy } from "lucide-react";
 
-type SettingsTab = "profile" | "appearance" | "notifications";
+type SettingsTab = "profile" | "appearance" | "notifications" | "support";
 
 interface SettingsSidebarProps {
   activeTab: SettingsTab;
@@ -13,6 +13,7 @@ const navItems = [
   { id: "profile", label: "Profile & Account", icon: User },
   { id: "appearance", label: "Appearance", icon: Palette },
   { id: "notifications", label: "Notifications", icon: Bell },
+  { id: "support", label: "Help & Support", icon: LifeBuoy },
 ];
 
 export default function SettingsSidebar({ activeTab, setActiveTab }: SettingsSidebarProps) {
