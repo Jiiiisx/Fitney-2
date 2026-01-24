@@ -11,6 +11,7 @@ const secret = new TextEncoder().encode(secretString);
 export interface UserPayload extends JWTPayload {
   userId: string;
   email: string;
+  role: string;
 }
 
 export async function getUserFromToken(token: string): Promise<UserPayload | null> {
@@ -24,6 +25,7 @@ export async function getUserFromToken(token: string): Promise<UserPayload | nul
       ...payload,
       userId: payload.sub,
       email: payload.email as string,
+      role: (payload.role as string) || 'user',
     };
     return user;
   } catch (err) {
@@ -53,4 +55,18 @@ export async function verifyAuth(req: NextRequest): Promise<{ user: UserPayload;
   }
 
   return { user, error: null };
+}
+
+export async function verifyAdmin(req: NextRequest): Promise<{ user: UserPayload; error: null } | { user: null; error: Response }> {
+  const auth = await verifyAuth(req);
+  if (auth.error) return auth;
+
+  if (auth.user.role !== 'admin') {
+    return { 
+      user: null, 
+      error: new Response(JSON.stringify({ error: 'Forbidden: Admin access required' }), { status: 403 }) 
+    };
+  }
+
+  return auth;
 }

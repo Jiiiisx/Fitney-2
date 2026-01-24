@@ -47,6 +47,7 @@ export const users = pgTable('users', {
   dateOfBirth: date('date_of_birth'),
   gender: varchar('gender', { length: 50 }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  role: varchar('role', { length: 50 }).default('user').notNull(),
   level: integer('level').default(1).notNull(),
   xp: integer('xp').default(0).notNull(),
 });

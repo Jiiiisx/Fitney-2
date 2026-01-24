@@ -39,7 +39,14 @@ export default function LoginPage() {
 
       if (res.ok) {
         // Cookie token set by server automatically
-        router.push('/dashboard');
+        const data = await res.json();
+        const user = data.user;
+        
+        if (user.role === 'admin') {
+          router.push('/admin');
+        } else {
+          router.push('/dashboard');
+        }
       } else {
         const data = await res.json();
         setError(data.error || 'Invalid credentials');

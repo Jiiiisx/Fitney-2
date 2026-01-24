@@ -40,7 +40,6 @@ const plans = [
     description: "Pilihan terbaik untuk komitmen jangka panjang.",
     features: [
       "Semua fitur di paket Bulanan",
-      "Konsultasi 1-on-1 dengan pelatih (1x sebulan)",
       "Akses awal ke fitur baru",
       "Dukungan prioritas",
     ],
