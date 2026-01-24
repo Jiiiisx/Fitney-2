@@ -111,10 +111,14 @@ export default async function RightSidebar() {
                 {trendingTags.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
                         {trendingTags.map((tag) => (
-                            <span key={tag.tag} className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-semibold cursor-pointer hover:bg-primary/20 transition-colors flex items-center gap-1">
+                            <Link 
+                                href={`/community?hashtag=${tag.tag}`}
+                                key={tag.tag} 
+                                className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-semibold cursor-pointer hover:bg-primary/20 transition-colors flex items-center gap-1"
+                            >
                                 #{tag.tag}
                                 <span className="text-[10px] opacity-70">({tag.count})</span>
-                            </span>
+                            </Link>
                         ))}
                     </div>
                 ) : (

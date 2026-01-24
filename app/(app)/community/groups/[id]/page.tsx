@@ -94,9 +94,9 @@ export default function GroupChatPage() {
     const groupImage = groupData?.imageUrl;
 
     return (
-        <div className="flex flex-col h-[calc(100vh-100px)] bg-background rounded-xl border border-border shadow-sm overflow-hidden">
+        <div className="flex flex-col h-full bg-background rounded-xl border border-border shadow-sm overflow-hidden">
             {/* Header */}
-            <div className="flex items-center gap-3 p-4 border-b border-border bg-card z-10 shadow-sm">
+            <div className="flex items-center gap-3 p-4 border-b border-border bg-card z-10 shadow-sm flex-shrink-0">
                 <Link
                     href="/community"
                     className="p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground hover:text-foreground"
@@ -170,7 +170,7 @@ export default function GroupChatPage() {
             </div>
 
             {/* Input Area */}
-            <form onSubmit={handleSend} className="p-4 bg-card border-t border-border flex gap-2 items-center">
+            <form onSubmit={handleSend} className="p-4 bg-card border-t border-border flex gap-2 items-center flex-shrink-0">
                 <input
                     type="text"
                     value={input}

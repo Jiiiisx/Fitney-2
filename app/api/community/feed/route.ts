@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/app/lib/db";
-import { posts, followers } from "@/app/lib/schema";
+import { posts, followers, hashtags, postHashtags } from "@/app/lib/schema";
 import { verifyAuth } from "@/app/lib/auth";
 import { desc, eq, inArray, and, lt, sql } from "drizzle-orm";
 
@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
     // URL params for infinite scroll
     const { searchParams } = new URL(req.url);
     const filter = searchParams.get("filter");
+    const hashtag = searchParams.get("hashtag");
     const cursor = searchParams.get("cursor"); // Date string ISO
 
     // Tentukan kondisi WHERE
@@ -23,6 +24,18 @@ export async function GET(req: NextRequest) {
     // Pagination specific
     if (cursor) {
       conditions.push(lt(posts.createdAt, new Date(cursor)));
+    }
+
+    if (hashtag) {
+      // Find posts associated with the hashtag
+      // This is a subquery approach
+      const postsWithHashtag = db
+        .select({ postId: postHashtags.postId })
+        .from(postHashtags)
+        .innerJoin(hashtags, eq(postHashtags.hashtagId, hashtags.id))
+        .where(eq(hashtags.tag, hashtag));
+
+      conditions.push(inArray(posts.id, postsWithHashtag));
     }
 
     if (filter === "mine") {

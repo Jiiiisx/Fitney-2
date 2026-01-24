@@ -4,6 +4,36 @@ import { groups } from "@/app/lib/schema";
 import { verifyAuth } from "@/app/lib/auth";
 import { eq, and } from "drizzle-orm";
 
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ groupId: string }> }
+) {
+  try {
+    const auth = await verifyAuth(req);
+    if (auth.error) return auth.error;
+
+    const { groupId } = await params;
+    const groupIdInt = parseInt(groupId);
+
+    if (isNaN(groupIdInt)) {
+      return NextResponse.json({ error: "Invalid Group ID" }, { status: 400 });
+    }
+
+    const groupResult = await db.select().from(groups).where(eq(groups.id, groupIdInt)).limit(1);
+    const group = groupResult[0];
+
+    if (!group) {
+        return NextResponse.json({ error: "Group not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(group);
+
+  } catch (error) {
+    console.error("GET_GROUP_ERROR", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
+}
+
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ groupId: string }> }

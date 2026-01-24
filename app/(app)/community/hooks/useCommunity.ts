@@ -16,11 +16,14 @@ export const fetcher = (url: string) => {
 
 export type FeedFilter = "all" | "mine" | "friends";
 
-export function useCommunityFeed(filter: FeedFilter = "all") {
+export function useCommunityFeed(filter: FeedFilter = "all", hashtag?: string | null) {
   const getKey = (pageIndex: number, previousPageData: any) => {
-    if (pageIndex === 0) return `/api/community/feed?filter=${filter}`;
+    let url = `/api/community/feed?filter=${filter}`;
+    if (hashtag) url += `&hashtag=${hashtag}`;
+    
+    if (pageIndex === 0) return url;
     if (!previousPageData || !previousPageData.nextCursor) return null;
-    return `/api/community/feed?filter=${filter}&cursor=${previousPageData.nextCursor}`;
+    return `${url}&cursor=${previousPageData.nextCursor}`;
   };
 
   const { data, error, isLoading, size, setSize, mutate } = useSWRInfinite(getKey, fetcher, {

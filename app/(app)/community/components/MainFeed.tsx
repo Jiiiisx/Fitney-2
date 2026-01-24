@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Globe, User, Users } from "lucide-react";
+import { Loader2, Globe, User, Users, X, Hash } from "lucide-react";
+import { useSearchParams, useRouter } from "next/navigation";
 import CreatePost from "./CreatePost";
 import PostCard from "./PostCard";
 import StoryTray from "./StoryTray";
@@ -9,7 +10,11 @@ import { useCommunityFeed, FeedFilter } from "../hooks/useCommunity";
 
 export default function MainFeed() {
   const [filter, setFilter] = useState<FeedFilter>("all");
-  const { posts, isLoading, mutate, loadMore, isLoadingMore, isReachingEnd } = useCommunityFeed(filter);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const hashtag = searchParams.get("hashtag");
+
+  const { posts, isLoading, mutate, loadMore, isLoadingMore, isReachingEnd } = useCommunityFeed(filter, hashtag);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -28,6 +33,10 @@ export default function MainFeed() {
     mutate();
   };
 
+  const clearHashtag = () => {
+    router.push("/community");
+  };
+
   // Deduplicate posts based on ID to prevent "same key" error
   const uniquePosts = posts
     ? Array.from(new Map(posts.map((p: any) => [p.id, p])).values())
@@ -38,49 +47,66 @@ export default function MainFeed() {
       <StoryTray />
       <CreatePost />
 
-      {/* Filter Tabs */}
-      <div className="flex items-center gap-4 mb-6 border-b border-border pb-2">
-        <button
-          onClick={() => setFilter("all")}
-          className={`flex items-center gap-2 pb-2 text-sm font-medium transition-colors relative ${filter === "all"
-            ? "text-primary"
-            : "text-muted-foreground hover:text-foreground"
-            }`}
-        >
-          <Globe className="w-4 h-4" />
-          Community
-          {filter === "all" && (
-            <span className="absolute bottom-[-9px] left-0 w-full h-[2px] bg-primary rounded-full" />
-          )}
-        </button>
+      {/* Filter Tabs & Hashtag Indicator */}
+      <div className="mb-6 border-b border-border pb-2">
+        {hashtag ? (
+          <div className="flex items-center justify-between py-2">
+             <div className="flex items-center gap-2 text-primary font-bold text-lg">
+                <Hash className="w-6 h-6" />
+                <span>#{hashtag}</span>
+             </div>
+             <button 
+                onClick={clearHashtag}
+                className="text-sm flex items-center gap-1 text-muted-foreground hover:text-destructive transition-colors"
+             >
+                <X className="w-4 h-4" /> Clear Filter
+             </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setFilter("all")}
+              className={`flex items-center gap-2 pb-2 text-sm font-medium transition-colors relative ${filter === "all"
+                ? "text-primary"
+                : "text-muted-foreground hover:text-foreground"
+                }`}
+            >
+              <Globe className="w-4 h-4" />
+              Community
+              {filter === "all" && (
+                <span className="absolute bottom-[-9px] left-0 w-full h-[2px] bg-primary rounded-full" />
+              )}
+            </button>
 
-        <button
-          onClick={() => setFilter("friends")}
-          className={`flex items-center gap-2 pb-2 text-sm font-medium transition-colors relative ${filter === "friends"
-            ? "text-primary"
-            : "text-muted-foreground hover:text-foreground"
-            }`}
-        >
-          <Users className="w-4 h-4" />
-          Friends
-          {filter === "friends" && (
-            <span className="absolute bottom-[-9px] left-0 w-full h-[2px] bg-primary rounded-full" />
-          )}
-        </button>
+            <button
+              onClick={() => setFilter("friends")}
+              className={`flex items-center gap-2 pb-2 text-sm font-medium transition-colors relative ${filter === "friends"
+                ? "text-primary"
+                : "text-muted-foreground hover:text-foreground"
+                }`}
+            >
+              <Users className="w-4 h-4" />
+              Friends
+              {filter === "friends" && (
+                <span className="absolute bottom-[-9px] left-0 w-full h-[2px] bg-primary rounded-full" />
+              )}
+            </button>
 
-        <button
-          onClick={() => setFilter("mine")}
-          className={`flex items-center gap-2 pb-2 text-sm font-medium transition-colors relative ${filter === "mine"
-            ? "text-primary"
-            : "text-muted-foreground hover:text-foreground"
-            }`}
-        >
-          <User className="w-4 h-4" />
-          My Posts
-          {filter === "mine" && (
-            <span className="absolute bottom-[-9px] left-0 w-full h-[2px] bg-primary rounded-full" />
-          )}
-        </button>
+            <button
+              onClick={() => setFilter("mine")}
+              className={`flex items-center gap-2 pb-2 text-sm font-medium transition-colors relative ${filter === "mine"
+                ? "text-primary"
+                : "text-muted-foreground hover:text-foreground"
+                }`}
+            >
+              <User className="w-4 h-4" />
+              My Posts
+              {filter === "mine" && (
+                <span className="absolute bottom-[-9px] left-0 w-full h-[2px] bg-primary rounded-full" />
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Feed Content */}

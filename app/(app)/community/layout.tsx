@@ -19,8 +19,8 @@ export default function CommunityLayout({
         </aside>
 
         {/* Main Content Area */}
-        <main className="w-full lg:w-[50%] bg-background overflow-y-auto custom-scrollbar relative" id="main-feed-container">
-          <div className="p-6 h-full min-h-screen">
+        <main className="w-full lg:w-[50%] bg-background overflow-hidden relative" id="main-feed-container">
+          <div className="p-6 h-full overflow-y-auto custom-scrollbar">
             {children}
           </div>
         </main>
