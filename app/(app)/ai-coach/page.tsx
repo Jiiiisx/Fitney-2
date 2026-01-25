@@ -28,6 +28,30 @@ const AI_TOOLS = [
     { id: 'recovery', name: 'Recovery Scan', icon: Zap, color: 'text-purple-500', desc: 'Readiness to train score' }
 ];
 
+// Contextual Templates (The Chips)
+const QUICK_CHIPS: Record<string, string[]> = {
+    briefing: [
+        "What's my main focus today?",
+        "Am I ready for a heavy workout?",
+        "Summarize my week so far"
+    ],
+    fridge: [
+        "Suggest a high protein dinner",
+        "I have chicken and rice, what else?",
+        "Quick snack under 200kcal"
+    ],
+    auditor: [
+        "Is my leg volume too low?",
+        "Fix my bench press plateau",
+        "Suggest a substitute for Squats"
+    ],
+    recovery: [
+        "My lower back feels tight",
+        "Stretch routine for hips",
+        "Why is my sleep score low?"
+    ]
+};
+
 export default function AICoachHub() {
     const [activeTool, setActiveTool] = useState('briefing');
     const [chatInput, setChatInput] = useState("");
@@ -113,9 +137,14 @@ export default function AICoachHub() {
         setIsChatting(true);
 
         try {
+            // SEND MODE (activeTool) TO BACKEND
             const res = await fetch("/api/ai/chat", {
                 method: "POST",
-                body: JSON.stringify({ messages: updatedHistory })
+                body: JSON.stringify({ 
+                    message: text, // Fallback
+                    messages: updatedHistory,
+                    mode: activeTool 
+                })
             });
             if (res.ok) {
                 const data = await res.json();
@@ -126,21 +155,17 @@ export default function AICoachHub() {
     };
 
     const handleFridgeSuggest = async () => {
-// ...
         if (!ingredients) return;
         setIsGenerating(true);
-        try {
-            const res = await fetch("/api/ai/fridge", {
-                method: "POST",
-                body: JSON.stringify({ ingredients: ingredients.split(",").map(i => i.trim()) })
-            });
-            if (res.ok) setRecipes(await res.json());
-        } catch (e) { }
+        // We can now route this through the main chat for consistency, 
+        // or keep the dedicated endpoint if it returns structured JSON recipes.
+        // For now, let's assume the dedicated endpoint is for structured cards, 
+        // but let's try to ask the Chatbot for a quick suggestion too.
+        handleSendMessage(`I have these ingredients: ${ingredients}. Suggest a recipe.`);
         setIsGenerating(false);
     };
 
     if (loading) return (
-        // ... same loading UI ...
         <div className="h-[80vh] flex items-center justify-center">
             <div className="relative">
                 <div className="w-20 h-20 border-4 border-primary/20 rounded-full animate-ping"></div>
@@ -152,8 +177,9 @@ export default function AICoachHub() {
     return (
         <div className="h-full flex flex-col lg:flex-row bg-background overflow-hidden">
             {/* LEFT SIDEBAR: AI TOOLS */}
-            <aside className="w-full lg:w-80 border-r border-border bg-muted/30 p-6 flex flex-col gap-6 overflow-y-auto">
-                <div className="flex items-center gap-3 mb-4">
+            {/* Added 'shrink-0' to prevent flex shrinking, and 'scrollbar-hide' class if available or custom css style */}
+            <aside className="w-full lg:w-80 shrink-0 border-r border-border bg-muted/30 flex flex-col gap-6 overflow-y-auto z-10 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden p-6">
+                <div className="flex items-center gap-3 mb-4 shrink-0">
                     <div className="p-3 bg-primary rounded-2xl text-primary-foreground shadow-xl shadow-primary/30">
                         <Sparkles className="w-6 h-6" />
                     </div>
@@ -163,7 +189,7 @@ export default function AICoachHub() {
                     </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2 shrink-0">
                     <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest px-2 mb-4">Core Intelligence</p>
                     {AI_TOOLS.map((tool) => (
                         <button
@@ -186,7 +212,7 @@ export default function AICoachHub() {
                     ))}
                 </div>
 
-                <div className="mt-auto pt-6 border-t border-border">
+                <div className="mt-auto pt-6 border-t border-border shrink-0">
                     <Card className="bg-primary text-primary-foreground border-none overflow-hidden relative shadow-2xl shadow-primary/20">
                         <div className="absolute -top-4 -right-4 opacity-20"><BrainCircuit className="w-24 h-24" /></div>
                         <CardContent className="p-5 relative z-10">
@@ -218,8 +244,8 @@ export default function AICoachHub() {
                     </div>
                 </header>
 
-                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
-                    <div className="max-w-4xl mx-auto space-y-8 pb-32">
+                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar relative z-10">
+                    <div className="max-w-4xl mx-auto space-y-8 pb-40">
                         
                         {activeTool === 'briefing' && briefingError && (
                             <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
@@ -259,7 +285,6 @@ export default function AICoachHub() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     {briefing.signals.map((sig: any, idx: number) => (
                                         <Card key={idx} className="bg-card border-none shadow-xl hover:shadow-primary/5 transition-all group overflow-hidden">
-                                            <div className={`absolute top-0 left-0 w-1 h-full ${sig.status === 'critical' ? 'bg-rose-500' : 'bg-blue-500'}`}></div>
                                             <CardContent className="p-6">
                                                 <h3 className={`font-bold flex items-center gap-2 mb-4 ${sig.status === 'critical' ? 'text-rose-500' : 'text-blue-500'}`}>
                                                     {sig.type === 'sleep' ? <HeartPulse className="w-5 h-5" /> : <Activity className="w-5 h-5" />}
@@ -290,7 +315,22 @@ export default function AICoachHub() {
 
                         {activeTool === 'fridge' && (
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
-                                {/* ... fridge content ... */}
+                                <div>
+                                    <h2 className="text-3xl font-black mb-2 italic">Smart Fridge</h2>
+                                    <p className="text-muted-foreground">Turn your leftovers into macro-perfect meals.</p>
+                                </div>
+                                <div className="flex gap-4">
+                                    <input 
+                                        type="text" 
+                                        value={ingredients}
+                                        onChange={(e) => setIngredients(e.target.value)}
+                                        placeholder="Enter ingredients (e.g. Chicken, Spinach, Rice)..."
+                                        className="flex-1 p-4 rounded-xl bg-card border border-border"
+                                    />
+                                    <Button onClick={handleFridgeSuggest} disabled={isGenerating} className="h-auto px-8 rounded-xl">
+                                        {isGenerating ? <Bot className="animate-spin" /> : "Generate"}
+                                    </Button>
+                                </div>
                             </motion.div>
                         )}
 
@@ -308,7 +348,7 @@ export default function AICoachHub() {
                                         ? 'bg-primary text-primary-foreground rounded-tr-none' 
                                         : 'bg-card border border-border rounded-tl-none shadow-sm'
                                     }`}>
-                                        <p className="text-sm font-medium leading-relaxed">{msg.content}</p>
+                                        <p className="text-sm font-medium leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                                     </div>
                                 </motion.div>
                             ))}
@@ -400,23 +440,36 @@ export default function AICoachHub() {
                             </motion.div>
                         )}
 
-                        {activeTool !== 'briefing' && activeTool !== 'fridge' && activeTool !== 'auditor' && activeTool !== 'recovery' && (
-                            <div className="flex flex-col items-center justify-center py-20 text-center">
-                                <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mb-6">
-                                    <Bot className="w-10 h-10 text-muted-foreground" />
-                                </div>
-                                <h3 className="text-xl font-bold mb-2">Module Under Calibration</h3>
-                                <p className="text-muted-foreground max-w-sm mb-8">The {activeTool} engine is currently analyzing your personal health data to provide accurate results.</p>
-                                <Button className="rounded-full px-10">Start Analysis</Button>
-                            </div>
-                        )}
-
                     </div>
                 </div>
 
                 {/* BOTTOM CHAT INTERFACE */}
                 <div className="absolute bottom-0 left-0 right-0 p-6 lg:p-8 bg-gradient-to-t from-background via-background to-transparent z-30">
                     <div className="max-w-4xl mx-auto relative group">
+                        
+                        {/* QUICK CHIPS / SUGGESTIONS - DYNAMIC BASED ON ACTIVE TOOL */}
+                        <div className="flex justify-center gap-3 mb-4 overflow-x-auto pb-2 scrollbar-hide mask-fade-sides">
+                            <AnimatePresence mode="wait">
+                                {QUICK_CHIPS[activeTool]?.map((chip, idx) => (
+                                    <motion.button
+                                        key={`${activeTool}-${idx}`}
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                        transition={{ delay: idx * 0.1 }}
+                                        onClick={() => handleSendMessage(chip)}
+                                        className="whitespace-nowrap px-4 py-2 bg-card/80 backdrop-blur-md border border-border rounded-full text-[10px] font-bold text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all shadow-sm flex items-center gap-2"
+                                    >
+                                        {activeTool === 'fridge' && <Utensils className="w-3 h-3" />}
+                                        {activeTool === 'auditor' && <Dumbbell className="w-3 h-3" />}
+                                        {activeTool === 'recovery' && <HeartPulse className="w-3 h-3" />}
+                                        {activeTool === 'briefing' && <Sparkles className="w-3 h-3" />}
+                                        {chip}
+                                    </motion.button>
+                                ))}
+                            </AnimatePresence>
+                        </div>
+
                         <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full opacity-0 group-focus-within:opacity-100 transition-opacity"></div>
                         <form 
                             onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }}
@@ -427,7 +480,7 @@ export default function AICoachHub() {
                                 type="text"
                                 value={chatInput}
                                 onChange={(e) => setChatInput(e.target.value)}
-                                placeholder="Ask your AI Coach anything..."
+                                placeholder={`Ask your ${activeTool === 'briefing' ? 'Coach' : activeTool} anything...`}
                                 className="flex-1 bg-transparent border-none outline-none text-sm font-medium py-4"
                             />
                             <button 
@@ -438,26 +491,6 @@ export default function AICoachHub() {
                                 <Send className="w-5 h-5" />
                             </button>
                         </form>
-                        <div className="flex justify-center gap-6 mt-4">
-                            <button 
-                                onClick={() => handleSendMessage("Analyze my latest workout performance.")}
-                                className="text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
-                            >
-                                <Zap className="w-3 h-3" /> ANALYZE LATEST WORKOUT
-                            </button>
-                            <button 
-                                onClick={() => handleSendMessage("What should I have for dinner tonight based on my calories?")}
-                                className="text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
-                            >
-                                <Utensils className="w-3 h-3" /> SUGGEST DINNER
-                            </button>
-                            <button 
-                                onClick={() => handleSendMessage("I feel some pain in my lower back, any advice?")}
-                                className="text-[10px] font-bold text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
-                            >
-                                <ShieldAlert className="w-3 h-3" /> INJURY CHECK
-                            </button>
-                        </div>
                     </div>
                 </div>
             </main>
