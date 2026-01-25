@@ -261,8 +261,8 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion, onPlan
       </div>
       
       {/* Scrollable Container for Mobile/Tablet */}
-      <div className="overflow-x-auto pb-4 -mx-4 px-4 lg:mx-0 lg:px-0 scrollbar-hide">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:flex xl:flex-row gap-6 min-w-[800px] xl:min-w-0">
+      <div className="pb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:flex xl:flex-row gap-6">
             {renderContent()}
         </div>
       </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   BarChart,
@@ -10,7 +11,12 @@ import {
   ResponsiveContainer,
   CartesianGrid,
   Cell,
+  LineChart,
+  Line,
+  AreaChart,
+  Area
 } from "recharts";
+import { Activity, Scale, TrendingDown, TrendingUp } from "lucide-react";
 
 interface ProgressChartsProps {
   weeklyData?: any[];
@@ -36,6 +42,22 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export default function ProgressCharts({ weeklyData, isLoading }: ProgressChartsProps) {
+  const [activeTab, setActiveTab] = useState<"workout" | "weight">("workout");
+  const [weightData, setWeightData] = useState<any[]>([]);
+  const [loadingWeight, setLoadingWeight] = useState(false);
+
+  useEffect(() => {
+    if (activeTab === "weight" && weightData.length === 0) {
+      setLoadingWeight(true);
+      fetch("/api/stats/weight-history")
+        .then(res => res.json())
+        .then(data => {
+          setWeightData(data);
+          setLoadingWeight(false);
+        });
+    }
+  }, [activeTab]);
+
   if (isLoading) {
     return (
         <Card className="bg-card/50 backdrop-blur-sm border-none shadow-sm">
@@ -68,73 +90,81 @@ export default function ProgressCharts({ weeklyData, isLoading }: ProgressCharts
   return (
     <Card className="bg-card border-none shadow-sm overflow-hidden">
       <CardHeader className="pb-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-                <CardTitle className="text-lg font-bold">Weekly Activity</CardTitle>
-                <p className="text-xs text-muted-foreground mt-1">Total workout duration (minutes)</p>
+                <CardTitle className="text-lg font-bold">Progress Analytics</CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">Track your fitness journey data.</p>
             </div>
-            {/* Optional: Add a small badge or total summary here */}
+            
+            <div className="flex bg-muted/50 p-1 rounded-xl self-start sm:self-center">
+                <button 
+                    onClick={() => setActiveTab("workout")}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === 'workout' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                    <Activity className="w-3.5 h-3.5" /> Workouts
+                </button>
+                <button 
+                    onClick={() => setActiveTab("weight")}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === 'weight' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                    <Scale className="w-3.5 h-3.5" /> Weight
+                </button>
+            </div>
         </div>
       </CardHeader>
       <CardContent className="px-2 sm:px-6 pb-6">
-        <div className="h-[280px] w-full">
+        <div className="h-[250px] sm:h-[280px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <defs>
-                <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#F59E0B" stopOpacity={0.9} /> {/* Amber-500 */}
-                  <stop offset="95%" stopColor="#F59E0B" stopOpacity={0.4} />
-                </linearGradient>
-                <linearGradient id="barGradientHover" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#FBBF24" stopOpacity={1} /> {/* Amber-400 */}
-                  <stop offset="95%" stopColor="#FBBF24" stopOpacity={0.6} />
-                </linearGradient>
-              </defs>
-
-              <CartesianGrid 
-                strokeDasharray="4 4" 
-                vertical={false} 
-                stroke="var(--border)" 
-                opacity={0.4} 
-              />
-              
-              <XAxis 
-                dataKey="name" 
-                axisLine={false} 
-                tickLine={false} 
-                tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 500 }}
-                dy={12}
-              />
-              
-              <YAxis 
-                axisLine={false} 
-                tickLine={false} 
-                tick={{ fill: '#94a3b8', fontSize: 12 }}
-                dx={-5}
-              />
-              
-              <Tooltip 
-                content={<CustomTooltip />} 
-                cursor={{ fill: 'var(--muted)', opacity: 0.15, radius: 8 }}
-              />
-              
-              <Bar
-                dataKey="value"
-                fill="url(#barGradient)"
-                radius={[8, 8, 8, 8]} // Fully rounded top and slightly rounded bottom if you want floating effect
-                barSize={32}
-                animationDuration={1500}
-                animationEasing="ease-out"
-              >
-                {data.map((entry: any, index: number) => (
-                    <Cell 
-                        key={`cell-${index}`} 
-                        fill={entry.value > 0 ? "url(#barGradient)" : "transparent"} 
-                        className="transition-all duration-300 hover:opacity-80"
-                    />
-                ))}
-              </Bar>
-            </BarChart>
+            {activeTab === "workout" ? (
+              <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#F59E0B" stopOpacity={0.9} />
+                    <stop offset="95%" stopColor="#F59E0B" stopOpacity={0.4} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="var(--border)" opacity={0.4} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 500 }} dy={12} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} dx={-5} />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--muted)', opacity: 0.15, radius: 8 }} />
+                <Bar
+                  dataKey="value"
+                  fill="url(#barGradient)"
+                  radius={[8, 8, 8, 8]}
+                  barSize={32}
+                  animationDuration={1500}
+                >
+                  {data.map((entry: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={entry.value > 0 ? "url(#barGradient)" : "transparent"} />
+                  ))}
+                </Bar>
+              </BarChart>
+            ) : (
+              <AreaChart data={weightData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="lineGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="var(--border)" opacity={0.4} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 500 }} dy={12} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} dx={-5} domain={['dataMin - 2', 'dataMax + 2']} />
+                <Tooltip 
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                    formatter={(val) => [`${val} kg`, 'Weight']}
+                />
+                <Area 
+                    type="monotone" 
+                    dataKey="weight" 
+                    stroke="#3b82f6" 
+                    strokeWidth={3} 
+                    fillOpacity={1} 
+                    fill="url(#lineGradient)" 
+                    animationDuration={1500}
+                />
+              </AreaChart>
+            )}
           </ResponsiveContainer>
         </div>
       </CardContent>

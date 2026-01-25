@@ -2,8 +2,9 @@
 "use client";
 
 import { useState } from "react";
-import { PlusCircle, X } from "lucide-react";
+import { PlusCircle, X, Share2 } from "lucide-react";
 import { logWorkoutAction } from "@/app/actions";
+import toast from "react-hot-toast";
 
 type Exercise = {
   exercise_id: number;
@@ -18,8 +19,13 @@ export default function WorkoutLogger({
   const [isFormVisible, setIsFormVisible] = useState(false);
 
   const handleFormSubmit = async (formData: FormData) => {
-    await logWorkoutAction(formData);
-    setIsFormVisible(false);
+    const result = await logWorkoutAction(formData);
+    if (result.success) {
+      toast.success(`Workout Logged! +${result.awardedXp} XP`);
+      setIsFormVisible(false);
+    } else {
+      toast.error("Failed to log workout");
+    }
   };
 
   if (!isFormVisible) {
@@ -119,6 +125,12 @@ export default function WorkoutLogger({
               required
               className="w-full px-4 py-3 bg-gray-100 border-transparent rounded-lg focus:ring-2 focus:ring-gray-500"
             />
+          </div>
+          <div className="flex items-center gap-2 px-2">
+            <input type="checkbox" name="share" id="share" className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary" />
+            <label htmlFor="share" className="text-xs font-bold text-gray-600 flex items-center gap-1 cursor-pointer">
+              <Share2 size={12} /> Share to Feed
+            </label>
           </div>
           <button
             type="submit"

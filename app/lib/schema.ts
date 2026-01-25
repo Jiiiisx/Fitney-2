@@ -420,6 +420,15 @@ export const reports = pgTable('reports', {
   resolvedAt: timestamp('resolved_at', { withTimezone: true }),
 });
 
+export const announcements = pgTable('announcements', {
+  id: serial('id').primaryKey(),
+  content: text('content').notNull(),
+  type: varchar('type', { length: 50 }).default('info'), // 'info', 'warning', 'success'
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }),
+});
+
 // Gamification/Achievements
 export const achievements = pgTable('achievements', {
   id: serial('id').primaryKey(),

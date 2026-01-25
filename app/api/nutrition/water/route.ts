@@ -1,78 +1,49 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAuth } from "@/app/lib/auth";
 import { db } from "@/app/lib/db";
 import { waterLogs } from "@/app/lib/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
+import { verifyAuth } from "@/app/lib/auth";
+import { format } from "date-fns";
 
-// Ambil log air hari ini
 export async function GET(req: NextRequest) {
-  try {
-    const auth = await verifyAuth(req);
-    if (auth.error) return auth.error;
-    const userId = auth.user.userId;
+  const auth = await verifyAuth(req);
+  if (auth.error) return auth.error;
 
-    const today = new Date().toISOString().split('T')[0];
+  const today = format(new Date(), 'yyyy-MM-dd');
+  
+  const result = await db.query.waterLogs.findFirst({
+    where: (logs, { and, eq }) => and(eq(logs.userId, auth.user.userId), eq(logs.date, today))
+  });
 
-    const log = await db
-      .select()
-      .from(waterLogs)
-      .where(
-        and(
-          eq(waterLogs.userId, userId),
-          eq(waterLogs.date, today)
-        )
-      )
-      .limit(1);
-
-    return NextResponse.json(log[0] || { amountMl: 0 });
-  } catch ( error ) {
-    console.error("GET_WATER_ERROR", error);
-    return NextResponse.json({ error: "Internal Server Error"}, {status: 500});
-  }
+  return NextResponse.json(result || { amountMl: 0 });
 }
 
-// Update air minum (insert and update)
 export async function POST(req: NextRequest) {
+  const auth = await verifyAuth(req);
+  if (auth.error) return auth.error;
+
   try {
-    const auth = await verifyAuth(req);
-    if (auth.error) return auth.error;
-    const userId = auth.user.userId;
+    const { amount } = await req.json();
+    const today = format(new Date(), 'yyyy-MM-dd');
 
-    const body = await req.json();
-    const { amountMl, date } = body;
+    const existing = await db.query.waterLogs.findFirst({
+      where: (logs, { and, eq }) => and(eq(logs.userId, auth.user.userId), eq(logs.date, today))
+    });
 
-    const logDate = date || new Date().toISOString().split('T')[0];
-
-    //cek login
-    const existingLog = await db
-      .select()
-      .from(waterLogs)
-      .where(and(eq(waterLogs.userId, userId), eq(waterLogs.date, logDate)))
-      .limit(1);
-
-    let result;
-
-    if (existingLog.length > 0) {
-      result = await db
-        .update(waterLogs)
-        .set({ amountMl: amountMl })
-        .where(eq(waterLogs.id, existingLog[0].id))
-        .returning();
+    if (existing) {
+      await db.update(waterLogs)
+        .set({ amountMl: existing.amountMl + amount })
+        .where(eq(waterLogs.id, existing.id));
     } else {
-      result = await db
-        .insert(waterLogs)
-        .values({
-          userId,
-          date: logDate,
-          amountMl: amountMl
-        })
-        .returning();
+      await db.insert(waterLogs).values({
+        userId: auth.user.userId,
+        date: today,
+        amountMl: amount
+      });
     }
 
-    return NextResponse.json(result[0]);
-
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("POST_WATER_ERROR", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to log water" }, { status: 500 });
   }
 }

@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Settings, Bell, User, Search, LogOut } from "lucide-react";
-import { motion } from "framer-motion";
+import { Settings, Bell, User, Search, LogOut, Menu, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Popover,
   PopoverContent,
@@ -66,6 +66,7 @@ const Header = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notificationSound, setNotificationSound] = useState("default");
   const [hasInteracted, setHasInteracted] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const lastNotifId = useRef<number | null>(null);
 
   // Track first user interaction to allow audio playback
@@ -190,20 +191,74 @@ const Header = () => {
   return (
     <>
       {showOnboarding && <OnboardingModal onComplete={handleOnboardingComplete} />}
-      <header className="w-full px-4 pt-6 pb-2">
-        <div className="flex items-center justify-between w-full mx-auto bg-card/50 backdrop-blur-sm border rounded-full p-4">
-          {/* Logo */}
-          <div className="pl-4">
+      
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-md lg:hidden"
+          >
+            <div className="p-8 h-full flex flex-col">
+              <div className="flex items-center justify-between mb-12">
+                <Link href="/dashboard" className="text-3xl font-black" onClick={() => setIsMobileMenuOpen(false)}>Fitney</Link>
+                <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 bg-muted rounded-full">
+                  <X size={24} />
+                </button>
+              </div>
+              
+              <nav className="flex flex-col gap-4">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={`text-3xl font-bold py-2 ${pathname === item.href ? 'text-primary' : 'text-muted-foreground'}`}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </nav>
+
+              <div className="mt-auto pt-8 border-t">
+                <div className="flex items-center gap-4 mb-8">
+                  <Avatar user={user} />
+                  <div>
+                    <p className="font-bold text-lg">{user?.fullName || 'User'}</p>
+                    <p className="text-sm text-muted-foreground">Level {level}</p>
+                  </div>
+                </div>
+                <Button variant="destructive" className="w-full py-6 rounded-2xl font-bold" onClick={handleLogout}>
+                  <LogOut className="mr-2 w-5 h-5" /> Sign Out
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <header className="w-full px-4 lg:px-8 pt-6 pb-2">
+        <div className="flex items-center justify-between w-full mx-auto bg-card/50 backdrop-blur-sm border rounded-3xl lg:rounded-full p-3 lg:p-4">
+          {/* Logo & Mobile Toggle */}
+          <div className="flex items-center gap-2 pl-2">
+            <button 
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="lg:hidden p-2 hover:bg-muted rounded-xl"
+            >
+              <Menu size={24} />
+            </button>
             <Link
               href="/dashboard"
-              className="text-3xl font-bold text-foreground tracking-wider"
+              className="text-2xl lg:text-3xl font-black text-foreground tracking-tight"
             >
               Fitney
             </Link>
           </div>
 
-          {/* Navigation */}
-          <nav className="relative flex items-center bg-background/60 border rounded-full px-2 py-2">
+          {/* Desktop Navigation */}
+          <nav className="hidden lg:flex items-center bg-background/60 border rounded-full px-2 py-2">
             {navItems.map((item) => (
               <Link
                 key={item.label}
@@ -227,16 +282,17 @@ const Header = () => {
           </nav>
 
           {/* User Actions */}
-          <div className="flex items-center space-x-3 pr-4">
-            <Link href="/settings" className="p-4 rounded-full hover:bg-muted/50">
-              <Settings size={24} className="text-muted-foreground" />
+          <div className="flex items-center space-x-1 lg:space-x-3 pr-2 lg:pr-4">
+            <Link href="/settings" className="p-2 lg:p-4 rounded-full hover:bg-muted/50 transition-colors">
+              <Settings size={20} className="lg:w-6 lg:h-6 text-muted-foreground" />
             </Link>
+            
             <Popover>
               <PopoverTrigger asChild>
-                <button className="p-4 rounded-full hover:bg-muted/50 relative">
-                  <Bell size={24} className="text-muted-foreground" />
+                <button className="p-2 lg:p-4 rounded-full hover:bg-muted/50 relative transition-colors">
+                  <Bell size={20} className="lg:w-6 lg:h-6 text-muted-foreground" />
                   {unreadCount > 0 && (
-                    <span className="absolute top-3 right-3 bg-red-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full border-2 border-card">
+                    <span className="absolute top-2 right-2 lg:top-3 lg:right-3 bg-red-500 text-white text-[10px] font-bold w-4 h-4 lg:w-5 lg:h-5 flex items-center justify-center rounded-full border-2 border-card">
                       {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                   )}
@@ -247,32 +303,34 @@ const Header = () => {
               </PopoverContent>
             </Popover>
 
-            <Popover>
-              <PopoverTrigger asChild>
-                <div className="relative">
-                  <button className="rounded-full focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
-                    <Avatar user={user} />
-                  </button>
-                  <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full border-2 border-card">
-                    {level}
-                  </span>
-                </div>
-              </PopoverTrigger>
-              <PopoverContent className="w-56" align="end">
-                <div className="p-4 border-b">
-                  <p className="font-bold text-foreground">{user?.fullName || 'Guest'}</p>
-                  <p className="text-sm text-muted-foreground">{user?.email}</p>
-                </div>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start p-4"
-                  onClick={handleLogout}
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Log Out
-                </Button>
-              </PopoverContent>
-            </Popover>
+            <div className="hidden lg:block">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <div className="relative cursor-pointer">
+                    <button className="rounded-full focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                      <Avatar user={user} />
+                    </button>
+                    <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full border-2 border-card">
+                      {level}
+                    </span>
+                  </div>
+                </PopoverTrigger>
+                <PopoverContent className="w-56" align="end">
+                  <div className="p-4 border-b">
+                    <p className="font-bold text-foreground">{user?.fullName || 'Guest'}</p>
+                    <p className="text-sm text-muted-foreground">{user?.email}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start p-4"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Log Out
+                  </Button>
+                </PopoverContent>
+              </Popover>
+            </div>
 
           </div>
         </div>

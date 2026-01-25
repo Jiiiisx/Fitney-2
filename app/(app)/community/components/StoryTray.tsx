@@ -122,7 +122,7 @@ export default function StoryTray() {
     };
 
     return (
-        <div className="bg-card p-4 rounded-xl border border-border shadow-sm mb-6 overflow-x-auto custom-scrollbar">
+        <div className="bg-card p-4 sm:p-4 rounded-xl border border-border shadow-sm mb-6 overflow-x-auto scrollbar-hide">
             <div className="flex gap-4">
                 {/* Create Story Button */}
                 <div
@@ -208,7 +208,7 @@ export default function StoryTray() {
                         <ChevronRight className="w-8 h-8" />
                     </button>
 
-                    <div className="max-w-md w-full relative">
+                    <div className="w-full h-full md:h-auto md:max-w-md relative flex flex-col justify-center">
                         {/* Progress Bar */}
                         <div className="absolute top-4 left-4 right-4 flex gap-1.5 z-30">
                             {currentStories.map((_: any, idx: number) => (
@@ -230,10 +230,10 @@ export default function StoryTray() {
                         <img
                             src={currentStory.mediaUrl}
                             alt="Story"
-                            className="w-full rounded-2xl max-h-[85vh] shadow-2xl object-contain bg-black"
+                            className="w-full h-full md:h-auto md:max-h-[85vh] md:rounded-2xl shadow-2xl object-contain bg-black"
                         />
 
-                        <div className="absolute bottom-4 left-4 flex items-center gap-2">
+                        <div className="absolute bottom-4 left-4 flex items-center gap-2 z-30">
                             <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-700">
                                 {currentStory.user.imageUrl ? (
                                     <img src={currentStory.user.imageUrl} className="w-full h-full object-cover" />

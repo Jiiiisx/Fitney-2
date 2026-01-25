@@ -198,8 +198,8 @@ export default function PostCard({
 
       {/* Multi-Image Carousel */}
       {post.images && post.images.length > 0 && (
-        <div className="mt-3 relative group/carousel">
-          <div className="overflow-hidden rounded-lg border border-border bg-muted max-h-96 flex items-center justify-center">
+        <div className="mt-3 relative group/carousel -mx-5 w-[calc(100%+2.5rem)] sm:mx-0 sm:w-full">
+          <div className="overflow-hidden sm:rounded-lg border-y sm:border border-border bg-muted max-h-96 flex items-center justify-center">
             <img
               src={post.images[currentImageIndex]}
               alt={`Post content ${currentImageIndex + 1}`}

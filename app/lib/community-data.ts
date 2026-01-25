@@ -51,17 +51,10 @@ export const getTrendingHashtags = cache(async () => {
     return trending;
 });
 
-// Mock logic for achievers based on the API behavior or placeholder
+// Global Leaderboard logic
 export const getTopAchievers = cache(async (currentUserId: string) => {
-    // Logic untuk ranking teman berdasarkan XP/Level.
-    // 1. Get friend IDs
-    const friendsStart = await db.select({ id: followers.userId }).from(followers).where(eq(followers.followerId, currentUserId));
-    const friendIds = friendsStart.map(f => f.id);
-    friendIds.push(currentUserId); // Add self
-
-    // 2. Fetch users sorted by Level/XP
+    // Fetch all users sorted by Level/XP for a Global Leaderboard
     const topUsers = await db.query.users.findMany({
-        where: (users, { inArray }) => inArray(users.id, friendIds),
         orderBy: (users, { desc }) => [desc(users.level), desc(users.xp)],
         limit: 5,
         columns: {
@@ -73,7 +66,7 @@ export const getTopAchievers = cache(async (currentUserId: string) => {
         }
     });
 
-    // 3. Transform
+    // Transform
     return topUsers.map((u, index) => ({
         id: u.id,
         rank: index + 1,

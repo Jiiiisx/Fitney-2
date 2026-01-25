@@ -29,7 +29,9 @@ import {
     Wheat,
     Droplets,
     AlertTriangle,
-    CheckCircle2
+    CheckCircle2,
+    Megaphone,
+    Menu
 } from "lucide-react";
 import Link from "next/link";
 import { fetchWithAuth } from "@/app/lib/fetch-helper";
@@ -83,6 +85,7 @@ export default function AdminDashboard() {
     const [reportList, setReportList] = useState<any[]>([]);
     const [exerciseList, setExerciseList] = useState<any[]>([]);
     const [foodList, setFoodList] = useState<any[]>([]);
+    const [announcements, setAnnouncements] = useState<any[]>([]);
     const [categories, setCategories] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [globalSearch, setGlobalSearch] = useState("");
@@ -90,6 +93,7 @@ export default function AdminDashboard() {
     const [loading, setLoading] = useState(true);
     const [contentLoading, setContentLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     // Form states
     const [newExercise, setNewExercise] = useState({ name: "", description: "", categoryId: "", imageUrl: "" });
@@ -100,6 +104,9 @@ export default function AdminDashboard() {
         try {
             const result = await fetchWithAuth("/api/admin/stats");
             setData(result);
+            // Also fetch announcements
+            const ann = await fetchWithAuth("/api/admin/announcements");
+            setAnnouncements(ann);
         } catch (err: any) {
             setError(err.message || "Failed to load admin data");
         } finally {
@@ -361,7 +368,54 @@ export default function AdminDashboard() {
 
     return (
         <div className="flex h-screen bg-muted/30 dark:bg-black overflow-hidden font-poppins">
-            {/* Sidebar Navigation */}
+            {/* Mobile Sidebar Overlay */}
+            {mobileMenuOpen && (
+                <div className="fixed inset-0 z-50 lg:hidden">
+                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
+                    <aside className="absolute left-0 top-0 bottom-0 w-72 bg-card border-r border-border flex flex-col h-full animate-in slide-in-from-left duration-300">
+                         <div className="h-20 px-8 border-b border-border/50 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/30 shrink-0">
+                                    <Shield className="w-6 h-6" />
+                                </div>
+                                <div className="min-w-0">
+                                    <span className="text-xl font-black tracking-tighter block leading-none">FITNEY</span>
+                                    <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-[0.2em] mt-0.5">Admin Panel</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setMobileMenuOpen(false)} className="p-2 -mr-2 text-muted-foreground hover:text-foreground">
+                                <ArrowLeft className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <nav className="flex-1 p-4 space-y-2 mt-4 overflow-y-auto">
+                            <button onClick={() => { setActiveTab("overview"); setMobileMenuOpen(false); }} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-semibold transition-all ${activeTab === 'overview' ? 'bg-primary text-primary-foreground shadow-xl shadow-primary/20' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+                                <LayoutDashboard className="w-5 h-5" /> Dashboard
+                            </button>
+                            <button onClick={() => { setActiveTab("users"); setMobileMenuOpen(false); }} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-semibold transition-all ${activeTab === 'users' ? 'bg-primary text-primary-foreground shadow-xl shadow-primary/20' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+                                <Users className="w-5 h-5" /> User Directory
+                            </button>
+                            <button onClick={() => { setActiveTab("community"); setMobileMenuOpen(false); }} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-semibold transition-all ${activeTab === 'community' ? 'bg-primary text-primary-foreground shadow-xl shadow-primary/20' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+                                <MessageSquare className="w-5 h-5" /> Moderation
+                            </button>
+                            <button onClick={() => { setActiveTab("exercises"); setMobileMenuOpen(false); }} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-semibold transition-all ${activeTab === 'exercises' ? 'bg-primary text-primary-foreground shadow-xl shadow-primary/20' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+                                <Dumbbell className="w-5 h-5" /> Exercises
+                            </button>
+                            <button onClick={() => { setActiveTab("nutrition"); setMobileMenuOpen(false); }} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-semibold transition-all ${activeTab === 'nutrition' ? 'bg-primary text-primary-foreground shadow-xl shadow-primary/20' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+                                <Utensils className="w-5 h-5" /> Nutrition
+                            </button>
+                        </nav>
+                        
+                        <div className="p-6 border-t border-border/50">
+                            <Link href="/dashboard" className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all">
+                                <ArrowLeft className="w-4 h-4" /> Exit to App
+                            </Link>
+                        </div>
+                    </aside>
+                </div>
+            )}
+
+            {/* Sidebar Navigation (Desktop) */}
             <aside className="w-72 bg-card border-r border-border hidden lg:flex flex-col h-screen sticky top-0">
                 <div className="h-20 px-8 border-b border-border/50 flex items-center">
                     <div className="flex items-center gap-3">
@@ -404,8 +458,14 @@ export default function AdminDashboard() {
             <main className="flex-1 flex flex-col overflow-hidden relative">
                 
                 {/* Global Admin Header */}
-                <header className="h-20 bg-background border-b flex items-center justify-between px-8 sticky top-0 z-20">
-                    <div className="relative w-96">
+                <header className="h-16 lg:h-20 bg-background border-b flex items-center justify-between px-4 lg:px-8 sticky top-0 z-20">
+                    <div className="flex items-center gap-4 lg:hidden">
+                        <button onClick={() => setMobileMenuOpen(true)} className="p-2 -ml-2 text-foreground">
+                            <Menu className="w-6 h-6" />
+                        </button>
+                    </div>
+
+                    <div className="relative w-full max-w-xs lg:max-w-md mx-auto lg:mx-0">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <input 
                             type="text" 
@@ -560,6 +620,47 @@ export default function AdminDashboard() {
                                 </div>
 
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                    {/* Announcement Manager */}
+                                    <div className="bg-card border rounded-[2rem] p-8 shadow-sm flex flex-col">
+                                        <h3 className="text-xl font-black mb-6 flex items-center gap-2">
+                                            <Megaphone className="w-5 h-5 text-primary" /> Global Alert
+                                        </h3>
+                                        <form className="space-y-4 mb-8" onSubmit={async (e) => {
+                                            e.preventDefault();
+                                            const content = (e.target as any).content.value;
+                                            if (!content) return;
+                                            await fetchWithAuth("/api/admin/announcements", {
+                                                method: "POST",
+                                                body: JSON.stringify({ content, type: "info" })
+                                            });
+                                            (e.target as any).content.value = "";
+                                            fetchStats();
+                                            toast.success("Announcement posted!");
+                                        }}>
+                                            <textarea 
+                                                name="content"
+                                                placeholder="Send a message to all users..."
+                                                className="w-full bg-muted/50 border-none rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/50 transition-all outline-none resize-none"
+                                                rows={3}
+                                            />
+                                            <Button type="submit" className="w-full rounded-2xl font-bold">Post Announcement</Button>
+                                        </form>
+                                        <div className="space-y-3 overflow-y-auto max-h-[200px] custom-scrollbar">
+                                            {announcements.map((a: any) => (
+                                                <div key={a.id} className="p-4 bg-muted/30 rounded-2xl flex items-start justify-between group">
+                                                    <p className="text-xs font-medium leading-relaxed pr-4">{a.content}</p>
+                                                    <button onClick={async () => {
+                                                        await fetchWithAuth(`/api/admin/announcements?id=${a.id}`, { method: "DELETE" });
+                                                        fetchStats();
+                                                        toast.success("Removed");
+                                                    }} className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
                                     <div className="lg:col-span-2 bg-card border rounded-3xl shadow-sm overflow-hidden">
                                         <div className="p-6 border-b flex items-center justify-between bg-muted/10">
                                             <h3 className="font-bold flex items-center gap-2"><UserPlus className="w-5 h-5 text-primary" /> Newest Members</h3>
@@ -719,7 +820,7 @@ export default function AdminDashboard() {
                             <div className="animate-in fade-in slide-in-from-bottom-1 duration-500">
                                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
                                     {/* Sticky Sidebar Area */}
-                                    <div className="lg:col-span-1 space-y-6 sticky top-2">
+                                    <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-2">
                                         {/* Search Exercises */}
                                         <div className="relative w-full">
                                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -850,7 +951,7 @@ export default function AdminDashboard() {
                             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
                                     {/* Sticky Sidebar Area */}
-                                    <div className="lg:col-span-1 space-y-6 sticky top-8">
+                                    <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-8">
                                         {/* Search Foods */}
                                         <div className="relative w-full">
                                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -1029,6 +1130,7 @@ export default function AdminDashboard() {
 
                                     <TabsContent value="reports" className="space-y-6 outline-none">
                                         <div className="bg-card border rounded-[2rem] shadow-xl shadow-muted/50 overflow-hidden">
+                                            <div className="overflow-x-auto">
                                             <table className="w-full">
                                                 <thead>
                                                     <tr className="bg-muted/50 text-left text-[10px] font-black text-muted-foreground uppercase tracking-widest">
@@ -1090,6 +1192,7 @@ export default function AdminDashboard() {
                                                     )}
                                                 </tbody>
                                             </table>
+                                            </div>
                                         </div>
                                     </TabsContent>
 
@@ -1134,6 +1237,7 @@ export default function AdminDashboard() {
 
                                     <TabsContent value="groups" className="space-y-6 outline-none">
                                         <div className="bg-card border rounded-[2rem] shadow-xl shadow-muted/50 overflow-hidden">
+                                            <div className="overflow-x-auto">
                                             <table className="w-full">
                                                 <thead>
                                                     <tr className="bg-muted/50 text-left text-[10px] font-black text-muted-foreground uppercase tracking-widest">
@@ -1175,6 +1279,7 @@ export default function AdminDashboard() {
                                                     ))}
                                                 </tbody>
                                             </table>
+                                            </div>
                                         </div>
                                     </TabsContent>
                                 </Tabs>

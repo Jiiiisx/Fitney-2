@@ -102,7 +102,7 @@ export default function AddFoodModal({ isOpen, onClose, onFoodAdded }: AddFoodMo
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search food (e.g. Rice, Chicken)..."
-                className="pl-9"
+                className="pl-9 h-12 text-base"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 autoFocus
@@ -119,16 +119,16 @@ export default function AddFoodModal({ isOpen, onClose, onFoodAdded }: AddFoodMo
               {results.map((food) => (
                 <div
                   key={food.id}
-                  className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted cursor-pointer transition-colors"
+                  className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted cursor-pointer transition-colors active:bg-muted/80"
                   onClick={() => setSelectedFood(food)}
                 >
                   <div>
-                    <p className="font-medium">{food.name}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="font-medium text-base">{food.name}</p>
+                    <p className="text-sm text-muted-foreground">
                       {food.caloriesPer100g} kcal / 100g
                     </p>
                   </div>
-                  <Plus className="h-4 w-4 text-muted-foreground" />
+                  <Plus className="h-5 w-5 text-muted-foreground" />
                 </div>
               ))}
             </div>
@@ -152,6 +152,7 @@ export default function AddFoodModal({ isOpen, onClose, onFoodAdded }: AddFoodMo
                 type="number"
                 value={servingSize}
                 onChange={(e) => setServingSize(e.target.value)}
+                className="h-12 text-lg"
               />
             </div>
 

@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
     });
 
     if (!activePlan) {
-      return NextResponse.json({ message: 'No active plan found' }, { status: 404});
+      return NextResponse.json(null);
     }
 
     const scheduleDays = await db.query.userPlanDays.findMany({
