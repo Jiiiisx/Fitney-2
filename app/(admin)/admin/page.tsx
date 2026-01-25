@@ -43,6 +43,22 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+    LineChart, 
+    Line, 
+    XAxis, 
+    YAxis, 
+    CartesianGrid, 
+    Tooltip, 
+    ResponsiveContainer,
+    AreaChart,
+    Area,
+    PieChart,
+    Pie,
+    Cell
+} from 'recharts';
+
+const CHART_COLORS = ['#3b82f6', '#a855f7', '#f97316', '#22c55e'];
 
 const StatCard = ({ title, value, icon: Icon, color }: any) => (
     <div className="bg-card border rounded-2xl p-6 shadow-sm">
@@ -301,6 +317,24 @@ export default function AdminDashboard() {
         }
     };
 
+    const handleAdjustXP = async (userId: string, currentName: string) => {
+        const amount = prompt(`Enter XP amount to award to ${currentName} (e.g. 500):`);
+        if (!amount || isNaN(parseInt(amount))) return;
+
+        const reason = prompt("Enter reason (optional):");
+
+        try {
+            await fetchWithAuth(`/api/admin/users/${userId}/xp`, {
+                method: "PATCH",
+                body: JSON.stringify({ amount: parseInt(amount), reason })
+            });
+            toast.success(`Awarded ${amount} XP to ${currentName}`);
+            fetchUsers(searchQuery);
+        } catch (err) {
+            toast.error("Failed to adjust XP");
+        }
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background">
@@ -440,6 +474,92 @@ export default function AdminDashboard() {
                                 </div>
 
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                    {/* User Growth Chart */}
+                                    <div className="lg:col-span-2 bg-card border rounded-[2rem] p-8 shadow-sm">
+                                        <h3 className="text-xl font-black mb-8 flex items-center gap-2">
+                                            <TrendingUp className="w-5 h-5 text-primary" /> User Acquisition
+                                        </h3>
+                                        <div className="h-[350px] w-full">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <AreaChart data={data.growthData}>
+                                                    <defs>
+                                                        <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                                                            <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                                                            <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                                                        </linearGradient>
+                                                    </defs>
+                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                                                    <XAxis 
+                                                        dataKey="date" 
+                                                        axisLine={false}
+                                                        tickLine={false}
+                                                        tick={{ fontSize: 10, fontWeight: 700 }}
+                                                        dy={10}
+                                                        tickFormatter={(str) => format(new Date(str), "MMM d")}
+                                                    />
+                                                    <YAxis 
+                                                        axisLine={false}
+                                                        tickLine={false}
+                                                        tick={{ fontSize: 10, fontWeight: 700 }}
+                                                    />
+                                                    <Tooltip 
+                                                        contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                                                    />
+                                                    <Area 
+                                                        type="monotone" 
+                                                        dataKey="count" 
+                                                        stroke="hsl(var(--primary))" 
+                                                        strokeWidth={4}
+                                                        fillOpacity={1} 
+                                                        fill="url(#colorCount)" 
+                                                    />
+                                                </AreaChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    </div>
+
+                                    {/* Content Distribution Pie */}
+                                    <div className="bg-card border rounded-[2rem] p-8 shadow-sm flex flex-col">
+                                        <h3 className="text-xl font-black mb-8 flex items-center gap-2">
+                                            <Layers className="w-5 h-5 text-primary" /> Platform Content
+                                        </h3>
+                                        <div className="flex-1 flex flex-col justify-center">
+                                            <div className="h-[250px] w-full">
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <PieChart>
+                                                        <Pie
+                                                            data={data.contentStats}
+                                                            innerRadius={60}
+                                                            outerRadius={80}
+                                                            paddingAngle={8}
+                                                            dataKey="value"
+                                                        >
+                                                            {data.contentStats.map((entry: any, index: number) => (
+                                                                <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                                                            ))}
+                                                        </Pie>
+                                                        <Tooltip 
+                                                             contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                                                        />
+                                                    </PieChart>
+                                                </ResponsiveContainer>
+                                            </div>
+                                            <div className="mt-8 space-y-3">
+                                                {data.contentStats.map((stat: any, index: number) => (
+                                                    <div key={stat.name} className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }} />
+                                                            <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{stat.name}</span>
+                                                        </div>
+                                                        <span className="text-sm font-black">{stat.value}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                                     <div className="lg:col-span-2 bg-card border rounded-3xl shadow-sm overflow-hidden">
                                         <div className="p-6 border-b flex items-center justify-between bg-muted/10">
                                             <h3 className="font-bold flex items-center gap-2"><UserPlus className="w-5 h-5 text-primary" /> Newest Members</h3>
@@ -464,14 +584,20 @@ export default function AdminDashboard() {
                                     </div>
                                     
                                     <div className="bg-primary rounded-3xl p-8 text-primary-foreground flex flex-col justify-between shadow-2xl shadow-primary/30 relative overflow-hidden">
-                                        <div className="absolute top-0 right-0 p-4 opacity-10"><TrendingUp className="w-40 h-40" /></div>
+                                        <div className="absolute top-0 right-0 p-4 opacity-10"><Activity className="w-40 h-40" /></div>
                                         <div className="relative z-10">
-                                            <h3 className="text-2xl font-black leading-tight">Growth<br/>Momentum</h3>
-                                            <p className="text-primary-foreground/80 mt-2 text-sm">Application engagement is up by 12% this week.</p>
+                                            <h3 className="text-2xl font-black leading-tight">System<br/>Health</h3>
+                                            <p className="text-primary-foreground/80 mt-2 text-sm">All services are currently operational and performing optimally.</p>
                                         </div>
-                                        <Link href="/dashboard" className="mt-8">
-                                            <Button variant="secondary" className="w-full rounded-2xl font-bold py-6">Check Full Reports</Button>
-                                        </Link>
+                                        <div className="mt-8 space-y-4">
+                                            <div className="flex items-center justify-between text-xs font-bold">
+                                                <span>Server Load</span>
+                                                <span>12%</span>
+                                            </div>
+                                            <div className="w-full h-1.5 bg-white/20 rounded-full overflow-hidden">
+                                                <div className="w-[12%] h-full bg-white" />
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -564,6 +690,10 @@ export default function AdminDashboard() {
                                                                         </DropdownMenuItem>
                                                                         <DropdownMenuItem onClick={() => handleUpdateRole(u.id, "user")} className="gap-3 py-3 rounded-xl cursor-pointer">
                                                                             <Users className="w-4 h-4" /> Set Regular
+                                                                        </DropdownMenuItem>
+                                                                        <div className="h-px bg-border my-2" />
+                                                                        <DropdownMenuItem onClick={() => handleAdjustXP(u.id, u.fullName || u.username)} className="gap-3 py-3 rounded-xl cursor-pointer text-primary font-bold">
+                                                                            <Zap className="w-4 h-4" /> Award Bonus XP
                                                                         </DropdownMenuItem>
                                                                         <div className="h-px bg-border my-2" />
                                                                         <DropdownMenuItem onClick={() => handleDeleteUser(u.id, u.fullName || u.username)} className="gap-3 py-3 rounded-xl cursor-pointer text-destructive focus:text-destructive font-bold">

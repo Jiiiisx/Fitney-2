@@ -65,7 +65,25 @@ const Header = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notificationSound, setNotificationSound] = useState("default");
+  const [hasInteracted, setHasInteracted] = useState(false);
   const lastNotifId = useRef<number | null>(null);
+
+  // Track first user interaction to allow audio playback
+  useEffect(() => {
+    const handleFirstInteraction = () => {
+      setHasInteracted(true);
+      window.removeEventListener('click', handleFirstInteraction);
+      window.removeEventListener('keydown', handleFirstInteraction);
+    };
+
+    window.addEventListener('click', handleFirstInteraction);
+    window.addEventListener('keydown', handleFirstInteraction);
+
+    return () => {
+      window.removeEventListener('click', handleFirstInteraction);
+      window.removeEventListener('keydown', handleFirstInteraction);
+    };
+  }, []);
 
   const fetchUser = useCallback(async () => {
     try {
@@ -85,10 +103,14 @@ const Header = () => {
   }, []);
 
   const playNotificationSound = useCallback((soundName: string) => {
-    if (soundName === 'mute') return;
+    if (soundName === 'mute' || !hasInteracted) return;
+    
     const audio = new Audio(`/sounds/${soundName}.wav`);
-    audio.play().catch(err => console.error("Error playing sound:", err));
-  }, []);
+    audio.play().catch(err => {
+      // Quietly log or ignore autoplay block
+      console.log("Autoplay blocked or audio failed.");
+    });
+  }, [hasInteracted]);
 
   // Fetch gamification stats
   const fetchLevel = useCallback(async () => {

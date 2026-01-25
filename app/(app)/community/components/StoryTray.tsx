@@ -1,22 +1,13 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Plus, User, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useCurrentUser } from "../hooks/useCurrentUser";
-import { useStories, uploadImage, createStory } from "../hooks/useCommunity";
+import { useStories, uploadImage, createStory, markStoryAsViewedAction } from "../hooks/useCommunity";
+import { mutate } from "swr";
 import toast from "react-hot-toast";
 
-interface Story {
-    id: number;
-    userId: string;
-    mediaUrl: string;
-    createdAt: string;
-    user: {
-        username: string;
-        fullName: string;
-        imageUrl: string;
-    };
-}
+const STORY_DURATION = 5000; // 5 seconds per story
 
 export default function StoryTray() {
     const { user } = useCurrentUser();
@@ -24,6 +15,7 @@ export default function StoryTray() {
     const [isUploading, setIsUploading] = useState(false);
     const [viewingUser, setViewingUser] = useState<string | null>(null);
     const [storyIndex, setStoryIndex] = useState(0);
+    const [progress, setProgress] = useState(0);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Group stories by user
@@ -36,6 +28,72 @@ export default function StoryTray() {
     }, {});
 
     const userIds = Object.keys(groupedStories);
+    const currentStories = viewingUser ? groupedStories[viewingUser] : [];
+    const currentStory = currentStories[storyIndex];
+
+    const closeStory = () => {
+        setViewingUser(null);
+        setStoryIndex(0);
+        mutate("/api/community/stories"); // Final sync on close
+    };
+
+    const handleNext = (e?: React.MouseEvent) => {
+        e?.stopPropagation();
+        if (storyIndex < currentStories.length - 1) {
+            setStoryIndex(prev => prev + 1);
+        } else {
+            const currentUserIdx = userIds.indexOf(viewingUser!);
+            if (currentUserIdx < userIds.length - 1) {
+                setViewingUser(userIds[currentUserIdx + 1]);
+                setStoryIndex(0);
+            } else {
+                closeStory();
+            }
+        }
+    };
+
+    const handlePrev = (e?: React.MouseEvent) => {
+        e?.stopPropagation();
+        if (storyIndex > 0) {
+            setStoryIndex(prev => prev - 1);
+        } else {
+            const currentUserIdx = userIds.indexOf(viewingUser!);
+            if (currentUserIdx > 0) {
+                const prevUserId = userIds[currentUserIdx - 1];
+                setViewingUser(prevUserId);
+                setStoryIndex(groupedStories[prevUserId].length - 1);
+            }
+        }
+    };
+
+    // Auto-advance logic
+    useEffect(() => {
+        let timer: NodeJS.Timeout;
+        let progressInterval: NodeJS.Timeout;
+
+        if (viewingUser && currentStory) {
+            setProgress(0);
+            markStoryAsViewedAction(currentStory.id);
+            
+            // Progress bar interval (smooth update)
+            const startTime = Date.now();
+            progressInterval = setInterval(() => {
+                const elapsed = Date.now() - startTime;
+                const newProgress = (elapsed / STORY_DURATION) * 100;
+                setProgress(Math.min(newProgress, 100));
+            }, 50);
+
+            // Advance story timer
+            timer = setTimeout(() => {
+                handleNext();
+            }, STORY_DURATION);
+        }
+
+        return () => {
+            clearTimeout(timer);
+            clearInterval(progressInterval);
+        };
+    }, [viewingUser, storyIndex]);
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -62,14 +120,6 @@ export default function StoryTray() {
         setViewingUser(userId);
         setStoryIndex(0);
     };
-
-    const closeStory = () => {
-        setViewingUser(null);
-        setStoryIndex(0);
-    };
-
-    const currentStories = viewingUser ? groupedStories[viewingUser] : [];
-    const currentStory = currentStories[storyIndex];
 
     return (
         <div className="bg-card p-4 rounded-xl border border-border shadow-sm mb-6 overflow-x-auto custom-scrollbar">
@@ -107,7 +157,8 @@ export default function StoryTray() {
                 {userIds.map((userId) => {
                     const userStories = groupedStories[userId];
                     const storyUser = userStories[0].user;
-                    const isMyStory = user?.id === userId; // Assuming useCurrentUser returns `id`
+                    const isMyStory = user?.id === userId;
+                    const allViewed = userStories.every((s: any) => s.isViewed);
 
                     return (
                         <div
@@ -115,7 +166,7 @@ export default function StoryTray() {
                             className="flex flex-col items-center flex-shrink-0 cursor-pointer group"
                             onClick={() => handleViewStory(userId)}
                         >
-                            <div className="w-16 h-16 rounded-full p-[2px] mb-1 bg-gradient-to-tr from-yellow-400 to-red-500">
+                            <div className={`w-16 h-16 rounded-full p-[2px] mb-1 ${allViewed ? 'bg-muted border border-border' : 'bg-gradient-to-tr from-yellow-400 to-red-500'}`}>
                                 <div className="w-full h-full rounded-full border-2 border-card bg-muted flex items-center justify-center overflow-hidden">
                                     {storyUser.imageUrl ? (
                                         <img src={storyUser.imageUrl} alt={storyUser.username} className="w-full h-full object-cover" />
@@ -137,32 +188,49 @@ export default function StoryTray() {
                 <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
                     <button
                         onClick={closeStory}
-                        className="absolute top-4 right-4 text-white hover:text-gray-300 p-2"
+                        className="absolute top-6 right-6 text-white hover:text-gray-300 p-2 z-50 transition-colors"
                     >
-                        <X className="w-8 h-8" />
+                        <X className="w-10 h-10" />
+                    </button>
+
+                    {/* External Navigation Arrows */}
+                    <button 
+                        onClick={handlePrev}
+                        className="absolute left-8 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full hidden md:flex items-center justify-center text-white transition-all z-50"
+                    >
+                        <ChevronLeft className="w-8 h-8" />
+                    </button>
+
+                    <button 
+                        onClick={handleNext}
+                        className="absolute right-8 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full hidden md:flex items-center justify-center text-white transition-all z-50"
+                    >
+                        <ChevronRight className="w-8 h-8" />
                     </button>
 
                     <div className="max-w-md w-full relative">
                         {/* Progress Bar */}
-                        <div className="absolute top-2 left-2 right-2 flex gap-1">
+                        <div className="absolute top-4 left-4 right-4 flex gap-1.5 z-30">
                             {currentStories.map((_: any, idx: number) => (
-                                <div key={idx} className={`h-1 flex-1 rounded-full ${idx <= storyIndex ? 'bg-white' : 'bg-white/30'}`} />
+                                <div key={idx} className="h-1 flex-1 rounded-full bg-white/20 overflow-hidden">
+                                    <div 
+                                        className="h-full bg-white transition-all duration-50"
+                                        style={{ 
+                                            width: idx < storyIndex ? '100%' : idx === storyIndex ? `${progress}%` : '0%' 
+                                        }}
+                                    />
+                                </div>
                             ))}
                         </div>
 
-                        {/* Navigation Areas */}
-                        <div className="absolute inset-y-0 left-0 w-1/3" onClick={() => {
-                            if (storyIndex > 0) setStoryIndex(prev => prev - 1);
-                        }}></div>
-                        <div className="absolute inset-y-0 right-0 w-1/3" onClick={() => {
-                            if (storyIndex < currentStories.length - 1) setStoryIndex(prev => prev + 1);
-                            else closeStory();
-                        }}></div>
+                        {/* Internal Invisible Navigation Areas (for touch/feel) */}
+                        <div className="absolute inset-y-0 left-0 w-1/2 z-20 cursor-pointer" onClick={handlePrev}></div>
+                        <div className="absolute inset-y-0 right-0 w-1/2 z-20 cursor-pointer" onClick={handleNext}></div>
 
                         <img
                             src={currentStory.mediaUrl}
                             alt="Story"
-                            className="w-full rounded-lg max-h-[80vh] object-contain"
+                            className="w-full rounded-2xl max-h-[85vh] shadow-2xl object-contain bg-black"
                         />
 
                         <div className="absolute bottom-4 left-4 flex items-center gap-2">

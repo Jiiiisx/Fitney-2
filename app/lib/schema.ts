@@ -216,6 +216,14 @@ export const stories = pgTable('stories', {
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
 });
 
+export const storyViews = pgTable('story_views', {
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  storyId: integer('story_id').notNull().references(() => stories.id, { onDelete: 'cascade' }),
+  viewedAt: timestamp('viewed_at', { withTimezone: true }).defaultNow(),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.userId, table.storyId] }),
+}));
+
 export const savedPosts = pgTable('saved_posts', {
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   postId: integer('post_id').notNull().references(() => posts.id, { onDelete: 'cascade' }),
@@ -482,6 +490,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   sentMessages: many(directMessages, { relationName: 'sentMessages' }),
   receivedMessages: many(directMessages, { relationName: 'receivedMessages' }),
   stories: many(stories),
+  storyViews: many(storyViews),
   savedPosts: many(savedPosts),
   hiddenGroupMessages: many(hiddenGroupMessages),
   hiddenDirectMessages: many(hiddenDirectMessages),
@@ -607,8 +616,14 @@ export const userGroupsRelations = relations(userGroups, ({ one }) => ({
   group: one(groups, { fields: [userGroups.groupId], references: [groups.id] }),
 }));
 
-export const storiesRelations = relations(stories, ({ one }) => ({
+export const storiesRelations = relations(stories, ({ one, many }) => ({
   user: one(users, { fields: [stories.userId], references: [users.id] }),
+  views: many(storyViews),
+}));
+
+export const storyViewsRelations = relations(storyViews, ({ one }) => ({
+  story: one(stories, { fields: [storyViews.storyId], references: [stories.id] }),
+  user: one(users, { fields: [storyViews.userId], references: [users.id] }),
 }));
 
 export const savedPostsRelations = relations(savedPosts, ({ one }) => ({

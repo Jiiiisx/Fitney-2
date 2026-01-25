@@ -1,49 +1,56 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/app/lib/db";
 import { users, posts, groups, workoutLogs } from "@/app/lib/schema";
+import { count, sql, desc, gte } from "drizzle-orm";
 import { verifyAdmin } from "@/app/lib/auth";
-import { count, sql } from "drizzle-orm";
 
 export async function GET(req: NextRequest) {
+  const auth = await verifyAdmin(req);
+  if (auth.error) return auth.error;
+
   try {
-    // 1. Keamanan: Cek apakah benar-benar admin
-    const auth = await verifyAdmin(req);
-    if (auth.error) return auth.error;
+    // 1. Basic Stats
+    const [userCount] = await db.select({ value: count() }).from(users);
+    const [postCount] = await db.select({ value: count() }).from(posts);
+    const [groupCount] = await db.select({ value: count() }).from(groups);
+    const [workoutCount] = await db.select({ value: count() }).from(workoutLogs);
 
-    // 2. Ambil data statistik secara paralel
-    const [userCount, postsCount, groupsCount, logsCount] = await Promise.all([
-      db.select({ value: count() }).from(users),
-      db.select({ value: count() }).from(posts),
-      db.select({ value: count() }).from(groups),
-      db.select({ value: count() }).from(workoutLogs),
-    ]);
+    // 2. Recent Users
+    const recentUsers = await db.select().from(users).orderBy(desc(users.createdAt)).limit(5);
 
-    // 3. Ambil data user terbaru (misal 5 orang)
-    const recentUsers = await db.query.users.findMany({
-        orderBy: (users, { desc }) => [desc(users.createdAt)],
-        limit: 5,
-        columns: {
-            id: true,
-            username: true,
-            email: true,
-            fullName: true,
-            role: true,
-            createdAt: true,
-        }
-    });
+    // 3. Growth Data (Last 7 Days)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const growthData = await db.select({
+      date: sql<string>`TO_CHAR(${users.createdAt}, 'YYYY-MM-DD')`,
+      count: count(),
+    })
+    .from(users)
+    .where(gte(users.createdAt, sevenDaysAgo))
+    .groupBy(sql`TO_CHAR(${users.createdAt}, 'YYYY-MM-DD')`)
+    .orderBy(sql`TO_CHAR(${users.createdAt}, 'YYYY-MM-DD')`);
+
+    // 4. Content Distribution (Simplified)
+    const contentStats = [
+      { name: 'Posts', value: postCount.value },
+      { name: 'Groups', value: groupCount.value },
+      { name: 'Workouts', value: workoutCount.value },
+    ];
 
     return NextResponse.json({
       stats: {
-        totalUsers: userCount[0].value,
-        totalPosts: postsCount[0].value,
-        totalGroups: groupsCount[0].value,
-        totalWorkouts: logsCount[0].value,
+        totalUsers: userCount.value,
+        totalPosts: postCount.value,
+        totalGroups: groupCount.value,
+        totalWorkouts: workoutCount.value,
       },
-      recentUsers
+      recentUsers,
+      growthData,
+      contentStats
     });
-
   } catch (error) {
     console.error("ADMIN_STATS_ERROR", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 });
   }
 }

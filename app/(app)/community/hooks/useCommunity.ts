@@ -337,6 +337,23 @@ export async function createStory(mediaUrl: string) {
   }
 }
 
+export async function markStoryAsViewedAction(storyId: number) {
+  try {
+    const res = await fetch("/api/community/stories/view", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ storyId }),
+    });
+
+    if (res.ok) {
+      // Re-fetch stories to update ring colors
+      mutate("/api/community/stories");
+    }
+  } catch (error) {
+    console.error("Failed to mark story as viewed", error);
+  }
+}
+
 export async function createPost(content: string, images: string[] = []) {
   try {
     const res = await fetch(`/api/community/posts`, {
