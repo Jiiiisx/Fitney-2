@@ -16,7 +16,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     pathname === "/history" ||
     pathname === "/dashboard" ||
     pathname === "/settings" ||
-    pathname === "/community";
+    pathname === "/community" ||
+    pathname === "/ai-coach";
 
   useEffect(() => {
     const syncHistory = async () => {
