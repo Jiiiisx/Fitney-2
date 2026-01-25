@@ -181,6 +181,7 @@ const Header = () => {
 
   const navItems = [
     { href: "/dashboard", label: "Dashboard" },
+    { href: "/ai-coach", label: "AI Coach" }, // Added this
     { href: "/planner", label: "Planner" },
     { href: "/goals", label: "Goals" },
     { href: "/nutrition", label: "Nutrition" },
