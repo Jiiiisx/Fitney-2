@@ -148,8 +148,8 @@ const StatsSidebar = () => {
         </p>
       </div>
 
-      <div className="w-full">
-        <DynamicQuickActions />
+      <div className="hidden lg:block w-full">
+        <DynamicQuickActions variant="grid" />
       </div>
     </div>
   );

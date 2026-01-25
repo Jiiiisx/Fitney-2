@@ -41,11 +41,12 @@ export const getTrendingHashtags = cache(async () => {
         .select({
             tag: hashtags.tag,
             count: sql<number>`cast(count(${postHashtags.postId}) as int)`,
+            isFeatured: hashtags.isFeatured,
         })
         .from(hashtags)
         .leftJoin(postHashtags, eq(hashtags.id, postHashtags.hashtagId))
         .groupBy(hashtags.id)
-        .orderBy(desc(sql`count(${postHashtags.postId})`))
+        .orderBy(desc(hashtags.isFeatured), desc(sql`count(${postHashtags.postId})`))
         .limit(10);
 
     return trending;

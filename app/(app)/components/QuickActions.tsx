@@ -56,7 +56,11 @@ const ActionButton = ({ action, onClick }: { action: (typeof actions)[0], onClic
   </button>
 );
 
-export default function QuickActions() {
+interface QuickActionsProps {
+  variant?: "grid" | "carousel";
+}
+
+export default function QuickActions({ variant = "grid" }: QuickActionsProps) {
   const [activeModal, setActiveModal] = useState<string | null>(null);
 
   const closeModal = () => setActiveModal(null);
@@ -81,13 +85,20 @@ export default function QuickActions() {
 
   return (
     <div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-3 sm:gap-4">
         {actions.map((action) => (
-          <ActionButton 
-            key={action.label} 
-            action={action}
+          <button 
+            key={action.id}
             onClick={() => setActiveModal(action.id)}
-          />
+            className="flex flex-col items-center justify-center space-y-2 p-3 sm:p-4 bg-card border border-border/60 shadow-sm hover:shadow-md rounded-2xl transition-all w-full active:scale-95"
+          >
+            <div className={`p-2.5 sm:p-3 rounded-full ${action.color}`}>
+              <action.icon className={`w-5 h-5 sm:w-6 sm:h-6 ${action.textColor}`} />
+            </div>
+            <span className="text-[10px] sm:text-xs font-bold text-muted-foreground text-center leading-tight">
+              {action.label}
+            </span>
+          </button>
         ))}
       </div>
 

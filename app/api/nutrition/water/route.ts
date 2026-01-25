@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   if (auth.error) return auth.error;
 
   try {
-    const { amount } = await req.json();
+    const { amountMl } = await req.json();
     const today = format(new Date(), 'yyyy-MM-dd');
 
     const existing = await db.query.waterLogs.findFirst({
@@ -31,19 +31,21 @@ export async function POST(req: NextRequest) {
     });
 
     if (existing) {
+      // Frontend sends total accumulated amount, so we just set it (not add)
       await db.update(waterLogs)
-        .set({ amountMl: existing.amountMl + amount })
+        .set({ amountMl: amountMl })
         .where(eq(waterLogs.id, existing.id));
     } else {
       await db.insert(waterLogs).values({
         userId: auth.user.userId,
         date: today,
-        amountMl: amount
+        amountMl: amountMl
       });
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    console.error("WATER_LOG_ERROR", error);
     return NextResponse.json({ error: "Failed to log water" }, { status: 500 });
   }
 }

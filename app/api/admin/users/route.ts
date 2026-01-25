@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/app/lib/db";
 import { users } from "@/app/lib/schema";
 import { verifyAdmin } from "@/app/lib/auth";
-import { eq, ilike, or, desc } from "drizzle-orm";
+import { eq, ilike, or, desc, sql } from "drizzle-orm";
 
 // GET: List or Search Users
 export async function GET(req: NextRequest) {
@@ -12,6 +12,8 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const query = searchParams.get("q");
+    const limit = parseInt(searchParams.get("limit") || "50");
+    const offset = parseInt(searchParams.get("offset") || "0");
 
     let whereCondition = undefined;
     if (query) {
@@ -36,10 +38,13 @@ export async function GET(req: NextRequest) {
         createdAt: true,
         imageUrl: true,
       },
-      limit: 50,
+      limit: limit,
+      offset: offset,
     });
 
-    return NextResponse.json(allUsers);
+    const totalUsers = await db.select({ count: sql<number>`count(*)` }).from(users);
+
+    return NextResponse.json({ data: allUsers, total: totalUsers[0].count });
   } catch (error) {
     console.error("ADMIN_GET_USERS_ERROR", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

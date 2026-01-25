@@ -31,7 +31,12 @@ import {
     AlertTriangle,
     CheckCircle2,
     Megaphone,
-    Menu
+    Menu,
+    Edit3,
+    ChevronLeft,
+    ChevronRight,
+    Tag,
+    Star
 } from "lucide-react";
 import Link from "next/link";
 import { fetchWithAuth } from "@/app/lib/fetch-helper";
@@ -44,6 +49,13 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { 
+    Dialog, 
+    DialogContent, 
+    DialogHeader, 
+    DialogTitle, 
+    DialogFooter 
+} from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
     LineChart, 
@@ -77,14 +89,27 @@ const StatCard = ({ title, value, icon: Icon, color }: any) => (
 );
 
 export default function AdminDashboard() {
-    const [activeTab, setActiveTab] = useState<"overview" | "users" | "community" | "exercises" | "nutrition">("overview");
+    const [activeTab, setActiveTab] = useState<"overview" | "users" | "community" | "exercises" | "nutrition" | "tags">("overview");
     const [data, setData] = useState<any>(null);
     const [userList, setUserList] = useState<any[]>([]);
+    const [totalUsers, setTotalUsers] = useState(0);
+    const [userPage, setUserPage] = useState(1);
+
+    const [tagList, setTagList] = useState<any[]>([]);
+    const [totalTags, setTotalTags] = useState(0);
+    const [tagPage, setTagPage] = useState(1);
+    
+    const [exerciseList, setExerciseList] = useState<any[]>([]);
+    const [totalExercises, setTotalExercises] = useState(0);
+    const [exercisePage, setExercisePage] = useState(1);
+
+    const [foodList, setFoodList] = useState<any[]>([]);
+    const [totalFoods, setTotalFoods] = useState(0);
+    const [foodPage, setFoodPage] = useState(1);
+
     const [postList, setPostList] = useState<any[]>([]);
     const [groupList, setGroupList] = useState<any[]>([]);
     const [reportList, setReportList] = useState<any[]>([]);
-    const [exerciseList, setExerciseList] = useState<any[]>([]);
-    const [foodList, setFoodList] = useState<any[]>([]);
     const [announcements, setAnnouncements] = useState<any[]>([]);
     const [categories, setCategories] = useState<any[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
@@ -95,9 +120,12 @@ export default function AdminDashboard() {
     const [error, setError] = useState<string | null>(null);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-    // Form states
-    const [newExercise, setNewExercise] = useState({ name: "", description: "", categoryId: "", imageUrl: "" });
-    const [newFood, setNewFood] = useState({ name: "", calories: "", protein: "", carbs: "", fat: "" });
+    // Editing states
+    const [editingExercise, setEditingExercise] = useState<any>(null);
+    const [editingFood, setEditingFood] = useState<any>(null);
+
+    // Items per page
+    const LIMIT = 15;
 
     // Fetch Overview Stats
     const fetchStats = async () => {
@@ -115,11 +143,13 @@ export default function AdminDashboard() {
     };
 
     // Fetch Users
-    const fetchUsers = async (query = "") => {
+    const fetchUsers = async (query = "", page = 1) => {
         setContentLoading(true);
         try {
-            const result = await fetchWithAuth(`/api/admin/users?q=${query}`);
-            setUserList(result);
+            const offset = (page - 1) * LIMIT;
+            const result = await fetchWithAuth(`/api/admin/users?q=${query}&limit=${LIMIT}&offset=${offset}`);
+            setUserList(result.data);
+            setTotalUsers(result.total);
         } catch (err) {
             toast.error("Failed to load users");
         } finally {
@@ -131,7 +161,6 @@ export default function AdminDashboard() {
     const fetchCommunityContent = async () => {
         setContentLoading(true);
         try {
-            // Menggunakan Promise.allSettled agar jika satu gagal, yang lain tetap jalan
             const results = await Promise.allSettled([
                 fetchWithAuth("/api/admin/community/posts"),
                 fetchWithAuth("/api/admin/community/groups"),
@@ -139,13 +168,8 @@ export default function AdminDashboard() {
             ]);
             
             if (results[0].status === 'fulfilled') setPostList(results[0].value);
-            else console.error("Posts fetch failed:", results[0].reason);
-
             if (results[1].status === 'fulfilled') setGroupList(results[1].value);
-            else console.error("Groups fetch failed:", results[1].reason);
-
             if (results[2].status === 'fulfilled') setReportList(results[2].value);
-            else console.error("Reports fetch failed:", results[2].reason);
 
         } catch (err) {
             toast.error("Failed to load community content");
@@ -168,14 +192,16 @@ export default function AdminDashboard() {
     };
 
     // Fetch Exercises
-    const fetchExercises = async (query = "") => {
+    const fetchExercises = async (query = "", page = 1) => {
         setContentLoading(true);
         try {
+            const offset = (page - 1) * LIMIT;
             const [exResult, catResult] = await Promise.all([
-                fetchWithAuth(`/api/admin/exercises?q=${query}`),
+                fetchWithAuth(`/api/admin/exercises?q=${query}&limit=${LIMIT}&offset=${offset}`),
                 fetchWithAuth("/api/categories")
             ]);
-            setExerciseList(exResult);
+            setExerciseList(exResult.data);
+            setTotalExercises(exResult.total);
             setCategories(catResult);
         } catch (err) {
             toast.error("Failed to load exercises");
@@ -185,17 +211,61 @@ export default function AdminDashboard() {
     };
 
     // Fetch Foods
-    const fetchFoods = async (query = "") => {
+    const fetchFoods = async (query = "", page = 1) => {
         setContentLoading(true);
         try {
-            const result = await fetchWithAuth(`/api/admin/foods?q=${query}`);
-            setFoodList(result);
+            const offset = (page - 1) * LIMIT;
+            const result = await fetchWithAuth(`/api/admin/foods?q=${query}&limit=${LIMIT}&offset=${offset}`);
+            setFoodList(result.data);
+            setTotalFoods(result.total);
         } catch (err) {
             toast.error("Failed to load foods");
         } finally {
             setContentLoading(false);
         }
     };
+
+    // Fetch Tags
+    const fetchTags = async (query = "", page = 1) => {
+        setContentLoading(true);
+        try {
+            const offset = (page - 1) * LIMIT;
+            const result = await fetchWithAuth(`/api/admin/tags?q=${query}&limit=${LIMIT}&offset=${offset}`);
+            setTagList(result.data);
+            setTotalTags(result.total);
+        } catch (err) {
+            toast.error("Failed to load tags");
+        } finally {
+            setContentLoading(false);
+        }
+    };
+
+    const handleToggleFeaturedTag = async (id: number, currentStatus: boolean) => {
+        try {
+            await fetchWithAuth("/api/admin/tags", {
+                method: "PATCH",
+                body: JSON.stringify({ id, isFeatured: !currentStatus })
+            });
+            toast.success(currentStatus ? "Tag unfeatured" : "Tag featured!");
+            fetchTags(searchQuery, tagPage);
+        } catch (err) {
+            toast.error("Action failed");
+        }
+    };
+
+    const handleDeleteTag = async (id: number) => {
+        if(!confirm("Delete this tag?")) return;
+        try {
+            await fetchWithAuth(`/api/admin/tags?id=${id}`, { method: "DELETE" });
+            toast.success("Tag deleted");
+            fetchTags(searchQuery, tagPage);
+        } catch (err) {
+            toast.error("Delete failed");
+        }
+    };
+
+    const [newExercise, setNewExercise] = useState({ name: "", description: "", categoryId: "", imageUrl: "" });
+    const [newFood, setNewFood] = useState({ name: "", calories: "", protein: "", carbs: "", fat: "" });
 
     // Global Search Logic
     useEffect(() => {
@@ -216,15 +286,47 @@ export default function AdminDashboard() {
 
     useEffect(() => {
         if (activeTab === "users") {
-            fetchUsers(searchQuery);
+            fetchUsers(searchQuery, userPage);
         } else if (activeTab === "community") {
             fetchCommunityContent();
         } else if (activeTab === "exercises") {
-            fetchExercises(searchQuery);
+            fetchExercises(searchQuery, exercisePage);
         } else if (activeTab === "nutrition") {
-            fetchFoods(searchQuery);
+            fetchFoods(searchQuery, foodPage);
+        } else if (activeTab === "tags") {
+            fetchTags(searchQuery, tagPage);
         }
-    }, [activeTab, searchQuery]);
+    }, [activeTab, searchQuery, userPage, exercisePage, foodPage, tagPage]);
+
+    const handleUpdateExercise = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            await fetchWithAuth("/api/admin/exercises", {
+                method: "PATCH",
+                body: JSON.stringify(editingExercise)
+            });
+            toast.success("Exercise updated");
+            setEditingExercise(null);
+            fetchExercises(searchQuery, exercisePage);
+        } catch (err) {
+            toast.error("Failed to update exercise");
+        }
+    };
+
+    const handleUpdateFood = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            await fetchWithAuth("/api/admin/foods", {
+                method: "PATCH",
+                body: JSON.stringify(editingFood)
+            });
+            toast.success("Food item updated");
+            setEditingFood(null);
+            fetchFoods(searchQuery, foodPage);
+        } catch (err) {
+            toast.error("Failed to update food");
+        }
+    };
 
     const handleUpdateRole = async (userId: string, newRole: string) => {
         try {
@@ -404,6 +506,9 @@ export default function AdminDashboard() {
                             <button onClick={() => { setActiveTab("nutrition"); setMobileMenuOpen(false); }} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-semibold transition-all ${activeTab === 'nutrition' ? 'bg-primary text-primary-foreground shadow-xl shadow-primary/20' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
                                 <Utensils className="w-5 h-5" /> Nutrition
                             </button>
+                            <button onClick={() => { setActiveTab("tags"); setMobileMenuOpen(false); }} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-semibold transition-all ${activeTab === 'tags' ? 'bg-primary text-primary-foreground shadow-xl shadow-primary/20' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+                                <Tag className="w-5 h-5" /> Popular Tags
+                            </button>
                         </nav>
                         
                         <div className="p-6 border-t border-border/50">
@@ -444,6 +549,9 @@ export default function AdminDashboard() {
                     </button>
                     <button onClick={() => { setActiveTab("nutrition"); setSearchQuery(""); }} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-semibold transition-all ${activeTab === 'nutrition' ? 'bg-primary text-primary-foreground shadow-xl shadow-primary/20 scale-[1.02]' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
                         <Utensils className="w-5 h-5" /> Nutrition
+                    </button>
+                    <button onClick={() => { setActiveTab("tags"); setSearchQuery(""); }} className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-semibold transition-all ${activeTab === 'tags' ? 'bg-primary text-primary-foreground shadow-xl shadow-primary/20 scale-[1.02]' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}>
+                        <Tag className="w-5 h-5" /> Popular Tags
                     </button>
                 </nav>
 
@@ -811,6 +919,44 @@ export default function AdminDashboard() {
                                             </tbody>
                                         </table>
                                     </div>
+
+                                    {/* Pagination Controls */}
+                                    <div className="p-6 border-t border-border/50 bg-muted/5 flex items-center justify-between">
+                                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                                            Showing {((userPage - 1) * LIMIT) + 1} - {Math.min(userPage * LIMIT, totalUsers)} of {totalUsers} users
+                                        </p>
+                                        <div className="flex items-center gap-2">
+                                            <Button 
+                                                variant="outline" 
+                                                size="sm" 
+                                                className="rounded-xl"
+                                                disabled={userPage === 1}
+                                                onClick={() => setUserPage(p => p - 1)}
+                                            >
+                                                <ChevronLeft className="w-4 h-4 mr-1" /> Prev
+                                            </Button>
+                                            <div className="flex items-center gap-1">
+                                                {[...Array(Math.ceil(totalUsers / LIMIT))].map((_, i) => (
+                                                    <button 
+                                                        key={i}
+                                                        onClick={() => setUserPage(i + 1)}
+                                                        className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${userPage === i + 1 ? 'bg-primary text-primary-foreground shadow-lg' : 'hover:bg-muted text-muted-foreground'}`}
+                                                    >
+                                                        {i + 1}
+                                                    </button>
+                                                )).slice(Math.max(0, userPage - 3), Math.min(Math.ceil(totalUsers / LIMIT), userPage + 2))}
+                                            </div>
+                                            <Button 
+                                                variant="outline" 
+                                                size="sm" 
+                                                className="rounded-xl"
+                                                disabled={userPage >= Math.ceil(totalUsers / LIMIT)}
+                                                onClick={() => setUserPage(p => p + 1)}
+                                            >
+                                                Next <ChevronRight className="w-4 h-4 ml-1" />
+                                            </Button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -1092,12 +1238,20 @@ export default function AdminDashboard() {
                                                                     </div>
                                                                 </td>
                                                                 <td className="px-8 py-6 text-right">
-                                                                    <button 
-                                                                        onClick={() => handleDeleteFood(food.id)}
-                                                                        className="p-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-2xl transition-all"
-                                                                    >
-                                                                        <Trash2 className="w-5 h-5" />
-                                                                    </button>
+                                                                    <div className="flex justify-end gap-2">
+                                                                        <button 
+                                                                            onClick={() => setEditingFood(food)}
+                                                                            className="p-3 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-2xl transition-all"
+                                                                        >
+                                                                            <Edit3 className="w-5 h-5" />
+                                                                        </button>
+                                                                        <button 
+                                                                            onClick={() => handleDeleteFood(food.id)}
+                                                                            className="p-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-2xl transition-all"
+                                                                        >
+                                                                            <Trash2 className="w-5 h-5" />
+                                                                        </button>
+                                                                    </div>
                                                                 </td>
                                                             </tr>
                                                         ))
@@ -1106,6 +1260,114 @@ export default function AdminDashboard() {
                                                     )}
                                                 </tbody>
                                             </table>
+                                        </div>
+                                        {/* Pagination */}
+                                        <div className="p-6 border-t border-border/50 bg-muted/5 flex items-center justify-between">
+                                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                                                Page {foodPage} of {Math.ceil(totalFoods / LIMIT) || 1}
+                                            </p>
+                                            <div className="flex items-center gap-2">
+                                                <Button variant="ghost" size="sm" disabled={foodPage === 1} onClick={() => setFoodPage(p => p - 1)}><ChevronLeft className="w-4 h-4" /></Button>
+                                                <Button variant="ghost" size="sm" disabled={foodPage >= Math.ceil(totalFoods / LIMIT)} onClick={() => setFoodPage(p => p + 1)}><ChevronRight className="w-4 h-4" /></Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* VIEW: TAGS MANAGEMENT */}
+                        {activeTab === "tags" && (
+                            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <div className="bg-card border rounded-[2rem] shadow-xl shadow-muted/50 overflow-hidden">
+                                    {/* Table Toolbar */}
+                                    <div className="p-6 border-b border-border/50 bg-muted/5 flex items-center justify-between">
+                                        <div className="relative w-full md:w-96">
+                                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                                            <input 
+                                                type="text" 
+                                                placeholder="Search tags..."
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                                className="w-full pl-12 pr-4 py-2.5 rounded-xl border bg-background focus:ring-4 focus:ring-primary/10 outline-none transition-all text-sm"
+                                            />
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest bg-muted px-3 py-1 rounded-lg">
+                                                {totalTags} Total Tags
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full border-collapse">
+                                            <thead>
+                                                <tr className="bg-muted/50 text-left text-[10px] font-black text-muted-foreground uppercase tracking-[0.15em]">
+                                                    <th className="px-8 py-6">Hashtag</th>
+                                                    <th className="px-8 py-6">Post Volume</th>
+                                                    <th className="px-8 py-6">Status</th>
+                                                    <th className="px-8 py-6 text-right">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-border/50">
+                                                {contentLoading ? (
+                                                    <tr><td colSpan={4} className="py-32 text-center"><Loader2 className="w-12 h-12 animate-spin mx-auto text-primary opacity-50" /></td></tr>
+                                                ) : tagList.length > 0 ? (
+                                                    tagList.map((tag: any) => (
+                                                        <tr key={tag.id} className="hover:bg-muted/20 transition-colors group">
+                                                            <td className="px-8 py-6">
+                                                                <span className="font-black text-foreground">#{tag.tag}</span>
+                                                            </td>
+                                                            <td className="px-8 py-6">
+                                                                <div className="flex items-center gap-2">
+                                                                    <MessageSquare className="w-4 h-4 text-muted-foreground" />
+                                                                    <span className="text-sm font-bold">{tag.postCount}</span>
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-8 py-6">
+                                                                {tag.isFeatured ? (
+                                                                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-yellow-500/10 text-yellow-600 border border-yellow-500/20 text-[10px] font-black uppercase tracking-wider">
+                                                                        <Star className="w-3 h-3 fill-yellow-600" /> Featured
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Standard</span>
+                                                                )}
+                                                            </td>
+                                                            <td className="px-8 py-6 text-right">
+                                                                <div className="flex justify-end gap-2">
+                                                                    <button 
+                                                                        onClick={() => handleToggleFeaturedTag(tag.id, tag.isFeatured)}
+                                                                        className={`p-3 rounded-2xl transition-all ${tag.isFeatured ? 'text-yellow-600 bg-yellow-500/10 hover:bg-yellow-500/20' : 'text-muted-foreground hover:bg-muted'}`}
+                                                                        title={tag.isFeatured ? "Unfeature Tag" : "Feature Tag"}
+                                                                    >
+                                                                        <Star className={`w-5 h-5 ${tag.isFeatured ? 'fill-yellow-600' : ''}`} />
+                                                                    </button>
+                                                                    <button 
+                                                                        onClick={() => handleDeleteTag(tag.id)}
+                                                                        className="p-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-2xl transition-all"
+                                                                        title="Delete Tag"
+                                                                    >
+                                                                        <Trash2 className="w-5 h-5" />
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    ))
+                                                ) : (
+                                                    <tr><td colSpan={4} className="py-32 text-center text-muted-foreground font-medium italic">No tags found.</td></tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    
+                                    {/* Pagination */}
+                                    <div className="p-6 border-t border-border/50 bg-muted/5 flex items-center justify-between">
+                                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                                            Page {tagPage} of {Math.ceil(totalTags / LIMIT) || 1}
+                                        </p>
+                                        <div className="flex items-center gap-2">
+                                            <Button variant="ghost" size="sm" disabled={tagPage === 1} onClick={() => setTagPage(p => p - 1)}><ChevronLeft className="w-4 h-4" /></Button>
+                                            <Button variant="ghost" size="sm" disabled={tagPage >= Math.ceil(totalTags / LIMIT)} onClick={() => setTagPage(p => p + 1)}><ChevronRight className="w-4 h-4" /></Button>
                                         </div>
                                     </div>
                                 </div>
@@ -1288,6 +1550,124 @@ export default function AdminDashboard() {
 
                     </div>
                 </div>
+
+                {/* EDIT EXERCISE DIALOG */}
+                <Dialog open={!!editingExercise} onOpenChange={(open) => !open && setEditingExercise(null)}>
+                    <DialogContent className="sm:max-w-[500px] rounded-[2rem]">
+                        <DialogHeader>
+                            <DialogTitle className="text-xl font-black">Edit Movement</DialogTitle>
+                        </DialogHeader>
+                        {editingExercise && (
+                            <form onSubmit={handleUpdateExercise} className="space-y-4 py-4">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase text-muted-foreground ml-2">Name</label>
+                                    <input 
+                                        className="w-full bg-muted/50 border-none rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/50 transition-all outline-none"
+                                        value={editingExercise.name}
+                                        onChange={e => setEditingExercise({...editingExercise, name: e.target.value})}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase text-muted-foreground ml-2">Category</label>
+                                    <select 
+                                        className="w-full bg-muted/50 border-none rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/50 transition-all outline-none"
+                                        value={editingExercise.categoryId || ""}
+                                        onChange={e => setEditingExercise({...editingExercise, categoryId: e.target.value})}
+                                    >
+                                        <option value="">Select Category</option>
+                                        {categories.map((c: any) => (
+                                            <option key={c.id} value={c.id}>{c.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase text-muted-foreground ml-2">Image URL</label>
+                                    <input 
+                                        className="w-full bg-muted/50 border-none rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/50 transition-all outline-none"
+                                        value={editingExercise.imageUrl || ""}
+                                        onChange={e => setEditingExercise({...editingExercise, imageUrl: e.target.value})}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase text-muted-foreground ml-2">Description</label>
+                                    <textarea 
+                                        rows={3}
+                                        className="w-full bg-muted/50 border-none rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/50 transition-all outline-none resize-none"
+                                        value={editingExercise.description || ""}
+                                        onChange={e => setEditingExercise({...editingExercise, description: e.target.value})}
+                                    />
+                                </div>
+                                <DialogFooter className="pt-4">
+                                    <Button type="button" variant="ghost" onClick={() => setEditingExercise(null)}>Cancel</Button>
+                                    <Button type="submit" className="rounded-xl px-8">Save Changes</Button>
+                                </DialogFooter>
+                            </form>
+                        )}
+                    </DialogContent>
+                </Dialog>
+
+                {/* EDIT FOOD DIALOG */}
+                <Dialog open={!!editingFood} onOpenChange={(open) => !open && setEditingFood(null)}>
+                    <DialogContent className="sm:max-w-[500px] rounded-[2rem]">
+                        <DialogHeader>
+                            <DialogTitle className="text-xl font-black">Edit Nutrition Data</DialogTitle>
+                        </DialogHeader>
+                        {editingFood && (
+                            <form onSubmit={handleUpdateFood} className="space-y-4 py-4">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase text-muted-foreground ml-2">Food Name</label>
+                                    <input 
+                                        className="w-full bg-muted/50 border-none rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/50 transition-all outline-none"
+                                        value={editingFood.name}
+                                        onChange={e => setEditingFood({...editingFood, name: e.target.value})}
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase text-muted-foreground ml-2">Calories</label>
+                                        <input 
+                                            type="number"
+                                            className="w-full bg-muted/50 border-none rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/50 outline-none"
+                                            value={editingFood.caloriesPer100g}
+                                            onChange={e => setEditingFood({...editingFood, calories: e.target.value, caloriesPer100g: e.target.value})}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase text-muted-foreground ml-2">Protein (g)</label>
+                                        <input 
+                                            type="number"
+                                            className="w-full bg-muted/50 border-none rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/50 outline-none"
+                                            value={editingFood.proteinPer100g}
+                                            onChange={e => setEditingFood({...editingFood, protein: e.target.value, proteinPer100g: e.target.value})}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase text-muted-foreground ml-2">Carbs (g)</label>
+                                        <input 
+                                            type="number"
+                                            className="w-full bg-muted/50 border-none rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/50 outline-none"
+                                            value={editingFood.carbsPer100g}
+                                            onChange={e => setEditingFood({...editingFood, carbs: e.target.value, carbsPer100g: e.target.value})}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase text-muted-foreground ml-2">Fat (g)</label>
+                                        <input 
+                                            type="number"
+                                            className="w-full bg-muted/50 border-none rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/50 outline-none"
+                                            value={editingFood.fatPer100g}
+                                            onChange={e => setEditingFood({...editingFood, fat: e.target.value, fatPer100g: e.target.value})}
+                                        />
+                                    </div>
+                                </div>
+                                <DialogFooter className="pt-4">
+                                    <Button type="button" variant="ghost" onClick={() => setEditingFood(null)}>Cancel</Button>
+                                    <Button type="submit" className="rounded-xl px-8">Save Changes</Button>
+                                </DialogFooter>
+                            </form>
+                        )}
+                    </DialogContent>
+                </Dialog>
             </main>
         </div>
     );

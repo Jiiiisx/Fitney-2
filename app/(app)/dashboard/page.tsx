@@ -12,6 +12,7 @@ import ProgressCharts from "../components/ProgressCharts";
 import WorkoutBreakdown from "../components/WorkoutBreakdown";
 import CompleteProfileBanner from "../components/CompleteProfileBanner";
 import DashboardInsight from "../components/DashboardInsight";
+import QuickActions from "../components/QuickActions";
 import { Megaphone, X, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
@@ -91,7 +92,7 @@ export default function DashboardPage() {
     <div className="min-h-screen lg:h-full">
       <div className="flex flex-col lg:grid lg:grid-cols-3 min-h-screen lg:h-full">
         {/* Main Content Area (Scrollable) */}
-        <div className="order-2 lg:order-1 lg:col-span-2 space-y-6 lg:space-y-8 overflow-y-auto p-6 lg:p-8 scrollbar-hide">
+        <div className="order-2 lg:order-1 lg:col-span-2 space-y-6 lg:space-y-8 overflow-y-auto p-6 lg:p-8 pb-[10.5rem] lg:pb-[10.5rem] scrollbar-hide">
           {announcement && (
             <motion.div 
               initial={{ height: 0, opacity: 0 }}
@@ -119,6 +120,10 @@ export default function DashboardPage() {
           <CompleteProfileBanner />
 
           <TodaysPlanBanner stats={safeStats} plan={safeTodaysPlan} isLoading={loading} />
+
+          <div className="lg:hidden">
+            <QuickActions />
+          </div>
 
           <GamificationStreak streak={safeStreak} isLoading={loading} />
 

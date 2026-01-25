@@ -238,6 +238,7 @@ export const savedPosts = pgTable('saved_posts', {
 export const hashtags = pgTable('hashtags', {
   id: serial('id').primaryKey(),
   tag: varchar('tag', { length: 50 }).notNull().unique(), // Simpan tanpa #
+  isFeatured: boolean('is_featured').default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
 
