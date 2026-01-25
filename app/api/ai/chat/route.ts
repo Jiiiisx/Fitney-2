@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/app/lib/db";
-import { users, workoutLogs, foodLogs, foods } from "@/app/lib/schema";
-import { eq, desc, gte, sql, and } from "drizzle-orm";
+import { users, workoutLogs, foodLogs, foods, userProfiles, userGoals } from "@/app/lib/schema";
+import { eq, desc, sql, and } from "drizzle-orm";
 import { verifyAuth } from "@/app/lib/auth";
-import { model } from "@/app/lib/gemini";
+import { safeGenerateContent } from "@/app/lib/gemini";
 import { format } from "date-fns";
 
 export async function POST(req: NextRequest) {
@@ -12,14 +12,23 @@ export async function POST(req: NextRequest) {
     if (auth.error) return auth.error;
     const userId = auth.user.userId;
 
-    const { message } = await req.json();
+    // Expect 'messages' array (history) instead of single 'message'
+    const { message, messages } = await req.json();
+    
+    // Fallback if frontend sends old format
+    const chatHistory = messages || [{ role: 'user', content: message }];
+    const lastUserMessage = chatHistory[chatHistory.length - 1].content;
 
-    // 1. Gather User Context (The "Brain")
+    // 1. Fetch User Context
     const user = await db.query.users.findFirst({ where: eq(users.id, userId) });
+    const profile = await db.query.userProfiles.findFirst({ where: eq(userProfiles.userId, userId) });
+    const goals = await db.select().from(userGoals).where(eq(userGoals.userId, userId));
+
+    // 2. Fetch Recent Activity
     const recentWorkouts = await db.select().from(workoutLogs)
         .where(eq(workoutLogs.userId, userId))
         .orderBy(desc(workoutLogs.date))
-        .limit(5);
+        .limit(3);
     
     const todayStr = format(new Date(), 'yyyy-MM-dd');
     const todayNutrition = await db.select({
@@ -30,26 +39,43 @@ export async function POST(req: NextRequest) {
     .innerJoin(foods, eq(foodLogs.foodId, foods.id))
     .where(and(eq(foodLogs.userId, userId), eq(foodLogs.date, todayStr)));
 
-    const context = `
-      User Name: ${user?.fullName || user?.username}
-      User Level: ${user?.level}
-      Recent Workouts: ${recentWorkouts.map(w => `${w.date.toDateString()}: ${w.name} (${w.durationMin}m)`).join(", ")}
-      Food Eaten Today: ${todayNutrition.map(n => `${n.name} (${Math.round(n.calories)}kcal)`).join(", ")}
+    // 3. Build System Context
+    const systemContext = `
+      You are Fitney AI, an advanced fitness coach.
+      
+      USER PROFILE:
+      - Name: ${user?.fullName || user?.username}
+      - Level: ${user?.level}
+      - Goal: ${profile?.mainGoal || "General Fitness"}
+      - Experience: ${profile?.experienceLevel || "Intermediate"}
+      - Active Targets: ${goals.map(g => g.title).join(", ") || "None"}
+
+      RECENT DATA:
+      - Last Workouts: ${recentWorkouts.map(w => `${w.name} (${w.durationMin}m)`).join(", ")}
+      - Nutrition Today: ${todayNutrition.length > 0 ? todayNutrition.map(n => n.name).join(", ") : "No food logged yet"}
+
+      INSTRUCTIONS:
+      - Be concise (max 3-4 sentences) unless asked for a detailed plan.
+      - Use a motivating, professional, yet friendly tone.
+      - If asked about workouts, refer to their recent history or goals.
+      - Do not hallucinate data. If you don't know something, ask.
     `;
 
-    const systemPrompt = `
-      You are Fitney AI Coach. Use the context above to answer the user's question.
-      Keep it professional, empathetic, and science-based.
-      Maximum 3-4 sentences.
-    `;
+    // 4. Format Chat History for Gemini
+    // Convert: [{role: 'user', content: 'hi'}, {role: 'bot', content: 'hello'}]
+    // To: "User: hi\nAI: hello\n..."
+    const historyText = chatHistory.map((m: any) => 
+        `${m.role === 'user' ? 'User' : 'AI'}: ${m.content}`
+    ).join("\n");
 
-    const result = await model.generateContent(systemPrompt + context + "\nUser Question: " + message);
-    const response = await result.response;
+    const fullPrompt = `${systemContext}\n\nCONVERSATION HISTORY:\n${historyText}\n\nAI Response:`
 
-    return NextResponse.json({ reply: response.text() });
+    const reply = await safeGenerateContent(fullPrompt);
+
+    return NextResponse.json({ reply });
 
   } catch (error) {
     console.error("AI_CHAT_ERROR", error);
-    return NextResponse.json({ error: "Brain offline" }, { status: 500 });
+    return NextResponse.json({ reply: "My neural link is flickering. Please try again in a few seconds!" });
   }
 }

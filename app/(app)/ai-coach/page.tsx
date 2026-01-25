@@ -105,14 +105,17 @@ export default function AICoachHub() {
         if (!text) return;
 
         const newMsg = { role: 'user' as const, content: text };
-        setMessages(prev => [...prev, newMsg]);
+        // Create updated history locally to ensure we send the latest state
+        const updatedHistory = [...messages, newMsg];
+        
+        setMessages(updatedHistory);
         setChatInput("");
         setIsChatting(true);
 
         try {
             const res = await fetch("/api/ai/chat", {
                 method: "POST",
-                body: JSON.stringify({ message: text })
+                body: JSON.stringify({ messages: updatedHistory })
             });
             if (res.ok) {
                 const data = await res.json();
@@ -330,7 +333,7 @@ export default function AICoachHub() {
                                 </div>
                                 {isGenerating ? (
                                     <div className="py-20 text-center animate-pulse"><BrainCircuit className="w-12 h-12 text-primary mx-auto mb-4" />Analyzing Muscle Volume...</div>
-                                ) : auditorData && (
+                                ) : auditorData ? (
                                     <div className="space-y-6">
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                             <Card className="p-6 bg-card border-none shadow-xl text-center">
@@ -352,6 +355,10 @@ export default function AICoachHub() {
                                             <p className="text-lg font-medium opacity-90">{auditorData.suggestion}</p>
                                         </div>
                                     </div>
+                                ) : (
+                                    <div className="py-20 text-center">
+                                        <Button onClick={fetchAuditor} variant="outline" className="rounded-full px-10">Scan Training Volume</Button>
+                                    </div>
                                 )}
                             </motion.div>
                         )}
@@ -364,7 +371,7 @@ export default function AICoachHub() {
                                 </div>
                                 {isGenerating ? (
                                     <div className="py-20 text-center animate-pulse"><Zap className="w-12 h-12 text-primary mx-auto mb-4" />Scanning Recovery Signals...</div>
-                                ) : recoveryData && (
+                                ) : recoveryData ? (
                                     <div className="space-y-6">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div className="relative h-64 bg-card rounded-[2.5rem] flex items-center justify-center shadow-xl overflow-hidden">
@@ -384,6 +391,10 @@ export default function AICoachHub() {
                                                 </div>
                                             </Card>
                                         </div>
+                                    </div>
+                                ) : (
+                                    <div className="py-20 text-center">
+                                        <Button onClick={fetchRecovery} variant="outline" className="rounded-full px-10">Evaluate Body Readiness</Button>
                                     </div>
                                 )}
                             </motion.div>

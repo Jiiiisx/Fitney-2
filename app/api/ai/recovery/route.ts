@@ -4,7 +4,7 @@ import { workoutLogs, sleepLogs } from "@/app/lib/schema";
 import { eq, and, gte } from "drizzle-orm";
 import { verifyAuth } from "@/app/lib/auth";
 import { subDays, format } from "date-fns";
-import { model } from "@/app/lib/gemini";
+import { safeGenerateContent, extractJSON } from "@/app/lib/gemini";
 
 export async function GET(req: NextRequest) {
   try {
@@ -13,36 +13,34 @@ export async function GET(req: NextRequest) {
     const userId = auth.user.userId;
 
     const threeDaysAgo = subDays(new Date(), 3);
-
-    // Fetch Sleep & Workouts
     const workouts = await db.select().from(workoutLogs).where(and(eq(workoutLogs.userId, userId), gte(workoutLogs.date, threeDaysAgo)));
     const sleep = await db.select().from(sleepLogs).where(and(eq(sleepLogs.userId, userId), gte(sleepLogs.date, format(threeDaysAgo, 'yyyy-MM-dd'))));
 
-    const context = `
-      Last 3 days:
-      Workouts: ${workouts.length} sessions.
-      Sleep Logs: ${sleep.length} entries. Average quality: ${sleep.reduce((acc, s) => acc + (s.qualityRating || 0), 0) / (sleep.length || 1)}/5
-    `;
-
     const prompt = `
-      Evaluate the user's recovery status.
+      Evaluate recovery for: ${workouts.length} workouts, ${sleep.length} sleep logs.
+      Avg Sleep Quality: ${sleep.length > 0 ? (sleep.reduce((a, b) => a + (b.qualityRating || 0), 0) / sleep.length).toFixed(1) : 'Unknown'}/5.
+      
       Return ONLY a JSON object:
       {
-        "recoveryScore": number (1-100),
+        "recoveryScore": number,
         "status": "Optimal" | "Recovering" | "Fatigued",
-        "detail": "1-2 sentences about their nervous system and muscle recovery state.",
-        "action": "Next action (e.g. Full Rest, Light Cardio, or Heavy Lift)"
+        "detail": "Description",
+        "action": "Next action"
       }
     `;
 
-    const result = await model.generateContent(context + prompt);
-    const text = (await result.response).text();
-    const jsonMatch = text.match(/\{.*\}/s);
-    if (!jsonMatch) throw new Error("Invalid AI format");
+    const aiText = await safeGenerateContent(prompt);
+    const data = extractJSON(aiText);
 
-    return NextResponse.json(JSON.parse(jsonMatch[0]));
+    if (!data) throw new Error("AI output failed");
+    return NextResponse.json(data);
 
   } catch (error) {
-    return NextResponse.json({ error: "Scan failed" }, { status: 500 });
+    return NextResponse.json({ 
+        recoveryScore: 0, 
+        status: "Unknown", 
+        detail: "Unable to calculate recovery right now due to server load.", 
+        action: "Try again shortly" 
+    });
   }
 }
