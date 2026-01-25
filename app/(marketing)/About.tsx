@@ -35,23 +35,23 @@ export default function About() {
           ></path>
         </svg>
       </div>
-      <div className="relative text-white py-40 mt-20">
-        <div className="container mx-auto px-4 text-center relative">
-          <h2 className="text-5xl font-bold mb-4">
+      <div className="relative text-white py-20 lg:py-40 mt-10 lg:mt-20">
+        <div className="container mx-auto px-6 text-center relative">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black mb-6 leading-tight">
             Your Fitness Journey, Reimagined
           </h2>
-          <p className="text-lg max-w-3xl mx-auto">
+          <p className="text-base sm:text-lg lg:text-xl max-w-3xl mx-auto leading-relaxed opacity-90">
             Fitney is more than just an app it's your{" "}
-            <span className="text-yellow-400 font-semibold">
+            <span className="text-yellow-400 font-bold">
               personal fitness companion
             </span>
             . We believe that a healthy lifestyle should be accessible to
             everyone. Our mission is to{" "}
-            <span className="text-yellow-400 font-semibold">empower</span> you
+            <span className="text-yellow-400 font-bold">empower</span> you
             with the tools and{" "}
-            <span className="text-yellow-400 font-semibold">motivation</span>{" "}
+            <span className="text-yellow-400 font-bold">motivation</span>{" "}
             you need to achieve your{" "}
-            <span className="text-yellow-400 font-semibold">fitness goals</span>
+            <span className="text-yellow-400 font-bold">fitness goals</span>
             , no matter how big or small.
           </p>
         </div>

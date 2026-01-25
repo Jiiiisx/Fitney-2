@@ -53,25 +53,25 @@ export default function Pricing() {
     <section id="pricing" className="relative bg-[#fff9e6] py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
-          <h2 className="text-base font-semibold leading-7 text-yellow-600">
+          <h2 className="text-sm lg:text-base font-black uppercase tracking-[0.2em] text-yellow-600">
             Harga
           </h2>
-          <p className="mt-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+          <p className="mt-4 text-3xl font-black tracking-tight text-gray-900 sm:text-5xl">
             Pilih Paket yang Tepat untuk Anda
           </p>
         </div>
-        <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-gray-600">
+        <p className="mx-auto mt-6 max-w-2xl text-center text-base lg:text-lg leading-8 text-gray-600">
           Mulai perjalanan fitness Anda dengan paket yang dirancang untuk setiap
           level komitmen dan tujuan.
         </p>
-        <div className="isolate mx-auto mt-16 grid max-w-md grid-cols-1 gap-8 lg:mx-0 lg:max-w-none lg:grid-cols-3">
+        <div className="isolate mx-auto mt-12 lg:mt-16 grid max-w-md grid-cols-1 gap-8 lg:mx-0 lg:max-w-none lg:grid-cols-3">
           {plans.map((plan) => (
             <div
               key={plan.name}
-              className={`rounded-3xl p-8 ring-1 xl:p-10 ${
+              className={`rounded-[2.5rem] p-8 ring-1 xl:p-10 transition-all hover:shadow-2xl hover:-translate-y-1 ${
                 plan.mostPopular
-                  ? "ring-2 ring-yellow-500 bg-white"
-                  : "ring-gray-200 bg-white/60"
+                  ? "ring-2 ring-yellow-500 bg-white shadow-xl shadow-yellow-500/10"
+                  : "ring-gray-200 bg-white/60 backdrop-blur-sm"
               } ${plan.mostPopular ? "relative" : ""}`}
             >
               {plan.mostPopular && (

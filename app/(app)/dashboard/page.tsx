@@ -12,7 +12,8 @@ import ProgressCharts from "../components/ProgressCharts";
 import WorkoutBreakdown from "../components/WorkoutBreakdown";
 import CompleteProfileBanner from "../components/CompleteProfileBanner";
 import DashboardInsight from "../components/DashboardInsight";
-import { Megaphone, X } from "lucide-react";
+import { Megaphone, X, Loader2 } from "lucide-react";
+import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 
 // Interface yang lebih fleksibel agar cocok dengan respons API dan props komponen
@@ -60,12 +61,21 @@ export default function DashboardPage() {
       } catch (error) {
         console.error("Failed to fetch dashboard data", error);
       } finally {
-        setLoading(false);
+        setTimeout(() => setLoading(false), 800); // Add a small delay for smoother feel
       }
     };
 
     fetchDashboardData();
   }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-[80vh] flex flex-col items-center justify-center gap-4">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+        <p className="text-muted-foreground font-medium animate-pulse">Preparing your dashboard...</p>
+      </div>
+    );
+  }
 
   // Siapkan data default aman agar tidak error saat null
   const safeStats = data?.today || { duration: 0, calories: 0, workouts: 0 };

@@ -5,7 +5,7 @@ import WorkoutCard, { Workout } from "./WorkoutCard";
 import { addDays, format, parseISO } from 'date-fns';
 import { fetchWithAuth } from '@/app/lib/fetch-helper';
 
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import toast from 'react-hot-toast';
 
@@ -64,7 +64,7 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion, onPlan
        }
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
     } finally {
-      setLoading(false);
+      setTimeout(() => setLoading(false), 600);
     }
   };
 
@@ -135,7 +135,12 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion, onPlan
 
   const renderContent = () => {
     if (loading) {
-      return <div className="text-center p-8 col-span-full">Loading your plan...</div>;
+      return (
+        <div className="col-span-full py-20 flex flex-col items-center justify-center gap-4">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground font-medium animate-pulse">Syncing your plan...</p>
+        </div>
+      );
     }
 
     if (error) {

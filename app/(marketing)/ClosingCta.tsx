@@ -37,8 +37,8 @@ export default function ClosingCta() {
           ></path>
         </svg>
       </div>
-      <div className="mx-auto max-w-7xl py-24 sm:px-6 sm:py-32 lg:px-8">
-        <div className="relative isolate overflow-hidden bg-gray-800 px-6 pt-16 shadow-2xl sm:rounded-3xl sm:px-16 md:pt-24 lg:flex lg:items-center lg:gap-x-20 lg:px-24 lg:pt-0 mt-24 mb-24">
+      <div className="mx-auto max-w-7xl py-12 lg:py-24 sm:px-6 lg:px-8">
+        <div className="relative isolate overflow-hidden bg-gray-800 px-6 pt-16 shadow-2xl sm:rounded-[3rem] sm:px-16 md:pt-24 lg:flex lg:items-center lg:gap-x-20 lg:px-24 lg:pt-0 mt-12 lg:mt-24 mb-12 lg:mb-24">
           <svg
             viewBox="0 0 1024 1024"
             className="absolute left-1/2 top-1/2 -z-10 h-[64rem] w-[64rem] -translate-y-1/2 [mask-image:radial-gradient(closest-side,white,transparent)] sm:left-full sm:-ml-80 lg:left-1/2 lg:ml-0 lg:-translate-x-1/2 lg:translate-y-0"
@@ -59,19 +59,19 @@ export default function ClosingCta() {
             </defs>
           </svg>
           <div className="mx-auto max-w-md text-center lg:mx-0 lg:flex-auto lg:py-32 lg:text-left">
-            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+            <h2 className="text-3xl lg:text-4xl font-black tracking-tight text-white leading-tight">
               Tubuh ideal tak datang dari niat, tapi dari tindakan pertama.
-              <br />
-              <span className="text-yellow-400">Mulai hari ini.</span>
+              <br className="hidden lg:block" />
+              <span className="text-yellow-400"> Mulai hari ini.</span>
             </h2>
-            <p className="mt-6 text-lg leading-8 text-gray-300">
+            <p className="mt-6 text-base lg:text-lg leading-8 text-gray-300">
               Ambil langkah pertama Anda menuju versi diri yang lebih sehat dan
               lebih kuat bersama Fitney.
             </p>
-            <div className="mt-10 flex items-center justify-center gap-x-6 lg:justify-start">
+            <div className="mt-10 flex items-center justify-center lg:justify-start gap-x-6">
               <a
                 href="#"
-                className="rounded-md bg-yellow-400 px-8 py-4 text-base font-semibold text-gray-900 shadow-sm hover:bg-yellow-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                className="rounded-full bg-yellow-400 px-8 py-4 text-base font-black text-gray-900 shadow-xl shadow-yellow-400/20 hover:bg-yellow-300 transition-all hover:scale-105 active:scale-95"
               >
                 Coba Gratis Sekarang
               </a>
@@ -79,7 +79,7 @@ export default function ClosingCta() {
           </div>
           <div className="mt-16 lg:mt-0 lg:w-1/2">
             <Image
-              className="w-full h-auto"
+              className="w-full h-auto drop-shadow-2xl"
               src={ctaImage}
               alt="Fitness illustration"
               width={800}

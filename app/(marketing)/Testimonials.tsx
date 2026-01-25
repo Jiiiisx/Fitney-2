@@ -130,22 +130,22 @@ export default function Testimonials() {
           ></path>
         </svg>
       </div>
-      <div className="container mx-auto px-4 text-center pt-16 mt-24">
-        <h2 className="text-4xl font-bold mb-4">
+      <div className="container mx-auto px-6 text-center pt-16 mt-16 lg:mt-24">
+        <h2 className="text-3xl lg:text-4xl font-black mb-4 tracking-tight">
           Kisah Mereka yang Telah Bertransformasi
         </h2>
-        <p className="text-gray-400 max-w-2xl mx-auto mb-16">
+        <p className="text-gray-400 text-sm lg:text-base max-w-2xl mx-auto mb-12 lg:mb-16">
           Lihat bagaimana Fitney membantu orang-orang seperti Anda mencapai
           tujuan mereka.
         </p>
       </div>
 
-      <div className="relative h-[400px]">
+      <div className="relative min-h-[450px] lg:h-[400px]">
         <div
           ref={trackRef}
           className="flex items-center h-full transition-transform duration-700 ease-in-out"
           style={{
-            transform: `translateX(calc(50% - ${currentIndex * 33.33}% - 16.665%))`,
+            transform: `translateX(calc(50% - ${currentIndex * (typeof window !== 'undefined' && window.innerWidth < 768 ? 100 : 33.33)}% - ${typeof window !== 'undefined' && window.innerWidth < 768 ? 50 : 16.665}%))`,
           }}
         >
           {loopedTestimonials.map((testimonial, index) => {
@@ -153,30 +153,32 @@ export default function Testimonials() {
             return (
               <div
                 key={index}
-                className={`w-full md:w-1/3 flex-shrink-0 px-4 transition-all duration-500 ease-in-out ${isActive ? "opacity-100" : "opacity-50"}`}
+                className={`w-full md:w-1/3 flex-shrink-0 px-4 transition-all duration-500 ease-in-out ${isActive ? "opacity-100" : "opacity-40"}`}
                 style={{
-                  transform: `scale(${isActive ? 1 : 0.9})`,
-                  filter: `blur(${isActive ? 0 : "4px"})`,
+                  transform: `scale(${isActive ? 1 : 0.85})`,
+                  filter: `blur(${isActive ? 0 : "2px"})`,
                 }}
               >
-                <div className="w-full bg-gray-900 rounded-lg mx-auto flex flex-col items-center text-center p-8">
+                <div className="w-full max-w-md bg-gray-900 rounded-[2rem] mx-auto flex flex-col items-center text-center p-8 lg:p-10 border border-gray-800 shadow-2xl">
                   <div className="relative mb-6">
                     <Image
                       src={testimonial.imageSrc}
                       alt={testimonial.name}
-                      width={128}
-                      height={128}
-                      className="rounded-full object-cover border-4 border-yellow-400"
+                      width={100}
+                      height={100}
+                      className="rounded-full object-cover border-4 border-yellow-400 shadow-xl"
                     />
                   </div>
-                  <blockquote className="text-lg italic mb-4 max-w-md">
+                  <blockquote className="text-base lg:text-lg italic mb-6 leading-relaxed">
                     “{testimonial.quote}”
                   </blockquote>
-                  <div className="font-bold text-yellow-400 text-base mt-auto pt-4">
-                    {testimonial.name}
-                  </div>
-                  <div className="text-gray-500 text-sm">
-                    {testimonial.result}
+                  <div className="mt-auto">
+                    <div className="font-black text-yellow-400 text-base uppercase tracking-wider">
+                      {testimonial.name}
+                    </div>
+                    <div className="text-gray-500 text-xs font-bold mt-1">
+                      {testimonial.result}
+                    </div>
                   </div>
                 </div>
               </div>

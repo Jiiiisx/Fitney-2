@@ -42,6 +42,15 @@ export default function MainFeed() {
     ? Array.from(new Map(posts.map((p: any) => [p.id, p])).values())
     : [];
 
+  if (isLoading && uniquePosts.length === 0) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+        <p className="text-muted-foreground font-medium animate-pulse">Connecting to community...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-2xl mx-auto pb-20">
       <StoryTray />
