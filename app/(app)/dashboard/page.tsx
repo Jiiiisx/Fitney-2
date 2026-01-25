@@ -13,20 +13,25 @@ import WorkoutBreakdown from "../components/WorkoutBreakdown";
 import CompleteProfileBanner from "../components/CompleteProfileBanner";
 import DashboardInsight from "../components/DashboardInsight";
 import QuickActions from "../components/QuickActions";
+import PremiumAnalytics from "../components/PremiumAnalytics";
+import AIWorkoutGenerator from "../components/AIWorkoutGenerator";
+import PremiumTrends from "../components/PremiumTrends";
+import PremiumTools from "../components/PremiumTools";
 import { Megaphone, X, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 
 // Interface yang lebih fleksibel agar cocok dengan respons API dan props komponen
 interface DashboardData {
+  isPremium: boolean; // Add this
   today: {
     duration: number;
     calories: number;
     workouts: number;
     water?: number;
   };
-  todaysPlan: any; // Tambahkan ini
-  weekly: { name: string; value: number }[]; // Spesifikasikan bentuk array weekly
+  todaysPlan: any;
+  weekly: { name: string; value: number }[];
   recent: any[];
   streak: number;
   insight?: string;
@@ -35,6 +40,8 @@ interface DashboardData {
     avgDuration: number;
     heatmap: { date: string; count: number }[];
   };
+  fitnessRadar: any[]; // Add this
+  trendData: any[];
 }
 
 export default function DashboardPage() {
@@ -119,6 +126,8 @@ export default function DashboardPage() {
           )}
           <CompleteProfileBanner />
 
+          <AIWorkoutGenerator isPremium={data?.isPremium || false} />
+
           <TodaysPlanBanner stats={safeStats} plan={safeTodaysPlan} isLoading={loading} />
 
           <div className="lg:hidden">
@@ -131,12 +140,25 @@ export default function DashboardPage() {
 
           <RecentActivityList workouts={safeRecent} isLoading={loading} />
 
-          <ProgressCharts weeklyData={safeWeekly} isLoading={loading} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <ProgressCharts weeklyData={safeWeekly} isLoading={loading} />
+            <PremiumAnalytics 
+                data={data?.fitnessRadar || []} 
+                isPremium={data?.isPremium || false} 
+            />
+          </div>
 
           {/* Mengirimkan data breakdown ke komponen */}
           <WorkoutBreakdown stats={safeBreakdown} isLoading={loading} />
 
-          <UpgradeBanner />
+          <PremiumTrends 
+            data={data?.trendData || []} 
+            isPremium={data?.isPremium || false} 
+          />
+
+          <PremiumTools isPremium={data?.isPremium || false} />
+
+          {!(data?.isPremium) && <UpgradeBanner />}
         </div>
 
         {/* Stats Sidebar (Scrollable) */}
