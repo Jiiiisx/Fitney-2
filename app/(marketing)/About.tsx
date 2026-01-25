@@ -4,8 +4,8 @@ import HowItWorks from "./HowItWorks";
 
 export default function About() {
   return (
-    <section className="relative bg-gray-800 text-white py-20">
-      <div className="custom-shape-divider-top-1762325819">
+    <section className="relative bg-gray-800 text-white py-12 lg:py-20">
+      <div className="custom-shape-divider-top-1762325819 hidden lg:block">
         <svg
           data-name="Layer 1"
           xmlns="http://www.w3.org/2000/svg"
@@ -35,12 +35,12 @@ export default function About() {
           ></path>
         </svg>
       </div>
-      <div className="relative text-white py-20 lg:py-40 mt-10 lg:mt-20">
-        <div className="container mx-auto px-6 text-center relative">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black mb-6 leading-tight">
+      <div className="relative text-white py-12 lg:py-40 mt-0 lg:mt-20">
+        <div className="container mx-auto px-6 lg:px-12 text-center relative">
+          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black mb-6 leading-tight">
             Your Fitness Journey, Reimagined
           </h2>
-          <p className="text-base sm:text-lg lg:text-xl max-w-3xl mx-auto leading-relaxed opacity-90">
+          <p className="text-sm sm:text-lg lg:text-xl max-w-3xl mx-auto leading-relaxed opacity-90">
             Fitney is more than just an app it's your{" "}
             <span className="text-yellow-400 font-bold">
               personal fitness companion
@@ -58,7 +58,7 @@ export default function About() {
       </div>
       <Masalah />
       <HowItWorks />
-      <div className="custom-shape-divider-bottom-1762412495">
+      <div className="custom-shape-divider-bottom-1762412495 hidden lg:block">
         <svg
           data-name="Layer 1"
           xmlns="http://www.w3.org/2000/svg"

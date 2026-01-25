@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Plus, User, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useCurrentUser } from "../hooks/useCurrentUser";
 import { useStories, uploadImage, createStory, markStoryAsViewedAction } from "../hooks/useCommunity";
 import { mutate } from "swr";
@@ -27,7 +28,11 @@ export default function StoryTray() {
         return acc;
     }, {});
 
-    const userIds = Object.keys(groupedStories);
+    const userIds = Object.keys(groupedStories).filter(id => id !== user?.id);
+    const myStories = user?.id ? groupedStories[user.id] || [] : [];
+    const hasMyStories = myStories.length > 0;
+    const allMyStoriesViewed = hasMyStories && myStories.every((s: any) => s.isViewed);
+
     const currentStories = viewingUser ? groupedStories[viewingUser] : [];
     const currentStory = currentStories[storyIndex];
 
@@ -42,9 +47,12 @@ export default function StoryTray() {
         if (storyIndex < currentStories.length - 1) {
             setStoryIndex(prev => prev + 1);
         } else {
-            const currentUserIdx = userIds.indexOf(viewingUser!);
-            if (currentUserIdx < userIds.length - 1) {
-                setViewingUser(userIds[currentUserIdx + 1]);
+            // Get all userIds including self if self has stories for navigation
+            const navigationUserIds = hasMyStories ? [user!.id, ...userIds] : userIds;
+            const currentUserIdx = navigationUserIds.indexOf(viewingUser!);
+            
+            if (currentUserIdx < navigationUserIds.length - 1) {
+                setViewingUser(navigationUserIds[currentUserIdx + 1]);
                 setStoryIndex(0);
             } else {
                 closeStory();
@@ -57,9 +65,11 @@ export default function StoryTray() {
         if (storyIndex > 0) {
             setStoryIndex(prev => prev - 1);
         } else {
-            const currentUserIdx = userIds.indexOf(viewingUser!);
+            const navigationUserIds = hasMyStories ? [user!.id, ...userIds] : userIds;
+            const currentUserIdx = navigationUserIds.indexOf(viewingUser!);
+            
             if (currentUserIdx > 0) {
-                const prevUserId = userIds[currentUserIdx - 1];
+                const prevUserId = navigationUserIds[currentUserIdx - 1];
                 setViewingUser(prevUserId);
                 setStoryIndex(groupedStories[prevUserId].length - 1);
             }
@@ -124,11 +134,8 @@ export default function StoryTray() {
     return (
         <div className="bg-card p-4 sm:p-4 rounded-xl border border-border shadow-sm mb-6 overflow-x-auto scrollbar-hide">
             <div className="flex gap-4">
-                {/* Create Story Button */}
-                <div
-                    className="flex flex-col items-center flex-shrink-0 cursor-pointer group"
-                    onClick={() => !isUploading && fileInputRef.current?.click()}
-                >
+                {/* Combined Add Story / View My Story Button */}
+                <div className="flex flex-col items-center flex-shrink-0 cursor-pointer group">
                     <input
                         type="file"
                         ref={fileInputRef}
@@ -137,27 +144,44 @@ export default function StoryTray() {
                         onChange={handleFileUpload}
                     />
                     <div className="relative w-16 h-16 mb-1">
-                        <div className={`w-16 h-16 rounded-full bg-muted border-2 border-dashed border-primary/50 flex items-center justify-center overflow-hidden group-hover:border-primary transition-colors ${isUploading ? 'opacity-50' : ''}`}>
-                            {user?.imageUrl ? (
-                                <img src={user.imageUrl} alt="You" className="w-full h-full object-cover opacity-70 group-hover:opacity-100" />
-                            ) : (
-                                <User className="w-8 h-8 text-muted-foreground" />
+                        <div 
+                            onClick={() => hasMyStories ? handleViewStory(user!.id) : fileInputRef.current?.click()}
+                            className={cn(
+                                "w-16 h-16 rounded-full p-[2px] transition-transform active:scale-95",
+                                hasMyStories 
+                                    ? (allMyStoriesViewed ? 'bg-muted border border-border' : 'bg-gradient-to-tr from-yellow-400 to-red-500')
+                                    : ""
                             )}
+                        >
+                            <div className={cn(
+                                "w-full h-full rounded-full bg-muted flex items-center justify-center overflow-hidden border-2 border-card",
+                                !hasMyStories && "border-dashed border-primary/50"
+                            )}>
+                                {user?.imageUrl ? (
+                                    <img src={user.imageUrl} alt="You" className={cn("w-full h-full object-cover", !hasMyStories && "opacity-70 group-hover:opacity-100")} />
+                                ) : (
+                                    <User className="w-8 h-8 text-muted-foreground" />
+                                )}
+                            </div>
                         </div>
-                        <div className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-1 border-2 border-card">
+                        
+                        {/* Plus badge for adding story */}
+                        <div 
+                            onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                            className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-1 border-2 border-card hover:bg-primary/90 transition-colors"
+                        >
                             <Plus className="w-3 h-3" />
                         </div>
                     </div>
                     <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground">
-                        {isUploading ? "Uploading..." : "Add Story"}
+                        {isUploading ? "Uploading..." : (hasMyStories ? "Your Story" : "Add Story")}
                     </span>
                 </div>
 
-                {/* Stories List */}
+                {/* Other Users' Stories List */}
                 {userIds.map((userId) => {
                     const userStories = groupedStories[userId];
                     const storyUser = userStories[0].user;
-                    const isMyStory = user?.id === userId;
                     const allViewed = userStories.every((s: any) => s.isViewed);
 
                     return (
@@ -166,7 +190,7 @@ export default function StoryTray() {
                             className="flex flex-col items-center flex-shrink-0 cursor-pointer group"
                             onClick={() => handleViewStory(userId)}
                         >
-                            <div className={`w-16 h-16 rounded-full p-[2px] mb-1 ${allViewed ? 'bg-muted border border-border' : 'bg-gradient-to-tr from-yellow-400 to-red-500'}`}>
+                            <div className={`w-16 h-16 rounded-full p-[2px] mb-1 transition-transform active:scale-95 ${allViewed ? 'bg-muted border border-border' : 'bg-gradient-to-tr from-yellow-400 to-red-500'}`}>
                                 <div className="w-full h-full rounded-full border-2 border-card bg-muted flex items-center justify-center overflow-hidden">
                                     {storyUser.imageUrl ? (
                                         <img src={storyUser.imageUrl} alt={storyUser.username} className="w-full h-full object-cover" />
@@ -176,7 +200,7 @@ export default function StoryTray() {
                                 </div>
                             </div>
                             <span className="text-xs font-medium text-foreground max-w-[64px] truncate">
-                                {isMyStory ? "Your Story" : (storyUser.fullName || storyUser.username)}
+                                {storyUser.fullName || storyUser.username}
                             </span>
                         </div>
                     );

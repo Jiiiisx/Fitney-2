@@ -239,7 +239,7 @@ const Header = () => {
         )}
       </AnimatePresence>
 
-      <header className="w-full px-4 lg:px-8 pt-6 pb-2">
+      <header className="w-full px-6 lg:px-8 pt-6 pb-2">
         <div className="flex items-center justify-between w-full mx-auto bg-card/50 backdrop-blur-sm border rounded-3xl lg:rounded-full p-3 lg:p-4">
           {/* Logo & Mobile Toggle */}
           <div className="flex items-center gap-2 pl-2">

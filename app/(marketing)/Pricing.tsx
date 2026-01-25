@@ -51,7 +51,7 @@ const plans = [
 export default function Pricing() {
   return (
     <section id="pricing" className="relative bg-[#fff9e6] py-24 sm:py-32">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+      <div className="container mx-auto px-6 lg:px-12">
         <div className="mx-auto max-w-4xl text-center">
           <h2 className="text-sm lg:text-base font-black uppercase tracking-[0.2em] text-yellow-600">
             Harga

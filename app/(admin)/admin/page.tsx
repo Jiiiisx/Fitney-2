@@ -458,7 +458,7 @@ export default function AdminDashboard() {
             <main className="flex-1 flex flex-col overflow-hidden relative">
                 
                 {/* Global Admin Header */}
-                <header className="h-16 lg:h-20 bg-background border-b flex items-center justify-between px-4 lg:px-8 sticky top-0 z-20">
+                <header className="h-16 lg:h-20 bg-background border-b flex items-center justify-between px-6 lg:px-8 sticky top-0 z-20">
                     <div className="flex items-center gap-4 lg:hidden">
                         <button onClick={() => setMobileMenuOpen(true)} className="p-2 -ml-2 text-foreground">
                             <Menu className="w-6 h-6" />
@@ -520,7 +520,7 @@ export default function AdminDashboard() {
                 </header>
 
                 {/* Dynamic View Area */}
-                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto p-6 lg:p-8 custom-scrollbar">
                     <div className="max-w-[1600px] mx-auto space-y-10 pb-20">
                         
                         {/* VIEW: OVERVIEW */}

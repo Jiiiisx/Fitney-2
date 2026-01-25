@@ -48,7 +48,7 @@ export default function PlannerPage() {
         onOpenChange={setTemplatesModalOpen}
         onPlanStarted={handlePlanChange}
       />
-      <div className="bg-transparent min-h-screen p-4 sm:p-6 lg:p-8">
+      <div className="bg-transparent min-h-screen p-6 sm:p-6 lg:p-8">
         <div className="grid lg:grid-cols-12 gap-8 items-start">
             {/* LEFT SIDEBAR - STICKY */}
             <aside className="lg:col-span-3 lg:sticky lg:top-8 space-y-8">

@@ -18,7 +18,7 @@ export default function HistoryPage() {
 
   return (
     <>
-      <div className="space-y-8 p-6 md:p-8">
+      <div className="space-y-8 px-6 py-8 md:p-8">
         {/* Filters & Controls Toolbar */}
         <div className="bg-card/50 backdrop-blur-sm p-4 rounded-xl border border-border/60 shadow-sm">
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">

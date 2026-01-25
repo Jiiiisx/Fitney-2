@@ -130,7 +130,7 @@ export default function Testimonials() {
           ></path>
         </svg>
       </div>
-      <div className="container mx-auto px-6 text-center pt-16 mt-16 lg:mt-24">
+      <div className="container mx-auto px-6 lg:px-12 text-center pt-16 mt-16 lg:mt-24">
         <h2 className="text-3xl lg:text-4xl font-black mb-4 tracking-tight">
           Kisah Mereka yang Telah Bertransformasi
         </h2>

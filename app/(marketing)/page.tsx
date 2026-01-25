@@ -32,36 +32,33 @@ export default function Home() {
 
   return (
     <>
-      <div className="bg-gradient-to-b from-white to-[#fff9e6] min-h-screen lg:h-screen flex items-center pt-24 lg:pt-0">
-        <div className="container mx-auto px-6 sm:px-8 lg:px-12">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-20 text-center lg:text-left">
-            <div className="order-2 lg:order-1 max-w-2xl mx-auto lg:mx-0">
-              <div className="inline-block bg-yellow-200 rounded-full px-4 py-1 text-sm font-bold text-yellow-800 mb-6 shadow-sm">
-                Introducing Fitney
-              </div>
-              <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black text-gray-800 tracking-tight leading-[1.1]">
+      <div className="bg-gradient-to-b from-white to-[#fff9e6] min-h-screen lg:h-screen flex items-center pt-20 lg:pt-0">
+        <div className="container mx-auto px-6 lg:px-12">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-20">
+            <div className="max-w-2xl mx-auto lg:mx-0 text-center lg:text-left flex flex-col items-center lg:items-start">
+              <h1 className="text-3xl sm:text-5xl lg:text-7xl font-black text-gray-800 tracking-tight leading-tight">
                 Find your healthiest you with
               </h1>
-              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black text-yellow-500 mt-2 tracking-tight">
+              <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-yellow-500 mt-1 tracking-tight">
                 Fitney
               </h1>
-              <p className="text-gray-600 mt-6 text-lg sm:text-xl max-w-xl mx-auto lg:mx-0 leading-relaxed">
+              <p className="text-gray-600 mt-6 text-base sm:text-xl max-w-xl mx-auto lg:mx-0 leading-relaxed opacity-90">
                 Track workouts, monitor health, plan meals, and stay motivated.
                 A brighter, balanced lifestyle starts here.
               </p>
-              <p className="text-gray-500 mt-8 italic text-sm sm:text-base border-l-4 border-yellow-400 pl-4 py-1 inline-block text-left">
+              <p className="text-gray-500 mt-8 italic text-sm sm:text-base border-l-2 lg:border-l-4 border-yellow-400 pl-4 py-1 inline-block text-left">
                 "Start small, stay consistent, and see the change."
               </p>
-              <div className="mt-10 flex flex-col sm:flex-row justify-center lg:justify-start gap-4">
-                <button className="bg-yellow-400 text-gray-900 font-black px-10 py-4 rounded-full hover:bg-yellow-500 transition-all shadow-xl shadow-yellow-400/30 hover:scale-105 active:scale-95 text-lg">
+              <div className="mt-10 flex flex-col sm:flex-row justify-center lg:justify-start gap-4 w-full sm:w-auto px-4 sm:px-0">
+                <button className="bg-yellow-400 text-gray-900 font-black px-10 py-4 rounded-full hover:bg-yellow-500 transition-all shadow-xl shadow-yellow-400/30 hover:scale-105 active:scale-95 text-base lg:text-lg w-full sm:w-auto">
                   Get Started
                 </button>
-                <button className="bg-white/50 backdrop-blur-sm text-gray-700 font-bold px-10 py-4 rounded-full border border-gray-200 hover:bg-white hover:border-gray-300 transition-all text-lg shadow-sm">
+                <button className="bg-white/50 backdrop-blur-sm text-gray-700 font-bold px-10 py-4 rounded-full border border-gray-200 hover:bg-white hover:border-gray-300 transition-all text-base lg:text-lg shadow-sm w-full sm:w-auto">
                   Explore Features
                 </button>
               </div>
             </div>
-            <div className="order-1 lg:order-2 w-full max-w-sm sm:max-w-md lg:max-w-none px-4">
+            <div className="hidden lg:block w-full max-w-none px-4">
               <div className="relative">
                 <div className="absolute -inset-4 bg-yellow-400/20 rounded-[3rem] blur-3xl -z-10 animate-pulse"></div>
                 <Image

@@ -36,7 +36,7 @@ export default function Navbar() {
       }`}
     >
       <nav
-        className="flex items-center justify-between p-6 lg:px-8 max-w-7xl mx-auto"
+        className="flex items-center justify-between py-6 container mx-auto px-6 lg:px-12"
         aria-label="Global"
       >
         <div className="flex lg:flex-1">

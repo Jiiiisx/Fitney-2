@@ -85,7 +85,7 @@ export default function SettingsPage() {
 
         {/* Main Content */}
         <main className="w-full lg:w-3/4 bg-background overflow-y-auto">
-          <div className="p-4 lg:p-12 space-y-6">
+          <div className="p-6 lg:p-12 space-y-6">
             {/* Gamification Stats Section - Compact & Modern */}
             <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6 shadow-sm">
               <div>

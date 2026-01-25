@@ -57,7 +57,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <Toaster position="top-center" reverseOrder={false} />
         <Header />
         <main className={cn({
-          "p-4 sm:p-8": !isFixedLayoutPage,
+          "p-6 sm:p-8": !isFixedLayoutPage,
           "lg:flex-grow": isFixedLayoutPage,
           "overflow-y-auto": pathname === "/history",
           "lg:overflow-hidden": isFixedLayoutPage && pathname !== "/history",

@@ -110,7 +110,7 @@ export default function CommunityLayoutWrapper({
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.3 }}
-              className="p-4 min-h-[50vh]"
+              className="p-6 min-h-[50vh]"
             >
               {children}
             </motion.div>
@@ -119,7 +119,7 @@ export default function CommunityLayoutWrapper({
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.3 }}
-              className="p-4"
+              className="p-6"
             >
               {/* Reuse Right Sidebar content for Discover tab */}
               {rightSidebar}

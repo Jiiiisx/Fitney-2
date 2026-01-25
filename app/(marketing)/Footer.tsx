@@ -35,24 +35,24 @@ const navigation = {
 
 export default function Footer() {
   return (
-    <footer className="bg-[#fff9e6]" aria-labelledby="footer-heading">
+    <footer className="bg-[#fff9e6] border-t border-gray-200/50" aria-labelledby="footer-heading">
       <h2 id="footer-heading" className="sr-only">
         Footer
       </h2>
-      <div className="mx-auto max-w-7xl px-6 pb-8 pt-16 sm:pt-24 lg:px-8 lg:pt-32">
-        <div className="xl:grid xl:grid-cols-3 xl:gap-8">
-          <div className="space-y-8">
+      <div className="container mx-auto px-6 pb-8 pt-16 lg:px-12 lg:pt-24">
+        <div className="flex flex-col lg:flex-row lg:justify-between gap-12 lg:gap-24">
+          {/* Brand Info */}
+          <div className="flex flex-col items-center lg:items-start text-center lg:text-left max-w-sm mx-auto lg:mx-0">
             <h1 className="text-3xl font-black text-yellow-500 tracking-tighter">Fitney</h1>
-            <p className="text-sm leading-6 text-gray-600 max-w-xs">
-              Find your healthiest you. Track workouts, monitor health, plan
-              meals, and stay motivated.
+            <p className="mt-4 text-sm leading-relaxed text-gray-600">
+              Transformasikan perjalanan kebugaran Anda dengan Fitney. Pantau latihan, nutrisi, dan raih gol kesehatan Anda dengan bantuan teknologi cerdas.
             </p>
-            <div className="flex space-x-6">
+            <div className="mt-6 flex space-x-5">
               {navigation.social.map((item) => (
                 <a
                   key={item.name}
                   href={item.href}
-                  className="text-gray-400 hover:text-yellow-500 transition-colors"
+                  className="text-gray-400 hover:text-yellow-500 transition-all hover:scale-110"
                 >
                   <span className="sr-only">{item.name}</span>
                   <item.icon className="h-6 w-6" aria-hidden="true" />
@@ -60,40 +60,55 @@ export default function Footer() {
               ))}
             </div>
           </div>
-          <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 gap-8 xl:col-span-2 xl:mt-0">
-            <div className="grid grid-cols-2 gap-8">
-              <div>
-                <h3 className="text-sm font-black uppercase tracking-widest text-gray-900">
-                  Navigasi
-                </h3>
-                <ul role="list" className="mt-6 space-y-4">
-                  {navigation.links.map((item) => (
-                    <li key={item.name}>
-                      <a
-                        href={item.href}
-                        className="text-sm leading-6 text-gray-600 hover:text-yellow-600 transition-colors"
-                      >
-                        {item.name}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                 {/* Reserved for future links */}
-              </div>
+
+          {/* Links Grid */}
+          <div className="grid grid-cols-2 gap-x-8 gap-y-10 sm:gap-x-16 mx-auto lg:mx-0">
+            <div>
+              <h3 className="text-sm font-black uppercase tracking-widest text-gray-900 border-b-2 border-yellow-400 pb-1 inline-block">
+                Navigasi
+              </h3>
+              <ul role="list" className="mt-6 space-y-4">
+                {navigation.links.slice(0, 2).map((item) => (
+                  <li key={item.name}>
+                    <a
+                      href={item.href}
+                      className="text-sm font-medium text-gray-600 hover:text-yellow-600 transition-colors"
+                    >
+                      {item.name}
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <div className="grid grid-cols-2 gap-8">
-              <div>
-                 {/* Reserved for future links */}
-              </div>
+            <div>
+              <h3 className="text-sm font-black uppercase tracking-widest text-gray-900 border-b-2 border-yellow-400 pb-1 inline-block">
+                Bantuan
+              </h3>
+              <ul role="list" className="mt-6 space-y-4">
+                {navigation.links.slice(2).map((item) => (
+                  <li key={item.name}>
+                    <a
+                      href={item.href}
+                      className="text-sm font-medium text-gray-600 hover:text-yellow-600 transition-colors"
+                    >
+                      {item.name}
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         </div>
-        <div className="mt-16 border-t border-gray-900/10 pt-8 sm:mt-20 lg:mt-24">
-          <p className="text-xs leading-5 text-gray-500 text-center lg:text-left">
-            &copy; 2025 Fitney. All rights reserved.
+
+        {/* Copyright */}
+        <div className="mt-16 border-t border-gray-900/10 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-center">
+          <p className="text-xs font-medium text-gray-500">
+            &copy; 2025 Fitney Inc. Semua hak dilindungi.
           </p>
+          <div className="flex gap-6">
+             <a href="#" className="text-[10px] font-bold text-gray-400 hover:text-gray-600 uppercase tracking-widest">Kebijakan</a>
+             <a href="#" className="text-[10px] font-bold text-gray-400 hover:text-gray-600 uppercase tracking-widest">Ketentuan</a>
+          </div>
         </div>
       </div>
     </footer>

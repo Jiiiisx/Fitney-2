@@ -122,9 +122,9 @@ const Pill = ({
 
 export default function BenefitSection() {
   return (
-    <section id="features" className="relative bg-[#fff9e6] py-20">
+    <section id="features" className="relative bg-[#fff9e6] py-12 lg:py-20">
       {/* The shape divider is complex and has a specific class, so we leave it as is */}
-      <div className="custom-shape-divider-top-1762325819">
+      <div className="custom-shape-divider-top-1762325819 hidden lg:block">
         <svg
           data-name="Layer 1"
           xmlns="http://www.w3.org/2000/svg"
@@ -147,9 +147,9 @@ export default function BenefitSection() {
           ></path>
         </svg>
       </div>
-      <div className="container mx-auto px-6 pt-20 lg:pt-40">
+      <div className="container mx-auto px-6 lg:px-12 pt-12 lg:pt-40">
         <div className="text-center mb-12 lg:mb-20">
-          <h2 className="text-3xl lg:text-4xl font-black text-gray-800 tracking-tight">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-gray-800 tracking-tight">
             Kenapa Fitney Layak Dicoba?
           </h2>
           <p className="text-gray-600 mt-4 text-base lg:text-lg">
@@ -174,83 +174,69 @@ export default function BenefitSection() {
         </div>
 
         {/* Enhanced Comparison Table */}
-        <div className="max-w-6xl mx-auto mt-24 mb-24">
-          <h3 className="text-3xl font-bold text-gray-800 text-center mb-10">
+        <div className="max-w-6xl mx-auto mt-16 lg:mt-24 mb-16 lg:mb-24">
+          <h3 className="text-2xl sm:text-3xl font-black text-gray-800 text-center mb-10 tracking-tight">
             Lihat Perbedaannya Secara Langsung
           </h3>
-          <div className="overflow-x-auto rounded-xl shadow-2xl">
-            <table className="min-w-full bg-white divide-y divide-gray-200">
+          <div className="overflow-x-auto rounded-2xl shadow-xl border border-gray-200">
+            <table className="min-w-full bg-white divide-y divide-gray-200 text-sm lg:text-base">
               <thead className="bg-gray-800 text-white">
                 <tr>
-                  <th className="text-left py-6 px-8 uppercase font-semibold text-base">
+                  <th className="text-left py-4 px-4 lg:py-6 lg:px-8 uppercase font-bold text-xs lg:text-sm tracking-wider">
                     Fitur
                   </th>
-                  <th className="text-center py-6 px-8 uppercase font-semibold text-base">
-                    Layanan Gratis
+                  <th className="text-center py-4 px-4 lg:py-6 lg:px-8 uppercase font-bold text-xs lg:text-sm tracking-wider">
+                    Gratis
                   </th>
-                  <th className="text-center py-6 px-8 uppercase font-semibold text-base">
-                    Gym/Trainer
+                  <th className="text-center py-4 px-4 lg:py-6 lg:px-8 uppercase font-bold text-xs lg:text-sm tracking-wider">
+                    Gym/PT
                   </th>
-                  <th className="text-center py-6 px-8 uppercase font-semibold text-base bg-yellow-400 text-gray-900">
+                  <th className="text-center py-4 px-4 lg:py-6 lg:px-8 uppercase font-bold text-xs lg:text-sm tracking-wider bg-yellow-400 text-gray-900">
                     Fitney
                   </th>
                 </tr>
               </thead>
               <tbody className="text-gray-700 divide-y divide-gray-200">
-                <tr className="hover:bg-gray-50">
-                  <td className="text-left py-6 px-8 font-semibold text-lg">
+                <tr className="hover:bg-gray-50 transition-colors">
+                  <td className="text-left py-4 px-4 lg:py-6 lg:px-8 font-bold text-sm lg:text-lg">
                     Biaya
                   </td>
-                  <td className="text-center py-6 px-8">
-                    <Pill text="Gratis" color="yellow" />
+                  <td className="text-center py-4 px-4 lg:py-6 lg:px-8">
+                    <span className="text-[10px] lg:text-xs font-black uppercase text-yellow-600 bg-yellow-50 px-2 py-1 rounded">Gratis</span>
                   </td>
-                  <td className="text-center py-6 px-8">
-                    <Pill text="Sangat Mahal" color="red" />
+                  <td className="text-center py-4 px-4 lg:py-6 lg:px-8">
+                    <span className="text-[10px] lg:text-xs font-black uppercase text-red-600 bg-red-50 px-2 py-1 rounded">Mahal</span>
                   </td>
-                  <td className="text-center py-6 px-8 bg-yellow-50">
-                    <Pill text="Terjangkau" color="green" />
-                  </td>
-                </tr>
-                <tr className="hover:bg-gray-50">
-                  <td className="text-left py-6 px-8 font-semibold text-lg">
-                    Rencana Personal
-                  </td>
-                  <td className="text-center py-6 px-8">
-                    <CrossIcon />
-                  </td>
-                  <td className="text-center py-6 px-8">
-                    <CheckIcon />
-                  </td>
-                  <td className="text-center py-6 px-8 bg-yellow-50">
-                    <CheckIcon />
+                  <td className="text-center py-4 px-4 lg:py-6 lg:px-8 bg-yellow-50/30">
+                    <span className="text-[10px] lg:text-xs font-black uppercase text-green-600 bg-green-50 px-2 py-1 rounded">Hemat</span>
                   </td>
                 </tr>
-                <tr className="hover:bg-gray-50">
-                  <td className="text-left py-6 px-8 font-semibold text-lg">
-                    Fleksibilitas Waktu
+                <tr className="hover:bg-gray-50 transition-colors">
+                  <td className="text-left py-4 px-4 lg:py-6 lg:px-8 font-bold text-sm lg:text-lg">
+                    Personal
                   </td>
-                  <td className="text-center py-6 px-8">
-                    <Pill text="Sangat Fleksibel" color="green" />
+                  <td className="text-center py-4 px-4 lg:py-6 lg:px-8">
+                    <div className="flex justify-center scale-75 lg:scale-100"><CrossIcon /></div>
                   </td>
-                  <td className="text-center py-6 px-8">
-                    <Pill text="Terikat Jadwal" color="red" />
+                  <td className="text-center py-4 px-4 lg:py-6 lg:px-8">
+                    <div className="flex justify-center scale-75 lg:scale-100"><CheckIcon /></div>
                   </td>
-                  <td className="text-center py-6 px-8 bg-yellow-50">
-                    <Pill text="Sangat Fleksibel" color="green" />
+                  <td className="text-center py-4 px-4 lg:py-6 lg:px-8 bg-yellow-50/30">
+                    <div className="flex justify-center scale-75 lg:scale-100"><CheckIcon /></div>
                   </td>
                 </tr>
-                <tr className="hover:bg-gray-50">
-                  <td className="text-left py-6 px-8 font-semibold text-lg">
-                    Dukungan & Motivasi
+                <tr className="hover:bg-gray-50 transition-colors">
+                  <td className="text-left py-4 px-4 lg:py-6 lg:px-8 font-bold text-sm lg:text-lg">
+                    Waktu
                   </td>
-                  <td className="text-center py-6 px-8">
-                    <Pill text="Terbatas" color="yellow" />
+                  <td className="text-center py-4 px-4 lg:py-6 lg:px-8">
+                    <span className="text-[10px] lg:text-xs font-black uppercase text-green-600 bg-green-50 px-2 py-1 rounded">Bebas</span>
                   </td>
-                  <td className="text-center py-6 px-8">
-                    <Pill text="Saat Sesi" color="yellow" />
+                  <td className="text-center py-4 px-4 lg:py-6 lg:px-8">
+                    <span className="text-[10px] lg:text-xs font-black uppercase text-red-600 bg-red-50 px-2 py-1 rounded">Terikat</span>
                   </td>
-                  <td className="text-center py-6 px-8 bg-yellow-50">
-                    <Pill text="Setiap Hari" color="green" />
+                  <td className="text-center py-4 px-4 lg:py-6 lg:px-8 bg-yellow-50/30">
+                    <span className="text-[10px] lg:text-xs font-black uppercase text-green-600 bg-green-50 px-2 py-1 rounded">Bebas</span>
                   </td>
                 </tr>
               </tbody>

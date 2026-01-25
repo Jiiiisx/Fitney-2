@@ -91,7 +91,7 @@ export default function DashboardPage() {
     <div className="min-h-screen lg:h-full">
       <div className="flex flex-col lg:grid lg:grid-cols-3 min-h-screen lg:h-full">
         {/* Main Content Area (Scrollable) */}
-        <div className="order-2 lg:order-1 lg:col-span-2 space-y-6 lg:space-y-8 overflow-y-auto p-4 sm:p-6 lg:p-8 scrollbar-hide">
+        <div className="order-2 lg:order-1 lg:col-span-2 space-y-6 lg:space-y-8 overflow-y-auto p-6 lg:p-8 scrollbar-hide">
           {announcement && (
             <motion.div 
               initial={{ height: 0, opacity: 0 }}
@@ -135,7 +135,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Stats Sidebar (Scrollable) */}
-        <div className="order-1 lg:order-2 lg:col-span-1 space-y-6 lg:space-y-8 px-4 py-16 sm:px-6 sm:py-20 lg:p-8 bg-background lg:bg-muted lg:border-l border-border lg:overflow-y-auto scrollbar-hide [mask-image:linear-gradient(to_bottom,transparent,black_10%,black_90%,transparent)] lg:[mask-image:none]">
+        <div className="order-1 lg:order-2 lg:col-span-1 space-y-6 lg:space-y-8 px-6 py-16 sm:py-20 lg:p-8 bg-background lg:bg-muted lg:border-l border-border lg:overflow-y-auto scrollbar-hide [mask-image:linear-gradient(to_bottom,transparent,black_10%,black_90%,transparent)] lg:[mask-image:none]">
           <StatsSidebar />
         </div>
       </div>
