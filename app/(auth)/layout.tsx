@@ -93,7 +93,17 @@ export default function AuthLayout({
       </div>
 
       {/* Right Panel (Form) */}
-      <div className="flex items-center justify-center p-8">
+      <div className="flex flex-col items-center justify-center p-6 sm:p-8 relative">
+        {/* Mobile Back Button */}
+        <div className="absolute top-6 left-6 lg:hidden">
+            <Button asChild variant="ghost" size="sm" className="text-slate-600 px-2">
+                <Link href="/">
+                    <ChevronLeft className="w-5 h-5 mr-1" />
+                    Back
+                </Link>
+            </Button>
+        </div>
+
         <AnimatePresence mode="wait">
             <motion.div
                 key={pathname}
@@ -101,6 +111,7 @@ export default function AuthLayout({
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3 }}
+                className="w-full max-w-md pt-8 lg:pt-0"
             >
                 {children}
             </motion.div>

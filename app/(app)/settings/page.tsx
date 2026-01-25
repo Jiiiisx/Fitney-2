@@ -63,43 +63,42 @@ export default function SettingsPage() {
   return (
     <div className="h-full flex flex-col bg-background">
       {/* Header */}
-      <header className="px-12 pt-12 pb-8 border-b border-border bg-background flex-shrink-0">
+      <header className="px-6 py-8 lg:px-12 lg:pt-12 lg:pb-8 border-b border-border bg-background flex-shrink-0">
         <div className="max-w-screen-2xl mx-auto">
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">
+          <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
             Settings
           </h1>
-          <p className="text-base text-muted-foreground mt-2">
+          <p className="text-sm lg:text-base text-muted-foreground mt-1 lg:mt-2">
             Manage your account, preferences, and notifications.
           </p>
         </div>
       </header>
 
       {/* Main Layout */}
-      <div className="flex-grow flex max-w-screen-2xl mx-auto w-full overflow-hidden">
-        {/* Left Sidebar */}
-        <aside className="w-full lg:w-1/4 bg-muted/50 border-r border-border">
-          <div className="p-6">
+      <div className="flex-grow flex flex-col lg:flex-row max-w-screen-2xl mx-auto w-full lg:overflow-hidden">
+        {/* Left Sidebar (Tabs on Mobile) */}
+        <aside className="w-full lg:w-1/4 bg-muted/30 lg:bg-muted/50 border-b lg:border-b-0 lg:border-r border-border shrink-0">
+          <div className="p-4 lg:p-6">
             <SettingsSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
           </div>
         </aside>
 
         {/* Main Content */}
         <main className="w-full lg:w-3/4 bg-background overflow-y-auto">
-          <div className="p-12">
-            {/* Gamification Stats Section */}
-            <div className="mb-8 p-6 border rounded-lg bg-muted/20">
-              <h2 className="text-2xl font-semibold mb-4 text-foreground">Your Level</h2>
-              <div className="space-y-3">
-                <p className="text-lg text-muted-foreground">
-                  <strong>Level:</strong> <span className="text-foreground font-bold">{gamificationStats.level}</span>
-                </p>
-                <div>
-                  <div className="flex justify-between mb-1 text-sm">
-                    <span className="text-muted-foreground">Progress to Next Level</span>
-                    <span className="font-mono text-foreground">{gamificationStats.xp} / {gamificationStats.xpForNextLevel} XP</span>
-                  </div>
-                  <Progress value={gamificationStats.progressPercentage} />
+          <div className="p-4 lg:p-12 space-y-6">
+            {/* Gamification Stats Section - Compact & Modern */}
+            <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6 shadow-sm">
+              <div>
+                <h2 className="text-xl font-bold text-foreground mb-1">Level {gamificationStats.level}</h2>
+                <p className="text-sm text-muted-foreground">Keep pushing! You're doing great.</p>
+              </div>
+              
+              <div className="flex-1 w-full sm:max-w-md space-y-2">
+                <div className="flex justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <span>Progress</span>
+                  <span>{gamificationStats.xp} / {gamificationStats.xpForNextLevel} XP</span>
                 </div>
+                <Progress value={gamificationStats.progressPercentage} className="h-3" />
               </div>
             </div>
 
@@ -111,6 +110,7 @@ export default function SettingsPage() {
                 animate="animate"
                 exit="exit"
                 transition={{ duration: 0.2 }}
+                className="bg-card border border-border rounded-2xl p-6 shadow-sm"
               >
                 {renderContent()}
               </motion.div>

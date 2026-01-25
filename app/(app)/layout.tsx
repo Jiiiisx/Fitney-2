@@ -51,16 +51,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         className={cn(
           "font-poppins",
           "bg-gradient-to-b from-yellow-100 to-gray-50 dark:bg-none dark:bg-black",
-          isFixedLayoutPage ? "h-screen flex flex-col" : "min-h-screen",
+          isFixedLayoutPage ? "min-h-screen lg:h-screen lg:flex lg:flex-col" : "min-h-screen",
         )}
       >
         <Toaster position="top-center" reverseOrder={false} />
         <Header />
         <main className={cn({
-          "p-8": !isFixedLayoutPage,
-          "flex-grow": isFixedLayoutPage,
+          "p-4 sm:p-8": !isFixedLayoutPage,
+          "lg:flex-grow": isFixedLayoutPage,
           "overflow-y-auto": pathname === "/history",
-          "overflow-hidden": isFixedLayoutPage && pathname !== "/history",
+          "lg:overflow-hidden": isFixedLayoutPage && pathname !== "/history",
         })}>
           {children}
         </main>

@@ -125,10 +125,6 @@ const StatsSidebar = () => {
 
   return (
     <div className="h-full flex flex-col space-y-8">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-foreground">Statistic</h2>
-      </div>
-
       <div className="flex flex-col items-center text-center">
         <CircularProgress
           percentage={stats.progressPercentage}
@@ -153,7 +149,6 @@ const StatsSidebar = () => {
       </div>
 
       <div className="w-full">
-        <h4 className="text-sm font-semibold text-muted-foreground mb-4 uppercase tracking-wider">Quick Actions</h4>
         <DynamicQuickActions />
       </div>
     </div>
