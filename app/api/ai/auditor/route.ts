@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/app/lib/db";
-import { workoutLogs } from "@/app/lib/schema";
+import { workoutLogs, exercises, categories } from "@/app/lib/schema";
 import { eq, and, gte } from "drizzle-orm";
 import { verifyAuth } from "@/app/lib/auth";
 import { subDays } from "date-fns";
@@ -12,28 +12,40 @@ export async function GET(req: NextRequest) {
     if (auth.error) return auth.error;
     const userId = auth.user.userId;
 
-    const lastWeekWorkouts = await db.select().from(workoutLogs)
-        .where(and(eq(workoutLogs.userId, userId), gte(workoutLogs.date, subDays(new Date(), 7))));
+    // Fetch workouts with a bit more history for better balance analysis (14 days)
+    const recentWorkouts = await db.select().from(workoutLogs)
+        .where(and(eq(workoutLogs.userId, userId), gte(workoutLogs.date, subDays(new Date(), 14))));
 
-    if (lastWeekWorkouts.length === 0) {
+    if (recentWorkouts.length === 0) {
         return NextResponse.json({
             score: 0,
             status: "No Data",
-            analysis: "No workout data found for the last 7 days. Start logging to get an audit!",
-            suggestion: "Log your first workout today!"
+            analysis: "No workout data found for the last 14 days. Start logging to get an audit!",
+            suggestion: "Log your first workout today!",
+            muscleBalance: []
         });
     }
 
     const prompt = `
-      As a fitness coach, audit this user's training variety from the last 7 days:
-      ${lastWeekWorkouts.map(w => `- ${w.name} (${w.type})`).join("\n")}
+      As a Biomechanics Expert, audit this user's training variety from the last 14 days:
+      ${recentWorkouts.map(w => `- ${w.name} (${w.type})`).join("\n")}
+      
+      Analyze which muscle groups are being trained based on exercise names and types.
       
       Return ONLY a JSON object:
       {
         "score": number (1-100),
-        "status": "Balanced" | "Imbalanced",
-        "analysis": "Brief analysis",
-        "suggestion": "Next exercise type"
+        "status": "Balanced" | "Highly Imbalanced" | "Slightly Imbalanced",
+        "analysis": "A deep analysis of their volume and variety.",
+        "suggestion": "Specific exercise or muscle group to target next.",
+        "muscleBalance": [
+          {"muscle": "Chest", "score": number (1-100)},
+          {"muscle": "Back", "score": number (1-100)},
+          {"muscle": "Legs", "score": number (1-100)},
+          {"muscle": "Shoulders", "score": number (1-100)},
+          {"muscle": "Arms", "score": number (1-100)},
+          {"muscle": "Core", "score": number (1-100)}
+        ]
       }
     `;
 
@@ -49,7 +61,8 @@ export async function GET(req: NextRequest) {
         score: 50, 
         status: "Calibration Required", 
         analysis: "AI is currently busy. Please try again in 10 seconds.",
-        suggestion: "Retry Audit"
-    }, { status: 200 }); // Return as 200 with fallback to avoid blank UI
+        suggestion: "Retry Audit",
+        muscleBalance: []
+    });
   }
 }

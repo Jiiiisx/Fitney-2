@@ -14,7 +14,9 @@ import {
     RefreshCcw,
     HeartPulse,
     X,
-    Plus
+    Plus,
+    AlertTriangle,
+    CheckCircle2
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -116,7 +118,6 @@ export default function AICoachHub() {
     useEffect(() => {
         const init = async () => {
             try {
-                // Pre-fetch critical data
                 await fetchBriefing();
             } catch (e) {
                 console.error(e);
@@ -354,62 +355,142 @@ export default function AICoachHub() {
                                 </Card>
                             </motion.div>
                         )}
-                        
-                        {/* ... (rest of the code for auditor and recovery remains the same) */}
 
-                        {/* 3. AUDITOR & RECOVERY VIEWS (Existing logic) */}
-                        {activeTool === 'auditor' && auditorData && (
+                        {/* 3. WORKOUT AUDITOR V2 (Muscle Balance) */}
+                        {activeTool === 'auditor' && (
                             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
                                 <div>
-                                    <h2 className="text-3xl font-black mb-2 italic">Workout Balance Auditor</h2>
-                                    <p className="text-muted-foreground">AI scans your exercise variety to detect muscle group neglect.</p>
+                                    <h2 className="text-3xl font-black mb-2 italic">Muscle Variety Audit</h2>
+                                    <p className="text-muted-foreground">Detecting muscle group neglect from your last 14 days.</p>
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <Card className="p-6 bg-card border-none shadow-xl text-center">
-                                        <p className="text-[10px] font-black text-muted-foreground uppercase mb-2">Balance Score</p>
-                                        <p className="text-5xl font-black text-primary">{auditorData.score}%</p>
-                                    </Card>
-                                    <Card className="p-6 md:col-span-2 bg-card border-none shadow-xl flex items-center gap-6">
-                                        <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${auditorData.status === 'Balanced' ? 'bg-green-500/10 text-green-500' : 'bg-orange-500/10 text-orange-500'}`}>
-                                            <ShieldAlert className="w-6 h-6" />
+                                {isGenerating ? (
+                                    <div className="py-20 text-center animate-pulse"><BrainCircuit className="w-12 h-12 text-primary mx-auto mb-4" />Analyzing Biomechanics...</div>
+                                ) : auditorData ? (
+                                    <div className="space-y-8">
+                                        {/* Muscle Balance Grid */}
+                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                            {auditorData.muscleBalance?.map((m: any) => (
+                                                <Card key={m.muscle} className="p-4 bg-card/50 border-border/40 overflow-hidden relative">
+                                                    <div 
+                                                        className="absolute bottom-0 left-0 h-1 bg-primary/40 transition-all duration-1000" 
+                                                        style={{ width: `${m.score}%` }}
+                                                    ></div>
+                                                    <p className="text-[10px] font-black text-muted-foreground uppercase mb-1">{m.muscle}</p>
+                                                    <div className="flex items-end justify-between">
+                                                        <p className="text-2xl font-black">{m.score}%</p>
+                                                        <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded ${m.score > 70 ? 'bg-green-500/10 text-green-500' : m.score < 30 ? 'bg-rose-500/10 text-rose-500' : 'bg-amber-500/10 text-amber-500'}`}>
+                                                            {m.score > 70 ? 'OPTIMAL' : m.score < 30 ? 'NEGLECTED' : 'FAIR'}
+                                                        </span>
+                                                    </div>
+                                                </Card>
+                                            ))}
                                         </div>
-                                        <div>
-                                            <p className="font-bold text-lg">{auditorData.status} Training Pattern</p>
-                                            <p className="text-sm text-muted-foreground">{auditorData.analysis}</p>
-                                        </div>
-                                    </Card>
-                                </div>
-                            </motion.div>
-                        )}
 
-                        {activeTool === 'recovery' && recoveryData && (
-                            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
-                                <div>
-                                    <h2 className="text-3xl font-black mb-2 italic">Neural Recovery Scan</h2>
-                                    <p className="text-muted-foreground">Evaluating nervous system readiness based on sleep and strain.</p>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="relative h-64 bg-card rounded-[2.5rem] flex items-center justify-center shadow-xl overflow-hidden">
-                                        <div className="absolute inset-0 bg-primary/5"></div>
-                                        <div className="relative text-center">
-                                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Recovery Capacity</p>
-                                            <p className="text-7xl font-black text-primary">{recoveryData.recoveryScore}%</p>
-                                            <p className="mt-2 font-bold text-primary/60 uppercase text-xs tracking-tighter">{recoveryData.status}</p>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                            <Card className="p-6 bg-card border-none shadow-xl text-center">
+                                                <p className="text-[10px] font-black text-muted-foreground uppercase mb-2">Symmetry Score</p>
+                                                <p className="text-5xl font-black text-primary">{auditorData.score}%</p>
+                                            </Card>
+                                            <Card className="p-6 md:col-span-2 bg-card border-none shadow-xl flex items-center gap-6">
+                                                <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${auditorData.status.includes('Balanced') ? 'bg-green-500/10 text-green-500' : 'bg-orange-500/10 text-orange-500'}`}>
+                                                    <ShieldAlert className="w-6 h-6" />
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-lg">{auditorData.status}</p>
+                                                    <p className="text-sm text-muted-foreground">{auditorData.analysis}</p>
+                                                </div>
+                                            </Card>
+                                        </div>
+
+                                        <div className="p-8 bg-primary rounded-[2.5rem] text-primary-foreground shadow-2xl shadow-primary/30">
+                                            <h3 className="font-black text-xl mb-2 italic">Training Tip</h3>
+                                            <p className="text-lg font-medium opacity-90">{auditorData.suggestion}</p>
                                         </div>
                                     </div>
-                                    <Card className="p-8 bg-card border-none shadow-xl flex flex-col justify-center">
-                                        <h3 className="font-black text-xl mb-4">Physiological Status</h3>
-                                        <p className="text-muted-foreground leading-relaxed italic">"{recoveryData.detail}"</p>
-                                        <div className="mt-6 pt-6 border-t border-border">
-                                            <p className="text-[10px] font-black text-muted-foreground uppercase mb-2">Action Required</p>
-                                            <div className="inline-block px-4 py-2 bg-primary/10 text-primary rounded-xl font-bold">{recoveryData.action}</div>
-                                        </div>
-                                    </Card>
-                                </div>
+                                ) : (
+                                    <div className="py-20 text-center">
+                                        <Button onClick={fetchAuditor} variant="outline" className="rounded-full px-10">Start Biomechanical Audit</Button>
+                                    </div>
+                                )}
                             </motion.div>
                         )}
 
-                        {/* --- CHAT MESSAGES WITH TYPEWRITER --- */}
+                        {/* 4. RECOVERY SCAN V2 (CNS Fatigue & Injury Risk) */}
+                        {activeTool === 'recovery' && (
+                            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
+                                <div>
+                                    <h2 className="text-3xl font-black mb-2 italic">Neural Recovery & Injury Risk</h2>
+                                    <p className="text-muted-foreground">Monitoring central nervous system strain to prevent burnout.</p>
+                                </div>
+                                {isGenerating ? (
+                                    <div className="py-20 text-center animate-pulse"><Zap className="w-12 h-12 text-primary mx-auto mb-4" />Scanning Neural Signals...</div>
+                                ) : recoveryData ? (
+                                    <div className="space-y-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <Card className="p-8 bg-card border-none shadow-xl relative overflow-hidden group">
+                                                <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity"><Zap className="w-32 h-32" /></div>
+                                                <h3 className="text-sm font-black text-muted-foreground uppercase tracking-widest mb-6">Physiological Load</h3>
+                                                
+                                                <div className="space-y-6">
+                                                    <div>
+                                                        <div className="flex justify-between mb-2">
+                                                            <span className="text-xs font-bold uppercase">CNS Fatigue</span>
+                                                            <span className="text-xs font-black">{recoveryData.cnsFatigue}%</span>
+                                                        </div>
+                                                        <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                                            <motion.div 
+                                                                initial={{ width: 0 }} 
+                                                                animate={{ width: `${recoveryData.cnsFatigue}%` }}
+                                                                className={`h-full ${recoveryData.cnsFatigue > 70 ? 'bg-rose-500' : 'bg-blue-500'}`}
+                                                            ></motion.div>
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="flex justify-between mb-2">
+                                                            <span className="text-xs font-bold uppercase">Injury Risk</span>
+                                                            <span className="text-xs font-black">{recoveryData.injuryRisk}%</span>
+                                                        </div>
+                                                        <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                                            <motion.div 
+                                                                initial={{ width: 0 }} 
+                                                                animate={{ width: `${recoveryData.injuryRisk}%` }}
+                                                                className={`h-full ${recoveryData.injuryRisk > 60 ? 'bg-orange-500' : 'bg-emerald-500'}`}
+                                                            ></motion.div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </Card>
+
+                                            <Card className="p-8 bg-card border-none shadow-xl flex flex-col justify-center">
+                                                <div className="flex items-center gap-3 mb-4">
+                                                    {recoveryData.injuryRisk > 50 ? <AlertTriangle className="w-6 h-6 text-orange-500" /> : <CheckCircle2 className="w-6 h-6 text-emerald-500" />}
+                                                    <h3 className="font-black text-xl">{recoveryData.status}</h3>
+                                                </div>
+                                                <p className="text-muted-foreground leading-relaxed italic mb-6">"{recoveryData.detail}"</p>
+                                                <div className="pt-6 border-t border-border">
+                                                    <p className="text-[10px] font-black text-muted-foreground uppercase mb-2">Action Recommendation</p>
+                                                    <div className="inline-block px-4 py-2 bg-primary/10 text-primary rounded-xl font-bold">{recoveryData.action}</div>
+                                                </div>
+                                            </Card>
+                                        </div>
+
+                                        <div className="p-8 bg-amber-500/10 border-2 border-amber-500/20 rounded-[2.5rem] flex items-start gap-4">
+                                            <ShieldAlert className="w-8 h-8 text-amber-500 shrink-0 mt-1" />
+                                            <div>
+                                                <p className="font-black text-amber-500 uppercase text-xs tracking-widest mb-1">Injury Prevention Tip</p>
+                                                <p className="text-lg font-bold text-foreground/80 leading-tight">{recoveryData.preventionTip}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="py-20 text-center">
+                                        <Button onClick={fetchRecovery} variant="outline" className="rounded-full px-10">Evaluate Body Readiness</Button>
+                                    </div>
+                                )}
+                            </motion.div>
+                        )}
+
+                        {/* --- CHAT MESSAGES --- */}
                         <div className="space-y-4 pt-8 border-t border-border/30">
                             {messages.map((msg, i) => (
                                 <motion.div 
@@ -426,14 +507,7 @@ export default function AICoachHub() {
                                         {msg.role === 'user' ? (
                                             <p className="text-sm font-medium leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                                         ) : (
-                                            // Only animate the LATEST bot message
-                                            <Typewriter 
-                                                text={msg.content} 
-                                                speed={10} 
-                                                className="text-sm font-medium leading-relaxed" 
-                                                // If it's not the last message, just show text immediately by setting speed=0 (optional optimization)
-                                                // or just let it re-type fast. For now, we type all for consistent look.
-                                            />
+                                            <Typewriter text={msg.content} speed={10} className="text-sm font-medium leading-relaxed" />
                                         )}
                                     </div>
                                 </motion.div>
