@@ -3,7 +3,7 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { Plus, Utensils, GlassWater } from "lucide-react";
-import ActionModal from "./ActionModal";
+import ActionModal from "../../components/ActionModal";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const FormLoadingSkeleton = () => (

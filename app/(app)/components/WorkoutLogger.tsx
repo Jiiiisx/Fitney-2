@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { PlusCircle, X, Share2 } from "lucide-react";
-import { logWorkoutAction } from "@/app/actions";
+import { logWorkoutAction } from "@/app/actions/workout";
 import toast from "react-hot-toast";
 
 type Exercise = {

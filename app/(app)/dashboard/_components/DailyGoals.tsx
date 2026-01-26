@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import CircularProgress from "./CircularProgress";
+import CircularProgress from "../../components/CircularProgress";
 import { Footprints, Flame, Timer, Droplets } from "lucide-react";
 
 interface DailyGoalsProps {

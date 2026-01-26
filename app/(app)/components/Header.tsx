@@ -123,45 +123,49 @@ const Header = () => {
     }
   }, []);
 
-  // GLOBAL NOTIFICATION POLLING
-  const checkNotifications = useCallback(async (isFirst = false) => {
-    try {
-      const res = await fetch("/api/notifications");
-      if (res.ok) {
-        const data = await res.json();
-        const unread = data.filter((n: any) => !n.isRead);
-        setUnreadCount(unread.length);
+import useSWR from 'swr';
 
-        if (!isFirst && unread.length > 0) {
-          const newest = unread[0];
-          if (newest.id !== lastNotifId.current) {
-            lastNotifId.current = newest.id;
-            
-            // Play Sound
-            playNotificationSound(notificationSound);
+// ... (existing imports)
 
-            toast.success(`${newest.sender?.fullName || 'System'}: ${newest.message}`, {
-              icon: '🔔',
-              duration: 5000,
-              position: 'top-right'
-            });
-          }
-        } else if (isFirst && unread.length > 0) {
-          lastNotifId.current = unread[0].id;
-        }
-      }
-    } catch (e) { }
-  }, [notificationSound, playNotificationSound]);
+// SWR Fetcher
+const fetcher = (url: string) => fetch(url).then(res => res.json());
+
+const Header = () => {
+  // ... (existing state)
+  const lastNotifId = useRef<number | null>(null);
+
+  // SWR Polling (Replaces manual setInterval)
+  const { data: notifications } = useSWR('/api/notifications', fetcher, {
+    refreshInterval: 5000, // Poll every 5s
+    revalidateOnFocus: true,
+    dedupingInterval: 2000,
+  });
 
   useEffect(() => {
-    fetchUser();
-    fetchLevel();
-    
-    // Start notification polling
-    checkNotifications(true);
-    const interval = setInterval(() => checkNotifications(false), 5000);
-    return () => clearInterval(interval);
-  }, [fetchUser, fetchLevel, checkNotifications]);
+    if (notifications) {
+      const unread = notifications.filter((n: any) => !n.isRead);
+      setUnreadCount(unread.length);
+
+      if (unread.length > 0) {
+        const newest = unread[0];
+        // Only notify if it's a truly NEW notification ID we haven't seen this session
+        if (newest.id !== lastNotifId.current) {
+           // Prevent sound on first load
+           if (lastNotifId.current !== null) {
+              playNotificationSound(notificationSound);
+              toast.success(`${newest.sender?.fullName || 'System'}: ${newest.message}`, {
+                icon: '🔔',
+                duration: 5000,
+                position: 'top-right'
+              });
+           }
+           lastNotifId.current = newest.id;
+        }
+      }
+    }
+  }, [notifications, notificationSound, playNotificationSound]);
+
+  // ... (rest of the component)
 
   const handleLogout = async () => {
     try {

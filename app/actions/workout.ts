@@ -1,4 +1,3 @@
-// app/actions.ts
 "use server";
 
 import { db } from "@/app/lib/db";
@@ -12,7 +11,7 @@ const calculateXpForNextLevel = (level: number) => {
 
 export async function logWorkoutAction(formData: FormData) {
   try {
-    // ... (existing user logic)
+    // ... (existing user logic) 
     const user = await db.query.users.findFirst();
     if (!user) return { error: "No user found" };
     const userId = user.id;

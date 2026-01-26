@@ -2,21 +2,21 @@
 
 import { useEffect, useState } from "react";
 // Hapus dynamic import jika tidak perlu lazy loading berat, import biasa lebih aman untuk debugging awal
-import StatsSidebar from "../components/StatsSidebar";
-import TodaysPlanBanner from "../components/TodaysPlanBanner";
-import DailyGoals from "../components/DailyGoals";
-import RecentActivityList from "../components/RecentActivityList";
-import UpgradeBanner from "../components/UpgradeBanner";
-import GamificationStreak from "../components/GamificationStreak";
-import ProgressCharts from "../components/ProgressCharts";
-import WorkoutBreakdown from "../components/WorkoutBreakdown";
-import CompleteProfileBanner from "../components/CompleteProfileBanner";
-import DashboardInsight from "../components/DashboardInsight";
-import QuickActions from "../components/QuickActions";
-import PremiumAnalytics from "../components/PremiumAnalytics";
-import AIWorkoutGenerator from "../components/AIWorkoutGenerator";
-import PremiumTrends from "../components/PremiumTrends";
-import PremiumTools from "../components/PremiumTools";
+import StatsSidebar from "./_components/StatsSidebar";
+import TodaysPlanBanner from "./_components/TodaysPlanBanner";
+import DailyGoals from "./_components/DailyGoals";
+import RecentActivityList from "./_components/RecentActivityList";
+import UpgradeBanner from "./_components/UpgradeBanner";
+import GamificationStreak from "./_components/GamificationStreak";
+import ProgressCharts from "./_components/ProgressCharts";
+import WorkoutBreakdown from "./_components/WorkoutBreakdown";
+import CompleteProfileBanner from "./_components/CompleteProfileBanner";
+import DashboardInsight from "./_components/DashboardInsight";
+import QuickActions from "./_components/QuickActions";
+import PremiumAnalytics from "./_components/PremiumAnalytics";
+import AIWorkoutGenerator from "./_components/AIWorkoutGenerator";
+import PremiumTrends from "./_components/PremiumTrends";
+import PremiumTools from "./_components/PremiumTools";
 import { Megaphone, X, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";

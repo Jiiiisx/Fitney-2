@@ -4,7 +4,7 @@ import { users, workoutLogs, foodLogs, foods, userProfiles, userGoals, sleepLogs
 import { eq, desc, sql, and } from "drizzle-orm";
 import { verifyAuth } from "@/app/lib/auth";
 import { safeGenerateContent } from "@/app/lib/gemini";
-import { format, subDays } from "date-fns";
+import { format } from "date-fns";
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,11 +24,25 @@ export async function POST(req: NextRequest) {
     const goals = await db.select().from(userGoals).where(eq(userGoals.userId, userId));
 
     // Recent Activity (Critical for all modes)
+    // UPGRADE: Fetching detailed stats for AI analysis
     const recentWorkouts = await db.select().from(workoutLogs)
         .where(eq(workoutLogs.userId, userId))
         .orderBy(desc(workoutLogs.date))
-        .limit(5); // Increased to 5 for better Auditor context
+        .limit(10); // Analyze last 10 workouts for better pattern recognition
     
+    const formattedWorkouts = recentWorkouts.map(w => {
+        const dateStr = format(new Date(w.date), 'MMM d');
+        let details = "";
+        if (w.type === 'Strength') {
+             details = `${w.sets || '?'} sets x ${w.reps || '?'} reps @ ${w.weightKg || 0}kg`;
+        } else if (w.type === 'Cardio') {
+             details = `${w.durationMin || 0} min / ${w.distanceKm || 0} km`;
+        } else {
+             details = `${w.durationMin || 0} min`;
+        }
+        return `[${dateStr}] ${w.name}: ${details}`;
+    }).join("\n    ");
+
     // Nutrition Today
     const todayStr = format(new Date(), 'yyyy-MM-dd');
     const todayNutrition = await db.select({
@@ -61,7 +75,7 @@ export async function POST(req: NextRequest) {
                 FOCUS: Creating recipes, managing macros, food alternatives.
                 TONE: Creative, Practical, Encouraging.
                 CONTEXT: User ate ${Math.round(totalCals)}kcal / ${Math.round(totalProtein)}g protein today.
-                INSTRUCTION: If user lists ingredients, suggest a recipe that fits their remaining calorie needs.
+                INSTRUCTION: If user lists ingredients, suggest a recipe that fits their remaining calorie needs. Prioritize protein if they are low.
                 `;
             
             case 'auditor':
@@ -70,8 +84,15 @@ export async function POST(req: NextRequest) {
                 ROLE: Elite Strength Coach & Biomechanics Expert.
                 FOCUS: Training volume, muscle balance, form correction, progressive overload.
                 TONE: Technical, Analytical, Strict but fair.
-                CONTEXT: Recent workouts: ${recentWorkouts.map(w => w.name).join(', ')}.
-                INSTRUCTION: Analyze their workout frequency. Point out if they are skipping leg day or overtraining chest. Suggest substitutions if asked.
+                
+                DETAILED WORKOUT LOGS (Last 10):
+                ${formattedWorkouts}
+
+                INSTRUCTION: 
+                - Analyze the "Volume" (Sets x Reps x Weight).
+                - Look for "Progressive Overload" (are weights increasing?).
+                - Check for frequency (e.g., "You trained Legs twice this week, good job" or "You haven't trained Back in 5 days").
+                - If they ask for advice, reference their ACTUAL previous weights.
                 `;
 
             case 'recovery':
@@ -80,8 +101,10 @@ export async function POST(req: NextRequest) {
                 ROLE: Physiotherapist & Recovery Specialist.
                 FOCUS: Sleep, injury prevention, stress management, mobility.
                 TONE: Empathetic, Cautious, Soothing.
-                CONTEXT: Last sleep: ${lastSleep ? lastSleep.qualityRating + '/5' : 'No data'}. Workout strain is relevant.
-                INSTRUCTION: If user reports pain, suggest specific stretches or rest. Do NOT give medical prescriptions, but advise seeing a doctor for severe pain.
+                CONTEXT: Last sleep: ${lastSleep ? lastSleep.qualityRating + '/5' : 'No data'}. 
+                RECENT ACTIVITY: ${recentWorkouts.slice(0, 3).map(w => w.name).join(', ')}.
+                
+                INSTRUCTION: If user reports pain, suggest specific stretches or rest. Connect their sleep quality to their recent workout intensity.
                 `;
 
             case 'briefing':
@@ -107,7 +130,6 @@ export async function POST(req: NextRequest) {
 
     USER CURRENT DATA (SHARED MEMORY):
     - Active Goals: ${goals.map(g => g.title).join(", ") || "None"}
-    - Last Workout: ${recentWorkouts[0]?.name || "None"} (${recentWorkouts[0]?.date ? format(new Date(recentWorkouts[0].date), 'MMM d') : '- -'})
     
     CONVERSATION HISTORY:
     ${historyText}
