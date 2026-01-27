@@ -66,18 +66,18 @@ export default function PremiumAnalytics({ data, isPremium }: PremiumAnalyticsPr
                 )}
             </CardContent>
             
-            {isPremium && (
+            {isPremium && data.length > 0 && (
                  <div className="px-6 pb-6 grid grid-cols-2 gap-4">
                     <div className="p-3 bg-primary/5 rounded-2xl border border-primary/10">
                         <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Top Strength</p>
                         <p className="text-sm font-bold text-primary">
-                            {data.reduce((prev, current) => (prev.A > current.A) ? prev : current).subject}
+                            {data.reduce((prev, current) => (prev.A > current.A) ? prev : current)?.subject || 'N/A'}
                         </p>
                     </div>
                     <div className="p-3 bg-orange-500/5 rounded-2xl border border-orange-500/10">
                         <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Focus Area</p>
                         <p className="text-sm font-bold text-orange-500">
-                            {data.reduce((prev, current) => (prev.A < current.A) ? prev : current).subject}
+                            {data.reduce((prev, current) => (prev.A < current.A) ? prev : current)?.subject || 'N/A'}
                         </p>
                     </div>
                  </div>

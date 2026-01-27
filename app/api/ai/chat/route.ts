@@ -138,6 +138,7 @@ export async function POST(req: NextRequest) {
     `;
 
     const reply = await safeGenerateContent(fullPrompt);
+    console.log(`[AI-CHAT] Mode: ${mode}, Reply Length: ${reply?.length}`);
 
     return NextResponse.json({ reply });
 

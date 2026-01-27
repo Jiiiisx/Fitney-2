@@ -98,11 +98,16 @@ export async function GET(req: NextRequest) {
         
         const briefing = extractJSON(text);
 
-        if (!briefing) throw new Error("Failed to parse AI response");
+        if (!briefing || typeof briefing !== 'object') {
+            throw new Error("Invalid briefing structure");
+        }
 
         return NextResponse.json({
             date: format(today, 'MMMM d, yyyy'),
-            ...briefing
+            readinessScore: briefing.readinessScore || 70,
+            signals: briefing.signals || [],
+            recommendations: briefing.recommendations || [],
+            topInsight: briefing.topInsight || "Data analyzed successfully."
         });
     } catch (aiError) {
         console.error("GEMINI_CORE_ERROR", aiError);

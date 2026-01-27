@@ -32,17 +32,25 @@ export async function safeGenerateContent(prompt: string, retries = 2): Promise<
  * Handles Markdown code blocks (```json ... ```) and raw text
  */
 export function extractJSON(text: string) {
+  if (!text) return null;
   try {
-    // 1. Remove Markdown code blocks if present
-    let cleanText = text.replace(/```json\n?|\n?```/g, "").trim();
-    
-    // 2. If cleanText is still empty or weird, try regex match for { ... }
-    const jsonMatch = cleanText.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-    if (jsonMatch) {
-        cleanText = jsonMatch[0];
+    // 1. Try a direct parse first (cleanest case)
+    try {
+        return JSON.parse(text.trim());
+    } catch (e) {
+        // Continue to extraction logic
     }
 
-    return JSON.parse(cleanText);
+    // 2. Remove Markdown code blocks and any surrounding whitespace
+    let cleanText = text.replace(/```json\n?|\n?```/g, "").trim();
+    
+    // 3. Regex match for the first JSON object or array
+    const jsonMatch = cleanText.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+    if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]);
+    }
+
+    return null;
   } catch (e) {
     console.error("JSON_PARSE_ERROR", e);
     return null;

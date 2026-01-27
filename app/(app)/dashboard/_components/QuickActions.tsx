@@ -16,9 +16,9 @@ const FormLoadingSkeleton = () => (
   </div>
 )
 
-const AddWaterForm = dynamic(() => import('./forms/AddWaterForm'), { loading: () => <FormLoadingSkeleton/>});
-const AddMealForm = dynamic(() => import('./forms/AddMealForm'), { loading: () => <FormLoadingSkeleton/>});
-const LogWorkoutForm = dynamic(() => import('./forms/LogWorkoutForm'), { loading: () => <FormLoadingSkeleton/>});
+const AddWaterForm = dynamic(() => import('../../components/forms/AddWaterForm'), { loading: () => <FormLoadingSkeleton/>});
+const AddMealForm = dynamic(() => import('../../components/forms/AddMealForm'), { loading: () => <FormLoadingSkeleton/>});
+const LogWorkoutForm = dynamic(() => import('../../components/forms/LogWorkoutForm'), { loading: () => <FormLoadingSkeleton/>});
 
 const actions = [
   {

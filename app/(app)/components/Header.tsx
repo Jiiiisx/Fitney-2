@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Settings, Bell, User, Search, LogOut, Menu, X } from "lucide-react";
+import { Settings, Bell, User, LogOut, Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Popover,
@@ -15,6 +15,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { fetchWithAuth } from "@/app/lib/fetch-helper";
 import toast from "react-hot-toast";
+import useSWR from 'swr';
 
 interface UserProfile {
   fullName: string;
@@ -56,6 +57,8 @@ const Avatar = ({ user }: { user: UserProfile | null }) => {
   );
 };
 
+// SWR Fetcher
+const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 const Header = () => {
   const pathname = usePathname();
@@ -68,6 +71,13 @@ const Header = () => {
   const [hasInteracted, setHasInteracted] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const lastNotifId = useRef<number | null>(null);
+
+  // SWR Polling (Replaces manual setInterval)
+  const { data: notifications } = useSWR('/api/notifications', fetcher, {
+    refreshInterval: 5000, // Poll every 5s
+    revalidateOnFocus: true,
+    dedupingInterval: 2000,
+  });
 
   // Track first user interaction to allow audio playback
   useEffect(() => {
@@ -123,24 +133,6 @@ const Header = () => {
     }
   }, []);
 
-import useSWR from 'swr';
-
-// ... (existing imports)
-
-// SWR Fetcher
-const fetcher = (url: string) => fetch(url).then(res => res.json());
-
-const Header = () => {
-  // ... (existing state)
-  const lastNotifId = useRef<number | null>(null);
-
-  // SWR Polling (Replaces manual setInterval)
-  const { data: notifications } = useSWR('/api/notifications', fetcher, {
-    refreshInterval: 5000, // Poll every 5s
-    revalidateOnFocus: true,
-    dedupingInterval: 2000,
-  });
-
   useEffect(() => {
     if (notifications) {
       const unread = notifications.filter((n: any) => !n.isRead);
@@ -165,7 +157,10 @@ const Header = () => {
     }
   }, [notifications, notificationSound, playNotificationSound]);
 
-  // ... (rest of the component)
+  useEffect(() => {
+    fetchUser();
+    fetchLevel();
+  }, [fetchUser, fetchLevel]);
 
   const handleLogout = async () => {
     try {
@@ -185,7 +180,7 @@ const Header = () => {
 
   const navItems = [
     { href: "/dashboard", label: "Dashboard" },
-    { href: "/ai-coach", label: "AI Coach" }, // Added this
+    { href: "/ai-coach", label: "AI Coach" },
     { href: "/planner", label: "Planner" },
     { href: "/goals", label: "Goals" },
     { href: "/nutrition", label: "Nutrition" },
