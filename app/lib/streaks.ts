@@ -1,71 +1,85 @@
 import { db } from "@/app/lib/db";
-import { workoutLogs, userStreaks } from "@/app/lib/schema";
-import { eq, desc, sql } from "drizzle-orm";
-import { startOfDay, subDays, isSameDay } from "date-fns";
+import { workoutLogs, userStreaks, users, userPlanDayExercises, userPlanDays, userPlans } from "@/app/lib/schema";
+import { eq, desc, sql, and, gte, lt } from "drizzle-orm";
+import { startOfDay, subDays, endOfDay } from "date-fns";
 
 export async function updateUserStreak(userId: string) {
-  // 1. Ambil semua tanggal unik latihan user, urutkan dari terbaru
-  // Kita batasi misal 365 hari terakhir untuk performa, tapi streak > 1 tahun jarang.
-  // Ambil secukupnya, misal 100 record terakhir.
-  const logs = await db
-    .select({ date: workoutLogs.date })
-    .from(workoutLogs)
-    .where(eq(workoutLogs.userId, userId))
-    .orderBy(desc(workoutLogs.date));
-
-  if (logs.length === 0) {
-    // Tidak ada log, streak 0
-    await saveStreak(userId, 0, null);
-    return;
-  }
-
-  // 2. Normalisasi tanggal ke 'YYYY-MM-DD' atau Date object startOfDay
-  const uniqueDates = Array.from(new Set(logs.map(l => startOfDay(new Date(l.date)).toISOString())));
-  
-  // 3. Hitung Streak
-  // Streak valid jika latihan terakhir adalah HARI INI atau KEMARIN.
-  // Jika latihan terakhir 2 hari lalu, streak sudah putus (0).
-  
   const today = startOfDay(new Date());
-  const yesterday = subDays(today, 1);
-  const todayStr = today.toISOString();
-  const yesterdayStr = yesterday.toISOString();
+  const thirtyDaysAgo = subDays(today, 30);
 
-  // Cek apakah ada latihan hari ini atau kemarin
-  const hasActivityToday = uniqueDates.includes(todayStr);
-  const hasActivityYesterday = uniqueDates.includes(yesterdayStr);
+  // 1. Hitung berapa banyak jadwal yang terlewat (Missed) dalam 30 hari terakhir
+  // Kita ambil semua jadwal yang tanggalnya sudah lewat namun belum selesai
+  const missedDaysResult = await db.select({ count: sql<number>`count(*)` })
+    .from(userPlanDays)
+    .innerJoin(userPlans, eq(userPlanDays.userPlanId, userPlans.id))
+    .where(
+      and(
+        eq(userPlans.userId, userId),
+        lt(userPlanDays.date, today.toISOString().split('T')[0]),
+        gte(userPlanDays.date, thirtyDaysAgo.toISOString().split('T')[0]),
+        sql`NOT EXISTS (
+          SELECT 1 FROM ${workoutLogs} 
+          WHERE ${workoutLogs.userId} = ${userId} 
+          AND date::date = ${userPlanDays.date}::date
+        )`,
+        sql`${userPlanDays.name} != 'Rest Day'` // Rest day tidak dihitung missed
+      )
+    );
 
-  if (!hasActivityToday && !hasActivityYesterday) {
-    // Streak putus
-    await saveStreak(userId, 0, new Date(uniqueDates[0])); // Simpan last activity date meski streak 0
-    return;
-  }
+  const missedCount = Number(missedDaysResult[0]?.count || 0);
 
-  // Mulai hitung
-  // Jika ada activity hari ini, mulai hitung dari hari ini mundur.
-  // Jika tidak ada hari ini (tapi ada kemarin), mulai hitung dari kemarin mundur.
-  
+  // 2. Tentukan status Streak
+  // Jika missed > 5, streak reset. Jika tidak, streak berlanjut berdasarkan hari aktif.
   let currentStreak = 0;
-  let checkDate = hasActivityToday ? today : yesterday;
-  
-  while (true) {
-    const checkDateStr = checkDate.toISOString();
-    if (uniqueDates.includes(checkDateStr)) {
-      currentStreak++;
-      checkDate = subDays(checkDate, 1);
-    } else {
-      break;
-    }
+  if (missedCount <= 5) {
+      // Hitung streak aktif (hari-hari di mana ada latihan)
+      const logs = await db
+        .select({ date: workoutLogs.date })
+        .from(workoutLogs)
+        .where(eq(workoutLogs.userId, userId))
+        .orderBy(desc(workoutLogs.date));
+
+      if (logs.length > 0) {
+        const uniqueDates = Array.from(new Set(logs.map(l => startOfDay(new Date(l.date)).toISOString())));
+        const lastLogDate = startOfDay(new Date(uniqueDates[0]));
+        
+        // Streak tetap hidup jika latihan terakhir maksimal 7 hari lalu (selama jatah missed masih ada)
+        if (differenceInDays(today, lastLogDate) <= 7) {
+            let checkDate = lastLogDate;
+            while (uniqueDates.includes(checkDate.toISOString())) {
+                currentStreak++;
+                checkDate = subDays(checkDate, 1);
+            }
+        }
+      }
   }
 
-  // 4. Update Database
-  // Last activity date adalah tanggal paling baru di log (bisa hari ini atau kemarin atau kapanpun)
-  const lastActivity = new Date(uniqueDates[0]);
-  await saveStreak(userId, currentStreak, lastActivity);
+  // 3. Update Database
+  await saveStreak(userId, currentStreak, new Date());
+}
+
+// Helper untuk hitung selisih hari
+function differenceInDays(date1: Date, date2: Date) {
+    return Math.floor((date1.getTime() - date2.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+export async function applyMissedPenalty(userId: string) {
+    const penaltyAmount = 50;
+    
+    // Ambil user saat ini
+    const user = await db.select({ xp: users.xp }).from(users).where(eq(users.id, userId)).limit(1);
+    if (!user.length) return;
+
+    const newXp = Math.max(0, (user[0].xp || 0) - penaltyAmount);
+
+    await db.update(users)
+        .set({ xp: newXp })
+        .where(eq(users.id, userId));
+    
+    return penaltyAmount;
 }
 
 async function saveStreak(userId: string, streak: number, lastDate: Date | null) {
-  // Cek exist
   const existing = await db
     .select()
     .from(userStreaks)
@@ -76,7 +90,7 @@ async function saveStreak(userId: string, streak: number, lastDate: Date | null)
     await db.update(userStreaks)
       .set({
         currentStreak: streak,
-        lastActivityDate: lastDate ? lastDate.toISOString().split('T')[0] : null // cast to date string YYYY-MM-DD if schema uses date
+        lastActivityDate: lastDate ? lastDate.toISOString().split('T')[0] : null
       })
       .where(eq(userStreaks.userId, userId));
   } else {

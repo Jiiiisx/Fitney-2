@@ -10,7 +10,8 @@ import {
   ChevronDown,
   AlertCircle,
   Check,
-  Loader2
+  Loader2,
+  Coffee
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -34,7 +35,7 @@ const typeConfig = {
   Strength: { icon: <Dumbbell className="w-3.5 h-3.5" />, color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800" },
   Cardio: { icon: <HeartPulse className="w-3.5 h-3.5" />, color: "text-red-600 dark:text-red-400", bg: "bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800" },
   Flexibility: { icon: <Wind className="w-3.5 h-3.5" />, color: "text-green-600 dark:text-green-400", bg: "bg-green-50 dark:bg-green-900/20 border-green-100 dark:border-green-800" },
-  "Rest Day": { icon: <CheckCircle2 className="w-3.5 h-3.5" />, color: "text-slate-600 dark:text-slate-400", bg: "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700" },
+  "Rest Day": { icon: <Coffee className="w-3.5 h-3.5" />, color: "text-slate-600 dark:text-slate-400", bg: "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700" },
 };
 
 interface WorkoutCardProps {
@@ -161,34 +162,42 @@ export default function WorkoutCard({ workout, onDelete, onComplete }: WorkoutCa
 
         {/* Action Button - Full Width for Alignment */}
         <div className="pt-1">
-            {workout.status === 'missed' && onComplete && (
-                <button 
-                    onClick={(e) => { e.stopPropagation(); onComplete(); }} 
-                    className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-600 border border-red-100 hover:bg-red-100 hover:border-red-200 transition-all text-xs font-semibold shadow-sm"
-                >
-                    <AlertCircle className="w-3.5 h-3.5" />
-                    Log Missed
-                </button>
-            )}
-            
-            {workout.status === 'scheduled' && onComplete && (
-                <button 
-                    onClick={(e) => { e.stopPropagation(); onComplete(); }} 
-                    className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all text-xs font-semibold shadow-sm"
-                >
-                    <Check className="w-3.5 h-3.5" />
-                    Complete
-                </button>
-            )}
-            
-            {workout.status === 'completed' && (
-                <div className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-50 text-green-700 border border-green-100 text-xs font-semibold">
-                    <Check className="w-3.5 h-3.5" />
-                    Completed
+            {workout.type === 'Rest Day' ? (
+                <div className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/50 text-slate-500 border border-dashed border-slate-200 dark:border-slate-700 text-[10px] font-bold italic">
+                   Enjoy Your Recovery
                 </div>
+            ) : (
+                <>
+                    {workout.status === 'missed' && onComplete && (
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); onComplete(); }} 
+                            className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-600 border border-red-100 hover:bg-red-100 hover:border-red-200 transition-all text-xs font-semibold shadow-sm"
+                        >
+                            <AlertCircle className="w-3.5 h-3.5" />
+                            Log Missed
+                        </button>
+                    )}
+                    
+                    {workout.status === 'scheduled' && onComplete && (
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); onComplete(); }} 
+                            className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all text-xs font-semibold shadow-sm"
+                        >
+                            <Check className="w-3.5 h-3.5" />
+                            Complete
+                        </button>
+                    )}
+                    
+                    {workout.status === 'completed' && (
+                        <div className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-50 text-green-700 border border-green-100 text-xs font-semibold">
+                            <Check className="w-3.5 h-3.5" />
+                            Completed
+                        </div>
+                    )}
+                </>
             )}
              {/* Read-only scheduled state (no onComplete or duration only) */}
-             {workout.status === 'scheduled' && !onComplete && (
+             {workout.status === 'scheduled' && !onComplete && workout.type !== 'Rest Day' && (
                  <div className="w-full h-[28px]"></div> // Spacer to keep height consistent
              )}
         </div>
