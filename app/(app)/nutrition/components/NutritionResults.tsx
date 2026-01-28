@@ -7,8 +7,15 @@ import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
-import { Pencil, Plus, Droplets, Flame, Utensils, Lightbulb, Sparkles, ChefHat, Search, Loader2 } from 'lucide-react';
+import { Pencil, Plus, Droplets, Flame, Utensils, Lightbulb, Sparkles, ChefHat, Search, Loader2, Info } from 'lucide-react';
 import AddFoodModal from './AddFoodModal'; // Import Modal
+import { calculateDailyAdjustedTargets } from '@/app/lib/nutrition-calculator';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface UserData {
   tdee: number;
@@ -48,6 +55,7 @@ export default function NutritionResults({ userData, onEdit }: NutritionResultsP
   const [waterIntake, setWaterIntake] = useState(0);
   const [loading, setLoading] = useState(true);
   const [isAddFoodOpen, setIsAddFoodOpen] = useState(false); // State untuk Modal
+  const [activityType, setActivityType] = useState<'rest' | 'normal' | 'heavy'>('normal');
 
   // --- State for Recommendations ---
   const [recommendedFoods, setRecommendedFoods] = useState<RecommendedFood[]>([]);
@@ -59,11 +67,12 @@ export default function NutritionResults({ userData, onEdit }: NutritionResultsP
   // --- Fetch Nutrition Data ---
   const refreshData = useCallback(async () => {
     try {
-      const [summaryRes, logsRes, waterRes, recFoodsRes] = await Promise.all([
+      const [summaryRes, logsRes, waterRes, recFoodsRes, planRes] = await Promise.all([
         fetch("/api/nutrition/summary", { credentials: 'include' }),
         fetch("/api/nutrition/log", { credentials: 'include' }),
         fetch("/api/nutrition/water", { credentials: 'include' }),
-        fetch("/api/nutrition/recommendations", { credentials: 'include' })
+        fetch("/api/nutrition/recommendations", { credentials: 'include' }),
+        fetch("/api/stats/dashboard", { credentials: 'include' }) // Reuse dashboard API to get today's plan
       ]);
 
       if (summaryRes.ok) setSummary(await summaryRes.json());
@@ -73,6 +82,17 @@ export default function NutritionResults({ userData, onEdit }: NutritionResultsP
         setWaterIntake(waterData.amountMl || 0);
       }
       if (recFoodsRes.ok) setRecommendedFoods(await recFoodsRes.json());
+      
+      if (planRes.ok) {
+        const dashData = await planRes.json();
+        if (dashData.todaysPlan?.planName === 'Rest Day') {
+            setActivityType('rest');
+        } else if (dashData.today?.workouts > 0) {
+            setActivityType('heavy');
+        } else {
+            setActivityType('normal');
+        }
+      }
     } catch (error) {
       console.error("Failed to fetch data", error);
     } finally {
@@ -136,9 +156,10 @@ export default function NutritionResults({ userData, onEdit }: NutritionResultsP
     handleRecipeSearch(searchQuery);
   };
 
-  // Calculations
+  // Calculations with Dynamic Adjustment
+  const adjustedTargets = calculateDailyAdjustedTargets(userData.tdee, activityType);
   const consumedCalories = summary?.consumed?.calories || 0;
-  const targetCalories = userData.tdee;
+  const targetCalories = adjustedTargets.calories;
   const calPercentage = Math.min(100, (consumedCalories / targetCalories) * 100);
 
   return (
@@ -153,7 +174,17 @@ export default function NutritionResults({ userData, onEdit }: NutritionResultsP
                 <Flame className="w-5 h-5 text-orange-500 fill-orange-500" />
                 Daily Nutrition
               </h2>
-              <p className="text-sm text-muted-foreground">Target based on your TDEE</p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-sm text-muted-foreground">Adjusted for your <span className="font-bold text-emerald-600 dark:text-emerald-400">{activityType === 'rest' ? 'Rest Day' : activityType === 'heavy' ? 'Workout Day' : 'Activity'}</span></p>
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger><Info className="w-3 h-3 text-muted-foreground" /></TooltipTrigger>
+                        <TooltipContent className="max-w-[200px] text-xs">
+                            Fitney automatically adjusts your calorie and macro targets based on whether you are working out or resting today.
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+              </div>
             </div>
             <Button onClick={onEdit} variant="outline" size="sm" className="h-8 text-xs">
               <Pencil className="w-3 h-3 mr-2" /> Recalculate
@@ -163,23 +194,26 @@ export default function NutritionResults({ userData, onEdit }: NutritionResultsP
           <div className="space-y-2 mb-6">
             <div className="flex justify-between text-sm font-medium">
               <span>{consumedCalories} kcal consumed</span>
-              <span className="text-muted-foreground">Target: {targetCalories}</span>
+              <span className="text-muted-foreground font-bold">Today's Target: {targetCalories}</span>
             </div>
             <Progress value={calPercentage} className="h-3 bg-emerald-200 dark:bg-emerald-900" indicatorClassName="bg-emerald-500" />
           </div>
 
           <div className="grid grid-cols-3 gap-4 text-center">
-            <div className="p-3 bg-white/50 dark:bg-black/20 rounded-xl">
+            <div className="p-3 bg-white/50 dark:bg-black/20 rounded-xl relative overflow-hidden group">
               <p className="text-xs text-muted-foreground uppercase tracking-wider">Protein</p>
-              <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400">{summary?.consumed?.protein || 0}g</p>
+              <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400">{summary?.consumed?.protein || 0}g <span className="text-[10px] font-normal opacity-50">/ {adjustedTargets.protein}g</span></p>
+              <div className="absolute bottom-0 left-0 h-1 bg-emerald-500 transition-all duration-500" style={{ width: `${Math.min(100, ((summary?.consumed?.protein || 0) / adjustedTargets.protein) * 100)}%` }} />
             </div>
-            <div className="p-3 bg-white/50 dark:bg-black/20 rounded-xl">
+            <div className="p-3 bg-white/50 dark:bg-black/20 rounded-xl relative overflow-hidden">
               <p className="text-xs text-muted-foreground uppercase tracking-wider">Carbs</p>
-              <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400">{summary?.consumed?.carbs || 0}g</p>
+              <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400">{summary?.consumed?.carbs || 0}g <span className="text-[10px] font-normal opacity-50">/ {adjustedTargets.carbs}g</span></p>
+              <div className="absolute bottom-0 left-0 h-1 bg-emerald-500 transition-all duration-500" style={{ width: `${Math.min(100, ((summary?.consumed?.carbs || 0) / adjustedTargets.carbs) * 100)}%` }} />
             </div>
-            <div className="p-3 bg-white/50 dark:bg-black/20 rounded-xl">
+            <div className="p-3 bg-white/50 dark:bg-black/20 rounded-xl relative overflow-hidden">
               <p className="text-xs text-muted-foreground uppercase tracking-wider">Fat</p>
-              <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400">{summary?.consumed?.fat || 0}g</p>
+              <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400">{summary?.consumed?.fat || 0}g <span className="text-[10px] font-normal opacity-50">/ {adjustedTargets.fat}g</span></p>
+              <div className="absolute bottom-0 left-0 h-1 bg-emerald-500 transition-all duration-500" style={{ width: `${Math.min(100, ((summary?.consumed?.fat || 0) / adjustedTargets.fat) * 100)}%` }} />
             </div>
           </div>
         </CardContent>

@@ -47,3 +47,42 @@ export function calculateTDEE({ gender, age, weight, height, activityLevel }: Us
 
   return Math.round(tdee);
 }
+
+/**
+ * Adjusts targets based on the day's activity level.
+ */
+export function calculateDailyAdjustedTargets(baseTdee: number, activityType: 'rest' | 'normal' | 'heavy') {
+  let adjustedCalories = baseTdee;
+  let proteinRatio = 0.3; // 30% default
+  let carbRatio = 0.4;    // 40% default
+  let fatRatio = 0.3;     // 30% default
+
+  switch (activityType) {
+    case 'rest':
+      // Reduce calories on rest days, lower carbs
+      adjustedCalories = Math.round(baseTdee * 0.9);
+      proteinRatio = 0.35; // Higher protein to preserve muscle
+      carbRatio = 0.30;    // Lower carbs
+      fatRatio = 0.35;
+      break;
+    case 'heavy':
+      // Increase calories for heavy days, higher carbs
+      adjustedCalories = Math.round(baseTdee * 1.1);
+      proteinRatio = 0.25;
+      carbRatio = 0.50;    // More carbs for energy/recovery
+      fatRatio = 0.25;
+      break;
+    default:
+      // Normal activity
+      break;
+  }
+
+  // Convert ratios to grams
+  // Protein & Carbs: 4 cal/g, Fat: 9 cal/g
+  return {
+    calories: adjustedCalories,
+    protein: Math.round((adjustedCalories * proteinRatio) / 4),
+    carbs: Math.round((adjustedCalories * carbRatio) / 4),
+    fat: Math.round((adjustedCalories * fatRatio) / 9),
+  };
+}
