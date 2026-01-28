@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { User, Image as ImageIcon, Send, X } from "lucide-react";
+import { User, Image as ImageIcon, Send, X, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createPost, uploadImage } from "../hooks/useCommunity";
 import { useCurrentUser } from "../hooks/useCurrentUser";
 import toast from "react-hot-toast";
+import ShareModal from "../../components/sharing/ShareModal";
 
 interface Hashtag {
   tag: string;
@@ -19,6 +20,19 @@ export default function CreatePost() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [isPosting, setIsPosting] = useState(false);
+
+  // Data for sharing (Ideally fetch recent workout, but using sample for now)
+  const shareData = {
+    type: "Workout",
+    durationMinutes: 60,
+    caloriesBurned: 450,
+    date: new Date(),
+    workoutName: "Community Fitness",
+    user: {
+      name: user?.fullName || "Fitney Member",
+      username: user?.id?.slice(0, 8) || "fitney",
+    }
+  };
 
   // Hashtag Autocomplete States
   const [hashtags, setHashtags] = useState<Hashtag[]>([]);
@@ -218,15 +232,28 @@ export default function CreatePost() {
           <div className="flex-grow bg-muted/30 hover:bg-muted/50 transition-colors border border-border/50 rounded-full py-2.5 px-5 text-muted-foreground text-sm">
             Share your progress...
           </div>
-          <button
-            className="p-2 text-muted-foreground hover:text-primary transition-colors"
-            onClick={(e) => {
-              e.stopPropagation();
-              fileInputRef.current?.click();
-            }}
-          >
-            <ImageIcon className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-1">
+             <ShareModal 
+                workoutData={shareData}
+                trigger={
+                   <button
+                    className="p-2 text-muted-foreground hover:text-primary transition-colors"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Trophy className="w-5 h-5" />
+                  </button>
+                }
+             />
+             <button
+                className="p-2 text-muted-foreground hover:text-primary transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  fileInputRef.current?.click();
+                }}
+              >
+                <ImageIcon className="w-5 h-5" />
+              </button>
+          </div>
         </div>
       ) : (
         // EXPANDED VIEW
@@ -306,11 +333,23 @@ export default function CreatePost() {
               />
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="text-muted-foreground hover:text-primary p-2 rounded-full hover:bg-primary/10 transition-colors flex items-center gap-2 group"
+                className="text-muted-foreground hover:text-foreground p-2 rounded-lg hover:bg-muted transition-colors flex items-center gap-2"
               >
-                <ImageIcon className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-medium">Add Photo</span>
+                <ImageIcon className="w-4 h-4" />
+                <span className="text-xs font-medium">Photo</span>
               </button>
+
+              <ShareModal 
+                workoutData={shareData}
+                trigger={
+                  <button
+                    className="text-muted-foreground hover:text-amber-500 p-2 rounded-lg hover:bg-amber-500/5 transition-colors flex items-center gap-2"
+                  >
+                    <Trophy className="w-4 h-4" />
+                    <span className="text-xs font-medium">Achievement</span>
+                  </button>
+                }
+              />
             </div>
 
             <div className="flex items-center gap-2">

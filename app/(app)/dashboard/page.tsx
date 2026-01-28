@@ -17,9 +17,11 @@ import PremiumAnalytics from "./_components/PremiumAnalytics";
 import AIWorkoutGenerator from "./_components/AIWorkoutGenerator";
 import PremiumTrends from "./_components/PremiumTrends";
 import PremiumTools from "./_components/PremiumTools";
-import { Megaphone, X, Loader2 } from "lucide-react";
-import { motion } from "framer-motion";
+import { Megaphone, X, Loader2, Share2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
+import ShareModal from "../components/sharing/ShareModal";
+import { Button } from "@/components/ui/button";
 
 // Interface yang lebih fleksibel agar cocok dengan respons API dan props komponen
 interface DashboardData {
@@ -44,17 +46,25 @@ interface DashboardData {
   trendData: any[];
 }
 
+interface UserProfile {
+  fullName: string;
+  id: string;
+  imageUrl?: string;
+}
+
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [announcement, setAnnouncement] = useState<any>(null);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [dashRes, annRes] = await Promise.all([
+        const [dashRes, annRes, profileRes] = await Promise.all([
           fetch("/api/stats/dashboard", { credentials: 'include' }),
-          fetch("/api/announcements")
+          fetch("/api/announcements"),
+          fetch("/api/users/profile")
         ]);
 
         if (dashRes.ok) {
@@ -65,6 +75,11 @@ export default function DashboardPage() {
         if (annRes.ok) {
           const annResult = await annRes.json();
           if (annResult.length > 0) setAnnouncement(annResult[0]);
+        }
+
+        if (profileRes.ok) {
+          const profileResult = await profileRes.json();
+          setUserProfile(profileResult);
         }
       } catch (error) {
         console.error("Failed to fetch dashboard data", error);
@@ -95,8 +110,44 @@ export default function DashboardPage() {
   // Menyiapkan data breakdown dengan default value
   const safeBreakdown = data?.breakdown || { mostFrequent: "N/A", avgDuration: 0, heatmap: [] };
 
+  const shareData = {
+    type: "Daily Progress",
+    durationMinutes: safeStats.duration,
+    caloriesBurned: safeStats.calories,
+    date: new Date(),
+    workoutName: safeStats.workouts > 0 ? `${safeStats.workouts} Workouts Done` : "Daily Activity",
+    user: {
+      name: userProfile?.fullName || "Fitney User",
+      username: "fitney_member",
+    }
+  };
+
   return (
-    <div className="min-h-screen lg:h-full">
+    <div className="min-h-screen lg:h-full relative">
+      {/* Floating Share Button - Minimalist & Elegant */}
+      <AnimatePresence>
+        {!loading && (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="fixed bottom-24 right-6 z-50 lg:bottom-10 lg:right-10"
+          >
+            <ShareModal 
+              workoutData={shareData}
+              trigger={
+                <Button 
+                  size="icon"
+                  className="rounded-full h-12 w-12 lg:h-auto lg:w-auto lg:px-5 lg:py-2.5 shadow-lg shadow-black/10 hover:shadow-xl transition-all bg-zinc-900 hover:bg-zinc-800 text-white border border-zinc-800 lg:flex lg:items-center lg:gap-2 group"
+                >
+                  <Share2 className="w-5 h-5 lg:w-4 lg:h-4 text-primary" />
+                  <span className="hidden lg:inline text-sm font-medium tracking-tight">Share Progress</span>
+                </Button>
+              }
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="flex flex-col lg:grid lg:grid-cols-3 min-h-screen lg:h-full">
         {/* Main Content Area (Scrollable) */}
         <div className="order-2 lg:order-1 lg:col-span-2 space-y-6 lg:space-y-8 overflow-y-auto p-6 lg:p-8 pb-[10.5rem] lg:pb-[10.5rem] scrollbar-hide">
