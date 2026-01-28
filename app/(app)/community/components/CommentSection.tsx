@@ -179,19 +179,49 @@ export default function CommentSection({
 
   const handleSubmit = async () => {
     if (!input.trim()) return;
-    setIsSubmitting(true);
-    try {
-      // If replying, use parentId
-      const parentId = replyingTo ? replyingTo.id : undefined;
-      await createComment(postId, input, parentId);
+    const content = input;
+    const parentId = replyingTo ? replyingTo.id : null; // Ensure null if undefined
 
-      setInput("");
-      setReplyingTo(null);
-      onCommentAdded();
-      onCommentAdded();
-      refreshComments(); // Revalidate SWR
+    // 1. Prepare Optimistic Data
+    const optimisticComment: CommentData = {
+      id: Date.now(), // Temporary ID
+      content: content,
+      createdAt: new Date().toISOString(),
+      parentId: parentId,
+      userId: user?.id || 'temp-user',
+      user: {
+        fullName: user?.fullName || 'Me',
+        imageUrl: user?.imageUrl || null,
+        username: user?.username || 'me',
+      },
+      replies: []
+    };
+
+    setIsSubmitting(true);
+    setInput(""); // Clear input immediately for UX
+    setReplyingTo(null);
+
+    try {
+      // 2. Optimistic Update SWR Cache
+      await refreshComments(
+        (currentData) => {
+          if (!currentData) return [optimisticComment];
+          return [...currentData, optimisticComment];
+        },
+        { revalidate: false } // Jangan fetch dulu
+      );
+      
+      onCommentAdded(); // Update counter UI immediately
+
+      // 3. Perform Actual API Call
+      await createComment(postId, content, parentId || undefined);
+
+      // 4. Revalidate to get real ID and data from server
+      refreshComments();
     } catch (error) {
-      // Error handled in hook
+      console.error("Failed to post comment", error);
+      // Revert/Revalidate if failed
+      refreshComments();
     } finally {
       setIsSubmitting(false);
     }

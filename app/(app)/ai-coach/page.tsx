@@ -8,13 +8,11 @@ import {
     Zap, 
     Utensils, 
     Dumbbell, 
-    ShieldAlert, 
     Send,
     Activity,
     RefreshCcw,
     HeartPulse,
     X,
-    Plus,
     AlertTriangle,
     CheckCircle2
 } from "lucide-react";
@@ -22,6 +20,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { Typewriter } from "@/components/ui/typewriter";
+import { getOrCreateTodaySession, saveChatMessage, getChatHistory } from "@/app/actions/ai-coach";
+import { toast } from "react-hot-toast";
 
 const AI_TOOLS = [
     { id: 'briefing', name: 'Daily Briefing', icon: HeartPulse, color: 'text-rose-500', desc: 'Predictive health analysis' },
@@ -40,9 +40,10 @@ const QUICK_CHIPS: Record<string, string[]> = {
 export default function AICoachHub() {
     const [activeTool, setActiveTool] = useState('briefing');
     const [chatInput, setChatInput] = useState("");
-    const [messages, setMessages] = useState<{role: 'user'|'bot', content: string}[]>([]);
+    const [messages, setMessages] = useState<{role: 'user'|'bot'|'assistant', content: string}[]>([]);
     const [loading, setLoading] = useState(true);
     const [isChatting, setIsChatting] = useState(false);
+    const [sessionId, setSessionId] = useState<number | null>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
     
     const [briefing, setBriefing] = useState<any>(null);
@@ -59,6 +60,29 @@ export default function AICoachHub() {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
     }, [messages, isChatting]);
+
+    // Initialize Chat Session & History
+    useEffect(() => {
+        const initSession = async () => {
+            try {
+                const session = await getOrCreateTodaySession();
+                if (session && session.sessionId) {
+                    setSessionId(session.sessionId);
+                    const history = await getChatHistory(session.sessionId);
+                    if (history.messages) {
+                        setMessages(history.messages.map(m => ({
+                            role: m.role as 'user' | 'bot' | 'assistant',
+                            content: m.content
+                        })));
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to init chat:", error);
+                toast.error("Failed to load chat history");
+            }
+        };
+        initSession();
+    }, []);
 
     const fetchBriefing = async () => {
         setBriefingError(false);
@@ -119,22 +143,40 @@ export default function AICoachHub() {
 
     const handleSendMessage = async (msgOverride?: string) => {
         const text = msgOverride || chatInput;
-        if (!text) return;
+        if (!text || !sessionId) return; // Prevent chat if no session
+
+        // Optimistic Update
         const newMsg = { role: 'user' as const, content: text };
         const updatedHistory = [...messages, newMsg];
         setMessages(updatedHistory);
         setChatInput("");
         setIsChatting(true);
+
         try {
+            // Save User Message Async (Non-blocking)
+            saveChatMessage(sessionId, 'user', text);
+
             const res = await fetch("/api/ai/chat", {
                 method: "POST",
                 body: JSON.stringify({ message: text, messages: updatedHistory, mode: activeTool })
             });
+
             if (res.ok) {
                 const data = await res.json();
-                setMessages(prev => [...prev, { role: 'bot', content: data.reply }]);
+                const botReply = data.reply;
+                
+                // Update UI
+                setMessages(prev => [...prev, { role: 'bot', content: botReply }]);
+                
+                // Save Bot Message
+                await saveChatMessage(sessionId, 'assistant', botReply);
+            } else {
+                toast.error("Coach is temporarily unavailable.");
             }
-        } catch (e) { }
+        } catch (e) { 
+            console.error(e);
+            toast.error("Failed to send message.");
+        }
         setIsChatting(false);
     };
 

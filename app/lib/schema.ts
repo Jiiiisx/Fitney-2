@@ -66,6 +66,10 @@ export const exercises = pgTable('exercises', {
   categoryId: integer('category_id').references(() => categories.id),
   imageUrl: varchar('image_url', { length: 255 }),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+}, (table) => {
+  return {
+    exercisesCategoryIdIdx: index('exercises_category_id_idx').on(table.categoryId),
+  };
 });
 
 // Workout Program Templates
@@ -205,6 +209,11 @@ export const posts = pgTable('posts', {
   images: json('images').$type<string[]>().default([]),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+}, (table) => {
+  return {
+    postsUserIdIdx: index('posts_user_id_idx').on(table.userId),
+    postsCreatedAtIdx: index('posts_created_at_idx').on(table.createdAt),
+  };
 });
 
 export const stories = pgTable('stories', {
@@ -268,6 +277,10 @@ export const postComments = pgTable('post_comments', {
   parentId: integer('parent_id').references((): AnyPgColumn => postComments.id, { onDelete: 'cascade' }),
   content: text('content').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, (table) => {
+  return {
+    postCommentsPostIdIdx: index('post_comments_post_id_idx').on(table.postId),
+  };
 });
 
 // GROUPS (NEW)
@@ -406,6 +419,11 @@ export const notifications = pgTable('notifications', {
   linkUrl: varchar('link_url', { length: 255 }),
   isRead: boolean('is_read').default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, (table) => {
+  return {
+    notificationsUserIdIdx: index('notifications_user_id_idx').on(table.userId),
+    notificationsIsReadIdx: index('notifications_is_read_idx').on(table.isRead),
+  };
 });
 
 // Reports (NEW)
@@ -461,6 +479,16 @@ export const userProfiles = pgTable('user_profiles', {
   mainGoal: varchar('main_goal', { length: 50 }),
   experienceLevel: varchar('experience_level', { length: 50 }),
   workoutLocation: varchar('workout_location', { length: 50 }),
+  gender: varchar('gender', { length: 20 }),
+  age: integer('age'),
+  weight: numeric('weight', { precision: 10, scale: 2 }),
+  height: numeric('height', { precision: 10, scale: 2 }),
+  activityLevel: varchar('activity_level', { length: 50 }),
+  tdee: integer('tdee'),
+  calorieTarget: integer('calorie_target'),
+  proteinTarget: integer('protein_target'),
+  carbsTarget: integer('carbs_target'),
+  fatTarget: integer('fat_target'),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 });
 
@@ -475,7 +503,36 @@ export const communityEvents = pgTable('community_events', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
 
+export const aiChatSessions = pgTable('ai_chat_sessions', {
+  id: serial('id').primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  title: varchar('title', { length: 255 }).default('New Chat'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+});
+
+export const aiChatMessages = pgTable('ai_chat_messages', {
+  id: serial('id').primaryKey(),
+  sessionId: integer('session_id').notNull().references(() => aiChatSessions.id, { onDelete: 'cascade' }),
+  role: varchar('role', { length: 20 }).notNull(), // 'user' | 'assistant'
+  content: text('content').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, (table) => {
+  return {
+    aiChatMessagesSessionIdIdx: index('ai_chat_messages_session_id_idx').on(table.sessionId),
+  };
+});
+
 import { relations } from 'drizzle-orm';
+
+export const aiChatSessionsRelations = relations(aiChatSessions, ({ one, many }) => ({
+  user: one(users, { fields: [aiChatSessions.userId], references: [users.id] }),
+  messages: many(aiChatMessages),
+}));
+
+export const aiChatMessagesRelations = relations(aiChatMessages, ({ one }) => ({
+  session: one(aiChatSessions, { fields: [aiChatMessages.sessionId], references: [aiChatSessions.id] }),
+}));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
   userProfile: one(userProfiles, { fields: [users.id], references: [userProfiles.userId] }),
@@ -504,6 +561,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   savedPosts: many(savedPosts),
   hiddenGroupMessages: many(hiddenGroupMessages),
   hiddenDirectMessages: many(hiddenDirectMessages),
+  aiChatSessions: many(aiChatSessions),
 }));
 
 export const directMessagesRelations = relations(directMessages, ({ one }) => ({

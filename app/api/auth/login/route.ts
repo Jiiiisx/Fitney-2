@@ -2,17 +2,24 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { db } from '@/app/lib/db';
 import { users } from '@/app/lib/schema';
+import { loginSchema } from '@/app/lib/validators';
 import bcrypt from 'bcryptjs';
 import { SignJWT } from 'jose';
 import { eq, or } from 'drizzle-orm'
 
 export async function POST(req: Request) {
   try {
-    const { identifier, password } = await req.json();
+    const body = await req.json();
+    const validatedFields = loginSchema.safeParse(body);
 
-    if (!identifier || !password) {
-      return NextResponse.json({ error: 'Missing identifier or password' }, { status: 400 });
+    if (!validatedFields.success) {
+      return NextResponse.json({ 
+        error: 'Validation Error', 
+        details: validatedFields.error.flatten().fieldErrors 
+      }, { status: 400 });
     }
+
+    const { identifier, password } = validatedFields.data;
 
     const userResult = await db
       .select()

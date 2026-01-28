@@ -4,57 +4,75 @@ import { useState, useEffect } from 'react';
 import NutritionWizard from './components/NutritionWizard';
 import NutritionResults from './components/NutritionResults';
 import { calculateTDEE } from '@/app/lib/nutrition-calculator';
-
-const LOCAL_STORAGE_KEY = 'fitneyNutritionData';
+import { saveNutritionProfile, getNutritionProfile } from '@/app/actions/nutrition';
+import { toast } from 'react-hot-toast';
 
 export default function NutritionPage() {
   const [userData, setUserData] = useState<any>(null);
-  const [loading, setLoading] = useState(true); // To prevent flash of content
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // On initial mount, check if data exists in local storage
-    try {
-      const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (savedData) {
-        setUserData(JSON.parse(savedData));
+    const loadProfile = async () => {
+      try {
+        const { profile, error } = await getNutritionProfile();
+        if (error) {
+          console.error(error);
+        } else if (profile) {
+          setUserData(profile);
+        }
+      } catch (error) {
+        console.error("Failed to load nutrition profile", error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Failed to read from local storage", error);
-    } finally {
-      setLoading(false);
-    }
+    };
+    loadProfile();
   }, []);
 
-  const handleWizardComplete = (wizardData: any) => { 
-    const tdee = calculateTDEE({
-      ...wizardData,
-      age: parseInt(wizardData.age, 10),
-      weight: parseFloat(wizardData.weight),
-      height: parseFloat(wizardData.height),
-    });
-
-    const dataToSave = { ...wizardData, tdee };
-    
+  const handleWizardComplete = async (wizardData: any) => { 
+    setLoading(true);
     try {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dataToSave));
-      setUserData(dataToSave);
+      const tdee = calculateTDEE({
+        ...wizardData,
+        age: parseInt(wizardData.age, 10),
+        weight: parseFloat(wizardData.weight),
+        height: parseFloat(wizardData.height),
+      });
+
+      const result = await saveNutritionProfile({
+        ...wizardData,
+        age: parseInt(wizardData.age, 10),
+        weight: parseFloat(wizardData.weight),
+        height: parseFloat(wizardData.height),
+        tdee
+      });
+
+      if (result.success) {
+        setUserData({ ...wizardData, tdee });
+        toast.success("Nutrition profile saved!");
+      } else {
+        toast.error(result.error || "Failed to save profile");
+      }
     } catch (error) {
-      console.error("Failed to save to local storage", error);
+      console.error("Failed to save profile", error);
+      toast.error("An unexpected error occurred");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleEdit = () => {
-    try {
-      localStorage.removeItem(LOCAL_STORAGE_KEY);
-      setUserData(null);
-    } catch (error) {
-      console.error("Failed to remove from local storage", error);
-    }
+    setUserData(null);
   };
 
   const renderContent = () => {
     if (loading) {
-      return <div className="text-center p-12">Loading...</div>;
+      return (
+        <div className="h-[60vh] flex flex-col items-center justify-center gap-4">
+          <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+          <p className="text-muted-foreground animate-pulse">Synchronizing nutrition data...</p>
+        </div>
+      );
     }
 
     if (userData) {
