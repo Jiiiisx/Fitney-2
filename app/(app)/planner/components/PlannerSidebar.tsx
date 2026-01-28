@@ -1,6 +1,7 @@
 "use client";
 
 import { Plus, LayoutTemplate, Filter } from "lucide-react";
+import { useAI } from "@/app/lib/AIContext";
 
 interface PlannerSidebarProps {
   onAddWorkoutClick: () => void;
@@ -15,6 +16,7 @@ export default function PlannerSidebar({
   onFilterChange,
   selectedFilters 
 }: PlannerSidebarProps) {
+  const { sayActionTip } = useAI();
   
   const handleCheckboxChange = (type: string) => {
     const newFilters = selectedFilters.includes(type)
@@ -23,13 +25,18 @@ export default function PlannerSidebar({
     onFilterChange(newFilters);
   };
 
+  const handleAddClick = () => {
+    sayActionTip('add_workout');
+    onAddWorkoutClick();
+  };
+
   return (
     // Remove background color, let it inherit from parent
     <div className="h-full">
       <h2 className="text-lg font-semibold mb-4 text-foreground">Plan & Filter</h2>
       <div className="space-y-3">
         <button
-          onClick={onAddWorkoutClick}
+          onClick={handleAddClick}
           className="w-full flex items-center justify-center py-3 px-4 bg-primary text-primary-foreground font-bold rounded-lg transition-all duration-300 hover:bg-primary/90 hover:shadow-md"
         >
           <Plus className="w-5 h-5 mr-2" />

@@ -7,8 +7,46 @@ export const model = genAI.getGenerativeModel(
   { 
     model: "gemini-3-flash-preview",
     generationConfig: {
-      maxOutputTokens: 500, // Membatasi agar tidak boros
-      temperature: 0.7,     // Tetap kreatif tapi fokus
+      maxOutputTokens: 1500, 
+      temperature: 0.1,
+      responseMimeType: "application/json",
+      // DEFINISI SKEMA FORMAL
+      responseSchema: {
+        type: "object",
+        properties: {
+          readinessScore: { type: "number" },
+          signals: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                type: { type: "string", enum: ["sleep", "recovery", "nutrition"] },
+                status: { type: "string", enum: ["optimal", "warning", "critical"] },
+                msg: { type: "string" }
+              }
+            }
+          },
+          recommendations: { type: "array", items: { type: "string" } },
+          topInsight: { type: "string" },
+          contextualTips: {
+            type: "object",
+            properties: {
+              nutrition: { type: "array", items: { type: "string" } },
+              planner: { type: "array", items: { type: "string" } },
+              community: { type: "array", items: { type: "string" } },
+              actions: {
+                type: "object",
+                properties: {
+                  add_workout: { type: "string" },
+                  search_recipe: { type: "string" },
+                  log_water: { type: "string" }
+                }
+              }
+            }
+          }
+        },
+        required: ["readinessScore", "signals", "recommendations", "topInsight", "contextualTips"]
+      }
     }
   }, 
   { apiVersion: "v1beta" }
@@ -40,25 +78,21 @@ export async function safeGenerateContent(prompt: string, retries = 2): Promise<
 export function extractJSON(text: string) {
   if (!text) return null;
   try {
-    // 1. Try a direct parse first (cleanest case)
-    try {
-        return JSON.parse(text.trim());
-    } catch (e) {
-        // Continue to extraction logic
-    }
-
-    // 2. Remove Markdown code blocks and any surrounding whitespace
-    let cleanText = text.replace(/```json\n?|\n?```/g, "").trim();
-    
-    // 3. Regex match for the first JSON object or array
-    const jsonMatch = cleanText.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-    if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
-    }
-
-    return null;
+    const cleanText = text.trim();
+    // In application/json mode with responseSchema, 
+    // the text should be a perfect JSON string already.
+    return JSON.parse(cleanText);
   } catch (e) {
-    console.error("JSON_PARSE_ERROR", e);
+    // Fallback just in case some legacy wrapper is still there
+    try {
+        const startIdx = text.indexOf('{');
+        const endIdx = text.lastIndexOf('}');
+        if (startIdx !== -1 && endIdx !== -1) {
+            return JSON.parse(text.substring(startIdx, endIdx + 1));
+        }
+    } catch (innerE) {
+        console.error("CRITICAL_JSON_PARSE_ERROR", innerE, "Raw text:", text);
+    }
     return null;
   }
 }

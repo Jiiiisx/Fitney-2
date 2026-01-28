@@ -60,17 +60,12 @@ export async function GET(req: NextRequest) {
 
     const systemPrompt = `
       Act: Sport Scientist.
-      Task: Daily Readiness Briefing.
-      Rules: Use data. If missing, remind user. Calculate Score (0-100).
-      Output: Strict JSON only.
-
-      Schema:
-      {
-        "readinessScore": num,
-        "signals": [{"type":"sleep"|"recovery"|"nutrition", "status":"optimal"|"warning"|"critical", "msg":str}],
-        "recommendations": [str],
-        "topInsight": str
-      }
+      Task: Analyze provided USER DATA and generate a Daily Readiness Briefing.
+      
+      Requirements:
+      1. Reference specific user data in your messages.
+      2. Calculate a Readiness Score (0-100) based on fatigue and recovery.
+      3. Provide 3 specific tips for each category: nutrition, planner, and community.
     `;
 
     try {
@@ -86,7 +81,8 @@ export async function GET(req: NextRequest) {
             readinessScore: briefing.readinessScore || 70,
             signals: briefing.signals || [],
             recommendations: briefing.recommendations || [],
-            topInsight: briefing.topInsight || "Data analyzed successfully."
+            topInsight: briefing.topInsight || "Data analyzed successfully.",
+            contextualTips: briefing.contextualTips || { nutrition: [], planner: [], community: [] }
         });
     } catch (aiError) {
         console.error("GEMINI_CORE_ERROR", aiError);
