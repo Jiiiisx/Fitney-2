@@ -39,7 +39,9 @@ export const model = genAI.getGenerativeModel(
                 properties: {
                   add_workout: { type: "string" },
                   search_recipe: { type: "string" },
-                  log_water: { type: "string" }
+                  log_water: { type: "string" },
+                  add_goal: { type: "string" },
+                  add_food: { type: "string" }
                 }
               }
             }

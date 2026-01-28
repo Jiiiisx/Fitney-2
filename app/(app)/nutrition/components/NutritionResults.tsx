@@ -10,6 +10,7 @@ import Image from 'next/image';
 import { Pencil, Plus, Droplets, Flame, Utensils, Lightbulb, Sparkles, ChefHat, Search, Loader2, Info } from 'lucide-react';
 import AddFoodModal from './AddFoodModal'; // Import Modal
 import { calculateDailyAdjustedTargets } from '@/app/lib/nutrition-calculator';
+import { useAI } from '@/app/lib/AIContext';
 import {
   Tooltip,
   TooltipContent,
@@ -48,7 +49,9 @@ interface RecommendedFood {
   fatPer100g: string;
 }
 
+// ... di dalam komponen NutritionResults ...
 export default function NutritionResults({ userData, onEdit }: NutritionResultsProps) {
+  const { sayActionTip } = useAI();
   // --- State for Nutrition Tracking ---
   const [summary, setSummary] = useState<any>(null);
   const [foodLogs, setFoodLogs] = useState<any[]>([]);
@@ -133,6 +136,7 @@ export default function NutritionResults({ userData, onEdit }: NutritionResultsP
 
   // --- Handlers ---
   const handleAddWater = async (amount: number) => {
+    sayActionTip('log_water');
     const newAmount = waterIntake + amount;
     setWaterIntake(newAmount);
 
@@ -153,6 +157,7 @@ export default function NutritionResults({ userData, onEdit }: NutritionResultsP
 
   const onSearchSubmit = (e: FormEvent) => {
     e.preventDefault();
+    sayActionTip('search_recipe');
     handleRecipeSearch(searchQuery);
   };
 

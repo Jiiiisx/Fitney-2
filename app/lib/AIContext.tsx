@@ -15,6 +15,8 @@ interface AIBriefing {
         add_workout?: string;
         search_recipe?: string;
         log_water?: string;
+        add_goal?: string;
+        add_food?: string;
     };
   };
 }
@@ -23,7 +25,7 @@ interface AIContextType {
   briefing: AIBriefing | null;
   currentTip: string;
   isLoading: boolean;
-  sayActionTip: (actionKey: 'add_workout' | 'search_recipe' | 'log_water') => void;
+  sayActionTip: (actionKey: 'add_workout' | 'search_recipe' | 'log_water' | 'add_goal' | 'add_food') => void;
 }
 
 const AIContext = createContext<AIContextType | undefined>(undefined);

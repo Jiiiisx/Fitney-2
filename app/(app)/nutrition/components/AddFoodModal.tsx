@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Search, Loader2, Plus } from "lucide-react";
+import { useAI } from "@/app/lib/AIContext";
 
 interface AddFoodModalProps {
   isOpen: boolean;
@@ -14,7 +15,15 @@ interface AddFoodModalProps {
 }
 
 export default function AddFoodModal({ isOpen, onClose, onFoodAdded }: AddFoodModalProps) {
+  const { sayActionTip } = useAI();
   const [query, setQuery] = useState("");
+  // ... rest of the component ...
+
+  // Update performSearch result mapping to include the trigger
+  const handleSelectFood = (food: any) => {
+    sayActionTip('add_food');
+    setSelectedFood(food);
+  };
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedFood, setSelectedFood] = useState<any | null>(null);
@@ -120,7 +129,7 @@ export default function AddFoodModal({ isOpen, onClose, onFoodAdded }: AddFoodMo
                 <div
                   key={food.id}
                   className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted cursor-pointer transition-colors active:bg-muted/80"
-                  onClick={() => setSelectedFood(food)}
+                  onClick={() => handleSelectFood(food)}
                 >
                   <div>
                     <p className="font-medium text-base">{food.name}</p>

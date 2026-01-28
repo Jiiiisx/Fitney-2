@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { FeaturedGoalCard } from "./components/FeaturedGoalCard";
-import { NewGoalCard } from "./components/NewGoalCard"; // Use the new universal card
+import { NewGoalCard } from "./components/NewGoalCard";
 import GoalTimeline from "./components/GoalTimeline";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -10,8 +10,8 @@ import { GoalFormModal } from "./components/GoalFormModal";
 import { GoalRecommendations } from "./components/GoalRecommendations";
 import { Card, CardContent } from "@/components/ui/card";
 import { fetchWithAuth } from "@/app/lib/fetch-helper";
+import { useAI } from "@/app/lib/AIContext";
 
-// Interfaces remain the same
 export interface Goal {
   id: number;
   user_id: string;
@@ -35,6 +35,7 @@ export type GoalTemplate = {
 };
 
 export default function GoalsPage() {
+  const { sayActionTip } = useAI();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [recommendations, setRecommendations] = useState<GoalTemplate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,9 +48,6 @@ export default function GoalsPage() {
     const fetchInitialData = async () => {
       try {
         setLoading(true);
-        // import fetchWithAuth at top of file if not present, but for now assuming it needs to be added or is available
-        // Note: I will need to check imports separately, but let's fix the logic first.
-        
         const goalsData = await fetchWithAuth('/api/goals');
         setGoals(goalsData);
 
@@ -70,8 +68,8 @@ export default function GoalsPage() {
     fetchInitialData();
   }, []);
 
-  // Handler functions remain the same
   const handleOpenCreateModal = () => {
+    sayActionTip('add_goal');
     setGoalToEdit(null);
     setModalOpen(true);
   };
@@ -91,7 +89,6 @@ export default function GoalsPage() {
   };
 
   const handleGoalDeleted = async (goalId: number) => {
-    // Optimistic update
     const previousGoals = goals;
     setGoals(goals.filter(g => g.id !== goalId));
 
@@ -101,7 +98,6 @@ export default function GoalsPage() {
       });
     } catch (err) {
       console.error("Failed to delete goal:", err);
-      // Revert if failed
       setGoals(previousGoals);
       alert("Failed to delete goal. Please try again.");
     }
@@ -125,8 +121,6 @@ export default function GoalsPage() {
   const featuredGoal = weeklyGoals.length > 0 ? weeklyGoals[0] : null;
   const otherWeeklyGoals = weeklyGoals.slice(1);
 
-
-  // RENDER FUNCTION: Completely refactored for new layout
   const renderContent = () => {
     if (loading) {
       return (
@@ -146,7 +140,6 @@ export default function GoalsPage() {
         );
     }
 
-    // Empty State
     if (goals.length === 0) {
       return (
         <GoalRecommendations 
@@ -159,10 +152,7 @@ export default function GoalsPage() {
 
     return (
       <div className="space-y-10">
-        
-        {/* Top Section: Hero & Timeline */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            {/* Featured Hero (2/3 width) */}
             <div className="xl:col-span-2 space-y-4">
                 <h2 className="text-lg font-semibold text-muted-foreground flex items-center gap-2">
                     <span className="h-2 w-2 rounded-full bg-primary animate-pulse"></span>
@@ -176,8 +166,6 @@ export default function GoalsPage() {
                     </div>
                 )}
             </div>
-
-            {/* Timeline Sidebar (1/3 width) */}
             <div className="xl:col-span-1 space-y-4">
                  <h2 className="text-lg font-semibold text-muted-foreground">Progress Streak</h2>
                  <div className="h-full">
@@ -186,7 +174,6 @@ export default function GoalsPage() {
             </div>
         </div>
 
-        {/* Active Goals Grid */}
         <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-foreground">Active Goals</h2>
@@ -203,7 +190,6 @@ export default function GoalsPage() {
                     <NewGoalCard key={goal.id} goal={goal} onEdit={handleOpenEditModal} onDelete={handleGoalDeleted} />
                 ))}
                 
-                {/* Add New Placeholder Card */}
                 <button 
                     onClick={handleOpenCreateModal}
                     className="group relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-muted-foreground/25 bg-muted/10 p-6 hover:border-primary hover:bg-primary/5 transition-all duration-300 min-h-[200px]"
