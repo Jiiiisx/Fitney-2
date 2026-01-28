@@ -4,7 +4,13 @@ const apiKey = (process.env.GOOGLE_AI_API_KEY || "").trim();
 const genAI = new GoogleGenerativeAI(apiKey);
 
 export const model = genAI.getGenerativeModel(
-  { model: "gemini-3-flash-preview" }, 
+  { 
+    model: "gemini-3-flash-preview",
+    generationConfig: {
+      maxOutputTokens: 500, // Membatasi agar tidak boros
+      temperature: 0.7,     // Tetap kreatif tapi fokus
+    }
+  }, 
   { apiVersion: "v1beta" }
 );
 

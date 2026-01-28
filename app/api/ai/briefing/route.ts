@@ -4,7 +4,7 @@ import { sleepLogs, workoutLogs, foodLogs, foods, userProfiles, userGoals, users
 import { eq, and, gte, sql, desc } from "drizzle-orm";
 import { verifyAuth } from "@/app/lib/auth";
 import { subDays, format, differenceInDays } from "date-fns";
-import { model, extractJSON } from "@/app/lib/gemini";
+import { model, extractJSON, safeGenerateContent } from "@/app/lib/gemini";
 
 export async function GET(req: NextRequest) {
   try {
@@ -49,53 +49,32 @@ export async function GET(req: NextRequest) {
     .innerJoin(foods, eq(foodLogs.foodId, foods.id))
     .where(and(eq(foodLogs.userId, userId), eq(foodLogs.date, todayStr)));
 
-    // 2. Construct Sophisticated Context
+    // 2. TOKEN-OPTIMIZED CONTEXT (Compact format)
     const context = `
-      USER PROFILE:
-      - Main Goal: ${userProfile?.mainGoal || 'General Fitness'}
-      - Experience: ${userProfile?.experienceLevel || 'Beginner'}
-      - Active Goals: ${activeGoals.map(g => `${g.title} (Target: ${g.targetValue} ${g.metric})`).join(', ') || 'None set'}
-
-      SLEEP METRICS:
-      - Last Night: ${lastSleep ? `${lastSleep.qualityRating}/5 Rating` : 'No data recorded'}
-      - 7-Day Avg Quality: ${avgSleepQuality.toFixed(1)}/5
-      - Trend: ${lastSleep && lastSleep.qualityRating ? (lastSleep.qualityRating >= avgSleepQuality ? 'Improving' : 'Declining') : 'Unknown'}
-
-      WORKOUT ACTIVITY (Last 7 Days):
-      - Frequency: ${recentWorkouts.length} sessions
-      - Details: ${recentWorkouts.map(w => `${w.type} (${w.durationMin}m)`).join(', ')}
-
-      NUTRITION TODAY:
-      - Calories: ${Math.round(Number(todayNutrition[0]?.calories || 0))} kcal
-      - Protein: ${Math.round(Number(todayNutrition[0]?.protein || 0))}g
+      GOAL:${userProfile?.mainGoal || 'Fit'}|EXP:${userProfile?.experienceLevel || 'Beg'}
+      GOALS:${activeGoals.map(g => `${g.title}:${g.targetValue}${g.metric}`).join(',') || 'None'}
+      SLEEP:Last:${lastSleep?.qualityRating || 'X'}/5|Avg:${avgSleepQuality.toFixed(1)}|Trend:${lastSleep && lastSleep.qualityRating ? (lastSleep.qualityRating >= avgSleepQuality ? 'Up' : 'Down') : 'X'}
+      WORKOUTS:${recentWorkouts.length} sessions|Details:${recentWorkouts.map(w => `${w.type.slice(0,3)}:${w.durationMin}m`).join('|')}
+      NUTRI:Cal:${Math.round(Number(todayNutrition[0]?.calories || 0))}|Prot:${Math.round(Number(todayNutrition[0]?.protein || 0))}g
     `;
 
     const systemPrompt = `
-      You are an elite Sport Scientist and AI Performance Coach.
-      Analyze the user's data to generate a "Daily Readiness Briefing".
-      
-      CRITICAL RULES:
-      1. Be specific. Reference their actual data (e.g., "Your sleep dropped to 3/5...").
-      2. If data is missing (like sleep), gently remind them that data improves accuracy, but give general advice based on their Goal.
-      3. Calculate a "Readiness Score" (0-100) based on sleep quality, recent workout volume (fatigue), and nutrition.
-      4. Output strict JSON.
+      Act: Sport Scientist.
+      Task: Daily Readiness Briefing.
+      Rules: Use data. If missing, remind user. Calculate Score (0-100).
+      Output: Strict JSON only.
 
-      JSON Format:
+      Schema:
       {
-        "readinessScore": number,
-        "signals": [
-          {"type": "sleep" | "recovery" | "nutrition", "status": "optimal" | "warning" | "critical", "msg": "Detailed observation"}
-        ],
-        "recommendations": ["Actionable advice 1", "Actionable advice 2"],
-        "topInsight": "A high-level synthesis of their current state (1 sentence)."
+        "readinessScore": num,
+        "signals": [{"type":"sleep"|"recovery"|"nutrition", "status":"optimal"|"warning"|"critical", "msg":str}],
+        "recommendations": [str],
+        "topInsight": str
       }
     `;
 
     try {
-        const result = await model.generateContent(systemPrompt + "\n\nUSER DATA:\n" + context);
-        const response = await result.response;
-        const text = response.text();
-        
+        const text = await safeGenerateContent(systemPrompt + "\n\nUSER DATA:\n" + context);
         const briefing = extractJSON(text);
 
         if (!briefing || typeof briefing !== 'object') {
