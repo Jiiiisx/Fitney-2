@@ -88,10 +88,16 @@ export default function PublicProfilePage() {
                 
                 <div className="pt-12 px-4">
                     <div className="mb-4 flex justify-end">
-                        {(user.role === 'premium' || user.role === 'admin') && (
-                            <div className="bg-yellow-500 text-white px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest shadow-lg flex items-center gap-2 border-2 border-white/20 animate-bounce">
+                        {(user.role === 'pro' || user.role === 'premium') && (
+                            <div className="bg-blue-500 text-white px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest shadow-lg flex items-center gap-2 border-2 border-white/20 animate-bounce">
                                 <Crown className="w-4 h-4 fill-current" />
                                 PRO ATHLETE
+                            </div>
+                        )}
+                        {(user.role === 'elite' || user.role === 'admin') && (
+                            <div className="bg-yellow-500 text-white px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest shadow-lg flex items-center gap-2 border-2 border-white/20 animate-bounce">
+                                <Crown className="w-4 h-4 fill-current" />
+                                ELITE ATHLETE
                             </div>
                         )}
                     </div>

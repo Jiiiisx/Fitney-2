@@ -187,10 +187,16 @@ export default function PostCard({
         <div>
           <div className="flex items-center gap-1.5">
             <p className="font-bold text-foreground text-sm group-hover/user:underline">{post.user.name || post.user.username}</p>
-            {(post.user.role === 'premium' || post.user.role === 'admin') && (
-                <div className="flex items-center gap-0.5 px-1.5 py-0.5 bg-yellow-500/10 text-yellow-600 rounded-md border border-yellow-500/20 shadow-sm" title="Premium Member">
+            {(post.user.role === 'pro' || post.user.role === 'premium') && (
+                <div className="flex items-center gap-0.5 px-1.5 py-0.5 bg-blue-500/10 text-blue-600 rounded-md border border-blue-500/20 shadow-sm" title="Pro Member">
                     <Crown className="w-3 h-3 fill-current" />
                     <span className="text-[8px] font-black uppercase tracking-tighter">PRO</span>
+                </div>
+            )}
+            {(post.user.role === 'elite' || post.user.role === 'admin') && (
+                <div className="flex items-center gap-0.5 px-1.5 py-0.5 bg-yellow-500/10 text-yellow-600 rounded-md border border-yellow-500/20 shadow-sm" title="Elite Member">
+                    <Crown className="w-3 h-3 fill-current" />
+                    <span className="text-[8px] font-black uppercase tracking-tighter">ELITE</span>
                 </div>
             )}
           </div>

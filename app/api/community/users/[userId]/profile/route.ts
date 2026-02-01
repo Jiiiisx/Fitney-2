@@ -87,6 +87,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
         imageUrl: user.imageUrl,
         level: user.level,
         xp: user.xp,
+        role: user.role,
         bio: user.userProfile?.mainGoal || "Fitness Enthusiast",
         createdAt: user.createdAt,
       },

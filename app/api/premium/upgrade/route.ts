@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     // 1. Update User Role and Expiry Dates
     await db.update(users)
       .set({ 
-          role: 'premium',
+          role: planId === 'pro' ? 'pro' : 'elite',
           premiumSince: now,
           premiumUntil: expiry
       })

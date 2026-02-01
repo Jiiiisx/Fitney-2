@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
         where: eq(users.id, userId),
         columns: { role: true }
     });
-    const isPremium = user?.role === 'premium' || user?.role === 'admin';
+    const isPremium = user?.role === 'pro' || user?.role === 'elite' || user?.role === 'premium' || user?.role === 'admin';
 
     const todayStart = startOfDay(new Date());
     const sevenDaysAgo = subDays(todayStart, 6);

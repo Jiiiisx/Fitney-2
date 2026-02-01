@@ -868,9 +868,11 @@ export default function AdminDashboard() {
                                                                 <span className={`text-[10px] px-3 py-1 rounded-lg font-black uppercase border ${
                                                                     u.role === 'admin' 
                                                                         ? 'bg-orange-500/10 text-orange-600 border-orange-500/20' 
-                                                                        : u.role === 'premium'
-                                                                            ? 'bg-purple-500/10 text-purple-600 border-purple-500/20'
-                                                                            : 'bg-muted text-muted-foreground border-border'
+                                                                        : u.role === 'elite'
+                                                                            ? 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20'
+                                                                            : u.role === 'pro' || u.role === 'premium'
+                                                                                ? 'bg-blue-500/10 text-blue-600 border-blue-500/20'
+                                                                                : 'bg-muted text-muted-foreground border-border'
                                                                 }`}>
                                                                     {u.role}
                                                                 </span>
@@ -882,7 +884,7 @@ export default function AdminDashboard() {
                                                                 </div>
                                                             </td>
                                                             <td className="px-8 py-6">
-                                                                {u.role === 'premium' && u.premiumSince ? (
+                                                                {(u.role === 'pro' || u.role === 'elite' || u.role === 'premium') && u.premiumSince ? (
                                                                     <div className="space-y-1">
                                                                         <p className="text-[10px] font-bold text-emerald-600 uppercase">Active</p>
                                                                         <p className="text-[10px] text-muted-foreground font-medium">

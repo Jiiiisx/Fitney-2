@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Check, Zap, Crown, Star, ShieldCheck, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import { fetchWithAuth } from "@/app/lib/fetch-helper";
 
 const PLANS = [
     {
@@ -35,7 +36,23 @@ export default function PremiumPage() {
     const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
     const [showCheckout, setShowCheckout] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState<any>(null);
+    const [currentRole, setCurrentRole] = useState<string>("user");
+    const [loading, setLoading] = useState(true);
     const router = useRouter();
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                const data = await fetchWithAuth("/api/users/profile");
+                setCurrentRole(data.role);
+            } catch (error) {
+                console.error(error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchProfile();
+    }, []);
 
     const handleSelectPlan = (plan: any) => {
         setSelectedPlan(plan);
@@ -55,7 +72,7 @@ export default function PremiumPage() {
             });
 
             if (res.ok) {
-                toast.success("Pembayaran Berhasil! Selamat datang di Fitney Premium.");
+                toast.success(`Berhasil Upgrade ke ${selectedPlan.name}!`);
                 router.push("/dashboard");
                 router.refresh();
             } else {
@@ -67,6 +84,14 @@ export default function PremiumPage() {
             setLoadingPlan(null);
         }
     };
+
+    if (loading) {
+        return (
+            <div className="min-h-[60vh] flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+        );
+    }
 
     return (
         <div className="max-w-6xl mx-auto py-12 px-6">
@@ -81,44 +106,51 @@ export default function PremiumPage() {
 
             {!showCheckout ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-                    {PLANS.map((plan) => (
-                        <motion.div key={plan.id} whileHover={{ y: -10 }} transition={{ type: "spring", stiffness: 300 }}>
-                            <Card className={`relative overflow-hidden border-2 ${plan.popular ? 'border-primary shadow-2xl shadow-primary/20' : 'border-border'} rounded-[2.5rem]`}>
-                                {plan.popular && (
-                                    <div className="absolute top-0 right-0 bg-primary text-primary-foreground px-6 py-1.5 rounded-bl-2xl text-[10px] font-black uppercase tracking-tighter">Paling Populer</div>
-                                )}
-                                <CardContent className="p-10">
-                                    <div className={`w-12 h-12 rounded-2xl ${plan.color} flex items-center justify-center text-white mb-6`}>
-                                        {plan.id === 'pro' ? <Zap className="w-6 h-6" /> : <Crown className="w-6 h-6" />}
-                                    </div>
-                                    <h3 className="text-2xl font-black mb-2">{plan.name}</h3>
-                                    <div className="flex items-baseline gap-1 mb-4">
-                                        <span className="text-4xl font-black">{plan.price}</span>
-                                        <span className="text-muted-foreground font-bold">{plan.period}</span>
-                                    </div>
-                                    <p className="text-sm text-muted-foreground mb-8 font-medium">{plan.desc}</p>
-                                    
-                                    <div className="space-y-4 mb-10">
-                                        {plan.features.map(f => (
-                                            <div key={f} className="flex items-center gap-3">
-                                                <div className="w-5 h-5 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0">
-                                                    <Check className="w-3 h-3 text-emerald-600" />
-                                                </div>
-                                                <span className="text-sm font-semibold opacity-80">{f}</span>
-                                            </div>
-                                        ))}
-                                    </div>
+                    {PLANS.map((plan) => {
+                        const isCurrentPlan = currentRole === plan.id;
+                        const isEliteUpgrade = currentRole === 'pro' && plan.id === 'elite';
+                        const isDisabled = isCurrentPlan || (currentRole === 'elite' && plan.id === 'pro');
 
-                                    <Button 
-                                        onClick={() => handleSelectPlan(plan)}
-                                        className={`w-full rounded-2xl py-7 font-bold text-lg ${plan.id === 'pro' ? 'bg-primary' : 'bg-zinc-900 hover:bg-zinc-800'}`}
-                                    >
-                                        Pilih Paket Ini
-                                    </Button>
-                                </CardContent>
-                            </Card>
-                        </motion.div>
-                    ))}
+                        return (
+                            <motion.div key={plan.id} whileHover={!isDisabled ? { y: -10 } : {}} transition={{ type: "spring", stiffness: 300 }}>
+                                <Card className={`relative overflow-hidden border-2 ${plan.popular ? 'border-primary shadow-2xl shadow-primary/20' : 'border-border'} rounded-[2.5rem] ${isDisabled ? 'opacity-80' : ''}`}>
+                                    {plan.popular && (
+                                        <div className="absolute top-0 right-0 bg-primary text-primary-foreground px-6 py-1.5 rounded-bl-2xl text-[10px] font-black uppercase tracking-tighter">Paling Populer</div>
+                                    )}
+                                    <CardContent className="p-10">
+                                        <div className={`w-12 h-12 rounded-2xl ${plan.color} flex items-center justify-center text-white mb-6`}>
+                                            {plan.id === 'pro' ? <Zap className="w-6 h-6" /> : <Crown className="w-6 h-6" />}
+                                        </div>
+                                        <h3 className="text-2xl font-black mb-2">{plan.name}</h3>
+                                        <div className="flex items-baseline gap-1 mb-4">
+                                            <span className="text-4xl font-black">{plan.price}</span>
+                                            <span className="text-muted-foreground font-bold">{plan.period}</span>
+                                        </div>
+                                        <p className="text-sm text-muted-foreground mb-8 font-medium">{plan.desc}</p>
+                                        
+                                        <div className="space-y-4 mb-10">
+                                            {plan.features.map(f => (
+                                                <div key={f} className="flex items-center gap-3">
+                                                    <div className="w-5 h-5 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0">
+                                                        <Check className="w-3 h-3 text-emerald-600" />
+                                                    </div>
+                                                    <span className="text-sm font-semibold opacity-80">{f}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        <Button 
+                                            onClick={() => handleSelectPlan(plan)}
+                                            disabled={isDisabled}
+                                            className={`w-full rounded-2xl py-7 font-bold text-lg ${plan.id === 'pro' ? 'bg-primary' : 'bg-zinc-900 hover:bg-zinc-800'}`}
+                                        >
+                                            {isCurrentPlan ? "Paket Aktif" : isEliteUpgrade ? "Upgrade ke Elite" : "Pilih Paket Ini"}
+                                        </Button>
+                                    </CardContent>
+                                </Card>
+                            </motion.div>
+                        );
+                    })}
                 </div>
             ) : (
                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-md mx-auto">

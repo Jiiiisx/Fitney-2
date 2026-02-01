@@ -212,7 +212,10 @@ export default function FindFriendsPage() {
                     <div>
                       <div className="flex items-center gap-1.5">
                         <h4 className="font-semibold text-lg leading-none">{user.fullName || user.username}</h4>
-                        {(user.role === 'premium' || user.role === 'admin') && (
+                        {(user.role === 'pro' || user.role === 'premium') && (
+                            <Crown className="h-4 w-4 text-blue-500 fill-current" />
+                        )}
+                        {(user.role === 'elite' || user.role === 'admin') && (
                             <Crown className="h-4 w-4 text-yellow-500 fill-current" />
                         )}
                       </div>
@@ -309,7 +312,10 @@ export default function FindFriendsPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1">
                             <h4 className="font-semibold text-sm truncate">{user.fullName || user.username}</h4>
-                            {(user.role === 'premium' || user.role === 'admin') && (
+                            {(user.role === 'pro' || user.role === 'premium') && (
+                                <Crown className="h-3 w-3 text-blue-500 fill-current shrink-0" />
+                            )}
+                            {(user.role === 'elite' || user.role === 'admin') && (
                                 <Crown className="h-3 w-3 text-yellow-500 fill-current shrink-0" />
                             )}
                         </div>
@@ -355,7 +361,10 @@ export default function FindFriendsPage() {
                 <div>
                   <div className="flex items-center gap-1.5">
                     <h4 className="font-semibold text-lg leading-none">{user.fullName || user.username}</h4>
-                    {(user.role === 'premium' || user.role === 'admin') && (
+                    {(user.role === 'pro' || user.role === 'premium') && (
+                        <Crown className="h-4 w-4 text-blue-500 fill-current" />
+                    )}
+                    {(user.role === 'elite' || user.role === 'admin') && (
                         <Crown className="h-4 w-4 text-yellow-500 fill-current" />
                     )}
                   </div>
