@@ -6,7 +6,7 @@ import { eq, and, gte, lte, sql } from 'drizzle-orm';
 import { subDays, startOfDay } from 'date-fns';
 
 const getXpForLevel = (level: number): number => {
-  return 1000 * level;
+  return Math.floor(100 * Math.pow(level, 1.5));
 };
 
 export async function GET(req: NextRequest) {
