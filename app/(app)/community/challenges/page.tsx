@@ -68,19 +68,19 @@ export default function ChallengesPage() {
     return (
         <div className="space-y-8 pb-24">
             {/* HERO HEADER */}
-            <div className="relative rounded-[2.5rem] bg-gradient-to-r from-orange-500 to-amber-500 p-8 text-white overflow-hidden shadow-xl shadow-orange-500/20">
-                <div className="absolute top-0 right-0 p-8 opacity-10"><Trophy className="w-64 h-64" /></div>
+            <div className="relative rounded-[2rem] sm:rounded-[2.5rem] bg-gradient-to-r from-orange-500 to-amber-500 p-6 sm:p-8 text-white overflow-hidden shadow-xl shadow-orange-500/20">
+                <div className="absolute top-0 right-0 p-8 opacity-10"><Trophy className="w-48 h-48 sm:w-64 sm:h-64" /></div>
                 <div className="relative z-10">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full text-xs font-bold mb-4 backdrop-blur-md border border-white/20">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full text-[10px] sm:text-xs font-bold mb-4 backdrop-blur-md border border-white/20">
                         <Flame className="w-3 h-3 text-yellow-300" />
                         <span>COMMUNITY BATTLES</span>
                     </div>
-                    <h1 className="text-4xl font-black mb-2 italic tracking-tight">PUSH YOUR LIMITS</h1>
-                    <p className="font-medium opacity-90 max-w-lg mb-8">Join global challenges, compete with friends, and earn exclusive badges. Consistency starts here.</p>
+                    <h1 className="text-2xl sm:text-4xl font-black mb-2 italic tracking-tight uppercase">PUSH YOUR LIMITS</h1>
+                    <p className="text-xs sm:text-base font-medium opacity-90 max-w-lg mb-6 sm:mb-8">Join global challenges, compete with friends, and earn exclusive badges.</p>
                     
                     <Dialog>
                         <DialogTrigger asChild>
-                            <Button size="lg" className="bg-white text-orange-600 hover:bg-white/90 font-black rounded-xl">
+                            <Button size="lg" className="w-full sm:w-auto bg-white text-orange-600 hover:bg-white/90 font-black rounded-xl">
                                 <Plus className="w-5 h-5 mr-2" /> CREATE CHALLENGE
                             </Button>
                         </DialogTrigger>

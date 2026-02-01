@@ -33,35 +33,35 @@ export default function FitnessPassport({ user, stats }: FitnessPassportProps) {
             <CardContent className="p-0">
                 <div className="flex flex-col md:flex-row">
                     {/* LEFT: ID CARD STYLE */}
-                    <div className="p-8 flex-1 relative z-10">
-                        <div className="flex justify-between items-start mb-8">
+                    <div className="p-6 sm:p-8 flex-1 relative z-10">
+                        <div className="flex justify-between items-start mb-6 sm:mb-8">
                             <div>
-                                <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-[0.2em] mb-1">Fitney Passport</h2>
-                                <h1 className="text-3xl font-black italic tracking-tight">{user.fullName}</h1>
-                                <p className="text-sm font-medium text-zinc-400">@{user.username}</p>
+                                <h2 className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em] mb-1">Fitney Passport</h2>
+                                <h1 className="text-xl sm:text-3xl font-black italic tracking-tight">{user.fullName}</h1>
+                                <p className="text-xs sm:text-sm font-medium text-zinc-400">@{user.username}</p>
                             </div>
                             <div className="text-right">
-                                <div className="inline-flex items-center gap-1 px-3 py-1 bg-yellow-500/20 text-yellow-500 rounded-full border border-yellow-500/20">
-                                    <Crown className="w-3 h-3" />
-                                    <span className="text-xs font-black uppercase">PRO MEMBER</span>
+                                <div className="inline-flex items-center gap-1 px-2 py-0.5 sm:px-3 sm:py-1 bg-yellow-500/20 text-yellow-500 rounded-full border border-yellow-500/20">
+                                    <Crown className="w-2.5 h-2.5 sm:w-3 h-3" />
+                                    <span className="text-[8px] sm:text-xs font-black uppercase">MEMBER</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-6 mb-8">
+                        <div className="grid grid-cols-3 gap-2 sm:gap-6 mb-6 sm:mb-8">
                             <div>
-                                <p className="text-[10px] uppercase font-bold text-zinc-500 mb-1">Level</p>
-                                <p className="text-4xl font-black font-mono">{user.level}</p>
+                                <p className="text-[8px] sm:text-[10px] uppercase font-bold text-zinc-500 mb-1">Level</p>
+                                <p className="text-2xl sm:text-4xl font-black font-mono">{user.level}</p>
                             </div>
                             <div>
-                                <p className="text-[10px] uppercase font-bold text-zinc-500 mb-1">Workouts</p>
-                                <p className="text-4xl font-black font-mono">{stats.totalWorkouts}</p>
+                                <p className="text-[8px] sm:text-[10px] uppercase font-bold text-zinc-500 mb-1">Workouts</p>
+                                <p className="text-2xl sm:text-4xl font-black font-mono">{stats.totalWorkouts}</p>
                             </div>
                             <div>
-                                <p className="text-[10px] uppercase font-bold text-zinc-500 mb-1">Streak</p>
+                                <p className="text-[8px] sm:text-[10px] uppercase font-bold text-zinc-500 mb-1">Streak</p>
                                 <div className="flex items-center gap-1 text-orange-500">
-                                    <Flame className="w-5 h-5 fill-current" />
-                                    <p className="text-4xl font-black font-mono">{stats.streak}</p>
+                                    <Flame className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
+                                    <p className="text-2xl sm:text-4xl font-black font-mono">{stats.streak}</p>
                                 </div>
                             </div>
                         </div>
