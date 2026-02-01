@@ -1,56 +1,59 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/app/lib/db";
 import { users, posts, groups, workoutLogs } from "@/app/lib/schema";
-import { count, sql, desc, gte } from "drizzle-orm";
+import { sql, count, desc, gte } from "drizzle-orm";
 import { verifyAdmin } from "@/app/lib/auth";
+import { subDays, format } from "date-fns";
 
 export async function GET(req: NextRequest) {
-  const auth = await verifyAdmin(req);
-  if (auth.error) return auth.error;
-
   try {
-    // 1. Basic Stats
+    const auth = await verifyAdmin(req);
+    if (auth.error) return auth.error;
+
+    // 1. Total Counters
     const [userCount] = await db.select({ value: count() }).from(users);
     const [postCount] = await db.select({ value: count() }).from(posts);
     const [groupCount] = await db.select({ value: count() }).from(groups);
     const [workoutCount] = await db.select({ value: count() }).from(workoutLogs);
 
-    // 2. Recent Users
-    const recentUsers = await db.select().from(users).orderBy(desc(users.createdAt)).limit(5);
-
-    // 3. Growth Data (Last 7 Days)
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-    const growthData = await db.select({
-      date: sql<string>`TO_CHAR(${users.createdAt}, 'YYYY-MM-DD')`,
-      count: count(),
+    // 2. Growth Data (Last 7 days)
+    const sevenDaysAgo = subDays(new Date(), 7);
+    const growth = await db.select({
+        date: sql<string>`DATE(${users.createdAt})`,
+        count: count()
     })
     .from(users)
     .where(gte(users.createdAt, sevenDaysAgo))
-    .groupBy(sql`TO_CHAR(${users.createdAt}, 'YYYY-MM-DD')`)
-    .orderBy(sql`TO_CHAR(${users.createdAt}, 'YYYY-MM-DD')`);
+    .groupBy(sql`DATE(${users.createdAt})`)
+    .orderBy(sql`DATE(${users.createdAt})`);
 
-    // 4. Content Distribution (Simplified)
+    // 3. Recent Users
+    const recentUsers = await db.query.users.findMany({
+        orderBy: [desc(users.createdAt)],
+        limit: 5
+    });
+
+    // 4. Content Distribution (Mock data for pie chart if not enough actual variety)
     const contentStats = [
-      { name: 'Posts', value: postCount.value },
-      { name: 'Groups', value: groupCount.value },
-      { name: 'Workouts', value: workoutCount.value },
+        { name: 'Posts', value: postCount.value },
+        { name: 'Groups', value: groupCount.value },
+        { name: 'Workouts', value: workoutCount.value },
     ];
 
     return NextResponse.json({
-      stats: {
-        totalUsers: userCount.value,
-        totalPosts: postCount.value,
-        totalGroups: groupCount.value,
-        totalWorkouts: workoutCount.value,
-      },
-      recentUsers,
-      growthData,
-      contentStats
+        stats: {
+            totalUsers: userCount.value,
+            totalPosts: postCount.value,
+            totalGroups: groupCount.value,
+            totalWorkouts: workoutCount.value
+        },
+        growthData: growth,
+        recentUsers,
+        contentStats
     });
+
   } catch (error) {
     console.error("ADMIN_STATS_ERROR", error);
-    return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 });
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }

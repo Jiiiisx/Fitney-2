@@ -101,7 +101,7 @@ export async function logWorkoutAction(formData: FormData) {
         .where(eq(users.id, userId));
 
       // Insert Log
-      await tx.insert(workoutLogs).values({
+      const [newLog] = await tx.insert(workoutLogs).values({
         userId: userId,
         type: type,
         name: workoutName,
@@ -111,7 +111,44 @@ export async function logWorkoutAction(formData: FormData) {
         durationMin: duration,
         distanceKm: distance ? String(distance) : null,
         date: new Date(),
+      }).returning();
+
+      // --- AUTOMATED CHALLENGE TRACKING ---
+      const activeChallenges = await tx.query.userChallenges.findMany({
+          where: and(eq(userChallenges.userId, userId), eq(userChallenges.isCompleted, false)),
+          with: {
+              challenge: true
+          }
       });
+
+      for (const uc of activeChallenges) {
+          const c = uc.challenge;
+          let progressBoost = 0;
+
+          if (c.type === 'frequency') {
+              progressBoost = 1; // 1 workout = 1 point
+          } else if (c.type === 'distance' && type === 'Cardio' && distance) {
+              progressBoost = Number(distance);
+          } else if (c.type === 'volume' && type === 'Strength' && weight) {
+              progressBoost = (sets || 1) * (weight || 0); // Volume = Sets x Weight
+          }
+
+          if (progressBoost > 0) {
+              const newProgress = (uc.progress || 0) + progressBoost;
+              const isNowCompleted = newProgress >= c.goalValue;
+
+              await tx.update(userChallenges)
+                .set({ 
+                    progress: newProgress,
+                    isCompleted: isNowCompleted
+                })
+                .where(and(
+                    eq(userChallenges.userId, userId),
+                    eq(userChallenges.challengeId, c.id)
+                ));
+          }
+      }
+      // ------------------------------------
 
       // Auto Share Logic
       if (shareToCommunity) {

@@ -1,65 +1,51 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/app/lib/db";
 import { users } from "@/app/lib/schema";
-import { verifyAdmin } from "@/app/lib/auth";
 import { eq } from "drizzle-orm";
+import { verifyAdmin } from "@/app/lib/auth";
 
-// PATCH: Update user (role, level, etc.)
 export async function PATCH(
-  req: NextRequest,
-  { params }: { params: Promise<{ userId: string }> }
+    req: NextRequest,
+    context: { params: Promise<{ userId: string }> }
 ) {
-  try {
-    const auth = await verifyAdmin(req);
-    if (auth.error) return auth.error;
+    try {
+        const auth = await verifyAdmin(req);
+        if (auth.error) return auth.error;
 
-    const { userId } = await params;
-    const body = await req.json();
-    
-    const allowedFields = ["role", "level", "xp"];
-    const updates: any = {};
-    
-    allowedFields.forEach(field => {
-      if (body[field] !== undefined) updates[field] = body[field];
-    });
+        const { userId } = await context.params;
+        const { role } = await req.json();
 
-    if (Object.keys(updates).length === 0) {
-      return NextResponse.json({ error: "No valid fields" }, { status: 400 });
+        if (!role) return NextResponse.json({ error: "Role is required" }, { status: 400 });
+
+        await db.update(users).set({ role }).where(eq(users.id, userId));
+
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        console.error("ADMIN_USER_UPDATE_ERROR", error);
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
-
-    const updatedUser = await db.update(users)
-      .set(updates)
-      .where(eq(users.id, userId))
-      .returning();
-
-    return NextResponse.json(updatedUser[0]);
-  } catch (error) {
-    console.error("ADMIN_UPDATE_USER_ERROR", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
-  }
 }
 
-// DELETE: Remove user
 export async function DELETE(
-  req: NextRequest,
-  { params }: { params: Promise<{ userId: string }> }
+    req: NextRequest,
+    context: { params: Promise<{ userId: string }> }
 ) {
-  try {
-    const auth = await verifyAdmin(req);
-    if (auth.error) return auth.error;
+    try {
+        const auth = await verifyAdmin(req);
+        if (auth.error) return auth.error;
 
-    const { userId } = await params;
+        const { userId } = await context.params;
 
-    // Prevent admin from deleting themselves
-    if (userId === auth.user.userId) {
-      return NextResponse.json({ error: "You cannot delete yourself" }, { status: 400 });
+        // Prevent self-deletion
+        if (userId === auth.user.userId) {
+            return NextResponse.json({ error: "You cannot delete your own admin account" }, { status: 403 });
+        }
+
+        await db.delete(users).where(eq(users.id, userId));
+
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        console.error("ADMIN_USER_DELETE_ERROR", error);
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
-
-    await db.delete(users).where(eq(users.id, userId));
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error("ADMIN_DELETE_USER_ERROR", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
-  }
 }
