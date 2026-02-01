@@ -65,7 +65,6 @@ export async function POST(req: NextRequest) {
           experienceLevel: level,
           workoutLocation: location,
           gender: gender || null,
-          fullName: username || null, // Juga simpan di profile jika ada kolomnya
           weight: weight ? weight.toString() : null,
           height: height ? height.toString() : null,
           updatedAt: new Date(),
