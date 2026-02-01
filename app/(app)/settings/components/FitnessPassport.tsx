@@ -26,7 +26,7 @@ export default function FitnessPassport({ user, stats }: FitnessPassportProps) {
     const progress = Math.min(100, (user.xp / xpForNextLevel) * 100);
 
     return (
-        <Card className="overflow-hidden border-none shadow-2xl bg-gradient-to-br from-zinc-900 to-zinc-800 text-white relative">
+        <Card className="overflow-hidden border-none shadow-2xl bg-gradient-to-br from-indigo-900 via-purple-900 to-violet-900 text-white relative">
             {/* Background Pattern */}
             <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-white to-transparent pointer-events-none"></div>
             

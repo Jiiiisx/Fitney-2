@@ -25,7 +25,8 @@ import { Button } from "@/components/ui/button";
 
 // Interface yang lebih fleksibel agar cocok dengan respons API dan props komponen
 interface DashboardData {
-  isPremium: boolean; // Add this
+  isPremium: boolean;
+  role: string;
   today: {
     duration: number;
     calories: number;
@@ -209,7 +210,9 @@ export default function DashboardPage() {
 
           <PremiumTools isPremium={data?.isPremium || false} />
 
-          {!(data?.isPremium) && <UpgradeBanner />}
+          {(data?.role === 'user' || data?.role === 'pro' || data?.role === 'premium') && (
+              <UpgradeBanner currentRole={data?.role || 'user'} />
+          )}
         </div>
 
         {/* Stats Sidebar (Scrollable) */}

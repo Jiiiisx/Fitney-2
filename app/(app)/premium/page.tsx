@@ -17,7 +17,7 @@ const PLANS = [
         period: '/bulan',
         desc: 'Cocok untuk pejuang konsistensi harian.',
         features: ['AI Workout Auditor', 'Premium Analytics', 'Prioritas AI Coach', 'Tanpa Iklan'],
-        color: 'bg-primary',
+        color: 'bg-indigo-500',
         popular: true
     },
     {
@@ -27,7 +27,7 @@ const PLANS = [
         period: '/tahun',
         desc: 'Untuk mereka yang serius bertransformasi.',
         features: ['Semua Fitur PRO', 'Badge Eksklusif ELITE', 'Early Access Fitur Baru', 'Simulasi Konsultasi'],
-        color: 'bg-zinc-900',
+        color: 'bg-purple-600',
         popular: false
     }
 ];
@@ -100,25 +100,32 @@ export default function PremiumPage() {
                     <Crown className="w-3 h-3" />
                     Premium Experience
                 </div>
-                <h1 className="text-5xl font-black italic tracking-tighter">LEVEL UP YOUR GAME</h1>
+                <h1 className="text-5xl font-black italic tracking-tighter text-indigo-600 dark:text-indigo-400">LEVEL UP YOUR GAME</h1>
                 <p className="text-muted-foreground text-lg max-w-2xl mx-auto font-medium">Buka seluruh potensi AI Fitney dan raih target kebugaranmu lebih cepat dengan fitur eksklusif.</p>
             </div>
 
             {!showCheckout ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                <div className={`grid gap-8 max-w-4xl mx-auto ${
+                    (currentRole === 'pro' || currentRole === 'premium') ? 'grid-cols-1 max-w-md' : 'grid-cols-1 md:grid-cols-2'
+                }`}>
                     {PLANS.map((plan) => {
-                        const isCurrentPlan = currentRole === plan.id;
-                        const isEliteUpgrade = currentRole === 'pro' && plan.id === 'elite';
-                        const isDisabled = isCurrentPlan || (currentRole === 'elite' && plan.id === 'pro');
+                        // Logic Sembunyikan Paket
+                        if ((currentRole === 'pro' || currentRole === 'premium') && plan.id === 'pro') return null;
+                        if (currentRole === 'elite') return null;
+
+                        const isEliteUpgrade = (currentRole === 'pro' || currentRole === 'premium') && plan.id === 'elite';
 
                         return (
-                            <motion.div key={plan.id} whileHover={!isDisabled ? { y: -10 } : {}} transition={{ type: "spring", stiffness: 300 }}>
-                                <Card className={`relative overflow-hidden border-2 ${plan.popular ? 'border-primary shadow-2xl shadow-primary/20' : 'border-border'} rounded-[2.5rem] ${isDisabled ? 'opacity-80' : ''}`}>
-                                    {plan.popular && (
-                                        <div className="absolute top-0 right-0 bg-primary text-primary-foreground px-6 py-1.5 rounded-bl-2xl text-[10px] font-black uppercase tracking-tighter">Paling Populer</div>
+                            <motion.div key={plan.id} whileHover={{ y: -10 }} transition={{ type: "spring", stiffness: 300 }}>
+                                <Card className={`relative overflow-hidden border-2 ${plan.popular || isEliteUpgrade ? 'border-indigo-500 shadow-2xl shadow-indigo-500/20' : 'border-border'} rounded-[2.5rem]`}>
+                                    {(plan.popular && currentRole === 'user') && (
+                                        <div className="absolute top-0 right-0 bg-indigo-500 text-white px-6 py-1.5 rounded-bl-2xl text-[10px] font-black uppercase tracking-tighter">Paling Populer</div>
+                                    )}
+                                    {isEliteUpgrade && (
+                                        <div className="absolute top-0 right-0 bg-purple-600 text-white px-6 py-1.5 rounded-bl-2xl text-[10px] font-black uppercase tracking-tighter">Recommended Upgrade</div>
                                     )}
                                     <CardContent className="p-10">
-                                        <div className={`w-12 h-12 rounded-2xl ${plan.color} flex items-center justify-center text-white mb-6`}>
+                                        <div className={`w-12 h-12 rounded-2xl ${plan.color} flex items-center justify-center text-white mb-6 shadow-lg`}>
                                             {plan.id === 'pro' ? <Zap className="w-6 h-6" /> : <Crown className="w-6 h-6" />}
                                         </div>
                                         <h3 className="text-2xl font-black mb-2">{plan.name}</h3>
@@ -141,16 +148,23 @@ export default function PremiumPage() {
 
                                         <Button 
                                             onClick={() => handleSelectPlan(plan)}
-                                            disabled={isDisabled}
-                                            className={`w-full rounded-2xl py-7 font-bold text-lg ${plan.id === 'pro' ? 'bg-primary' : 'bg-zinc-900 hover:bg-zinc-800'}`}
+                                            className={`w-full rounded-2xl py-7 font-bold text-lg ${plan.id === 'pro' ? 'bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-500/20' : 'bg-purple-600 hover:bg-purple-700 shadow-xl shadow-purple-500/20 text-white'}`}
                                         >
-                                            {isCurrentPlan ? "Paket Aktif" : isEliteUpgrade ? "Upgrade ke Elite" : "Pilih Paket Ini"}
+                                            {isEliteUpgrade ? "Upgrade Sekarang" : "Pilih Paket Ini"}
                                         </Button>
                                     </CardContent>
                                 </Card>
                             </motion.div>
                         );
                     })}
+
+                    {currentRole === 'elite' && (
+                        <div className="col-span-full text-center py-20 bg-purple-500/5 rounded-[3rem] border-2 border-dashed border-purple-500/20">
+                            <Crown className="w-16 h-16 text-purple-500 mx-auto mb-4 animate-bounce" />
+                            <h2 className="text-3xl font-black italic mb-2">YOU ARE AN ELITE ATHLETE</h2>
+                            <p className="text-muted-foreground font-medium">Seluruh fitur Fitney telah terbuka untukmu. Nikmati pengalaman tanpa batas.</p>
+                        </div>
+                    )}
                 </div>
             ) : (
                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-md mx-auto">
@@ -166,17 +180,17 @@ export default function PremiumPage() {
                             </div>
                             <div className="flex justify-between text-xl">
                                 <span className="font-black uppercase italic">Total</span>
-                                <span className="font-black text-primary">{selectedPlan.price}</span>
+                                <span className="font-black text-indigo-600">{selectedPlan.price}</span>
                             </div>
                         </div>
 
                         <div className="space-y-4 mb-8">
-                            <div className="p-4 border-2 border-primary rounded-2xl bg-primary/5 flex items-center justify-between cursor-pointer">
+                            <div className="p-4 border-2 border-indigo-500 rounded-2xl bg-indigo-500/5 flex items-center justify-between cursor-pointer">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-4 h-4 rounded-full border-4 border-primary" />
-                                    <span className="font-bold text-sm text-primary">Simulasi Kartu Kredit (Dev Mode)</span>
+                                    <div className="w-4 h-4 rounded-full border-4 border-indigo-500" />
+                                    <span className="font-bold text-sm text-indigo-600">Simulasi Kartu Kredit (Dev Mode)</span>
                                 </div>
-                                <Star className="w-4 h-4 text-primary fill-current" />
+                                <Star className="w-4 h-4 text-indigo-500 fill-current" />
                             </div>
                             <p className="text-[10px] text-center text-muted-foreground font-medium px-4">
                                 Ini adalah lingkungan simulasi untuk tugas sekolah. Tidak ada dana asli yang akan ditarik.

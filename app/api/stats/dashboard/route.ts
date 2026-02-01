@@ -133,6 +133,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
         isPremium,
+        role: user?.role || 'user',
         today: todayStats,
         todaysPlan,
         weekly: weeklyActivity,
