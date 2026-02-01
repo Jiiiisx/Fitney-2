@@ -36,7 +36,7 @@ const CircularProgress = ({ percentage, level }: { percentage: number; level: nu
   );
 };
 
-// Helper untuk mendapatkan sapaan berdasarkan waktu
+// Helper to get greeting based on time
 const getGreeting = () => {
   const hour = new Date().getHours();
   if (hour < 12) return "Good Morning";
@@ -44,7 +44,7 @@ const getGreeting = () => {
   return "Good Evening";
 };
 
-// Helper untuk mendapatkan pesan motivasi acak
+// Helper to get random motivation message
 const getRandomQuote = () => {
   const quotes = [
     "Continue your journey to achieve your target!",
@@ -83,13 +83,13 @@ const StatsSidebar = () => {
       setError(null);
 
       try {
-        // Fetch user profile untuk nama
+        // Fetch user profile for name
         const userRes = await fetch('/api/users/profile', {
           credentials: 'include'
         });
         if (userRes.ok) {
           const userData = await userRes.json();
-          // Ambil nama depan saja agar tidak kepanjangan
+          // Get first name only to avoid being too long
           const fullName = userData.full_name || userData.username || "User";
           setUserName(fullName.split(' ')[0]);
         }

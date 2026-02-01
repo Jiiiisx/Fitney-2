@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-// Hapus dynamic import jika tidak perlu lazy loading berat, import biasa lebih aman untuk debugging awal
+// Remove dynamic import if heavy lazy loading is not needed; regular import is safer for initial debugging
 import StatsSidebar from "./_components/StatsSidebar";
 import TodaysPlanBanner from "./_components/TodaysPlanBanner";
 import DailyGoals from "./_components/DailyGoals";
@@ -23,7 +23,7 @@ import toast from "react-hot-toast";
 import ShareModal from "../components/sharing/ShareModal";
 import { Button } from "@/components/ui/button";
 
-// Interface yang lebih fleksibel agar cocok dengan respons API dan props komponen
+// Flexible interface to match API response and component props
 interface DashboardData {
   isPremium: boolean;
   role: string;
@@ -101,14 +101,14 @@ export default function DashboardPage() {
     );
   }
 
-  // Siapkan data default aman agar tidak error saat null
+  // Prepare safe default data to prevent errors when null
   const safeStats = data?.today || { duration: 0, calories: 0, workouts: 0 };
   const safeTodaysPlan = data?.todaysPlan || null;
   const safeWeekly = data?.weekly || [];
   const safeRecent = data?.recent || [];
   const safeStreak = data?.streak || 0;
   const safeInsight = data?.insight || "";
-  // Menyiapkan data breakdown dengan default value
+  // Prepare breakdown data with default values
   const safeBreakdown = data?.breakdown || { mostFrequent: "N/A", avgDuration: 0, heatmap: [] };
 
   const shareData = {
@@ -200,7 +200,7 @@ export default function DashboardPage() {
             />
           </div>
 
-          {/* Mengirimkan data breakdown ke komponen */}
+          {/* Send breakdown data to component */}
           <WorkoutBreakdown stats={safeBreakdown} isLoading={loading} />
 
           <PremiumTrends 

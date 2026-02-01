@@ -31,14 +31,46 @@ export default function LoginPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  if (loading) {
-    return (
-      <div className="min-h-[40vh] flex flex-col items-center justify-center gap-4">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        <p className="text-muted-foreground font-medium animate-pulse">Securing connection...</p>
-      </div>
-    );
-  }
+  // Initialize Google Login
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window as any).google) {
+      (window as any).google.accounts.id.initialize({
+        client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+        callback: handleGoogleResponse
+      });
+      (window as any).google.accounts.id.renderButton(
+        document.getElementById("google-login-btn"),
+        { theme: "outline", size: "large", width: "100%" }
+      );
+    }
+  }, [loading]);
+
+  const handleGoogleResponse = async (response: any) => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credential: response.credential })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.user.role === 'admin') {
+          router.push('/admin');
+        } else {
+          router.push('/dashboard');
+        }
+      } else {
+        const data = await res.json();
+        setError(data.error || 'Google login failed');
+        setLoading(false);
+      }
+    } catch (err) {
+      setError('Something went wrong with Google login');
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,6 +105,17 @@ export default function LoginPage() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-[40vh] flex flex-col items-center justify-center gap-4">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <p className="text-muted-foreground font-medium animate-pulse">
+            {error ? "Error occurred..." : "Securing connection..."}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-md mx-auto">
       <div className="text-center mb-8">
@@ -85,10 +128,7 @@ export default function LoginPage() {
       </div>
 
       <div className="space-y-6">
-        <Button variant="outline" className="w-full py-6 text-lg">
-          <GoogleIcon className="mr-3" />
-          Sign in with Google
-        </Button>
+        <div id="google-login-btn" className="w-full min-h-[50px]"></div>
 
         <div className="flex items-center">
           <div className="flex-grow border-t border-slate-200"></div>

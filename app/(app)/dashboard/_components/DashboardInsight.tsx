@@ -9,7 +9,7 @@ interface DashboardInsightProps {
 export default function DashboardInsight({ insight }: DashboardInsightProps) {
   if (!insight) return null;
 
-  // Highlight angka/persen dalam teks agar lebih menarik
+  // Highlight numbers/percentages in text to make it more interesting
   const formattedInsight = insight.split(/(\d+%?)/).map((part, index) => 
     /\d+%?/.test(part) ? <span key={index} className="text-green-600 font-bold">{part}</span> : part
   );

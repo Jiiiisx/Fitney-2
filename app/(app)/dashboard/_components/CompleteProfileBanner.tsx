@@ -49,11 +49,11 @@ export default function CompleteProfileBanner() {
         <div className='space-y-2 text-white'>
           <h3 className='text-xl font-bold flex items-center gap-2'>
             <Sparkles className='w-5 h-5 text-yellow-300' />
-            Lengkapi Profil Anda!
+            Complete Your Profile!
           </h3>
           <p className='text-blue-100 max-w-lg'>
-            Agar Fitney bisa memberikan rekomendasi latihan dan nutrisi yang akurat,
-            kami butuh data tubuh Anda yang terbaru.
+            To allow Fitney to provide accurate workout and nutrition recommendations, 
+            we need your latest body data.
           </p>
         </div>
 
@@ -62,7 +62,7 @@ export default function CompleteProfileBanner() {
             variant='secondary'
             className='whitespace-nowrap bg-white text-blue-700 hover:bg-blue-50 font-semibold shadow-sm'
           >
-            Lengkapi Sekarang
+            Complete Now
             <ArrowRight className='w-4 h-4 ml-2' />
           </Button>
         </Link>

@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/popover";
 import { NotificationPopup } from "./NotificationPopup";
 import OnboardingModal from "./OnboardingModal";
+import UserAvatar from "./UserAvatar";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { fetchWithAuth } from "@/app/lib/fetch-helper";
@@ -25,36 +26,7 @@ interface UserProfile {
 }
 
 const Avatar = ({ user }: { user: UserProfile | null }) => {
-  if (!user) {
-    return (
-      <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-        <User size={24} className="text-muted-foreground" />
-      </div>
-    );
-  }
-
-  if (user.imageUrl) {
-    return (
-      <img
-        src={user.imageUrl}
-        alt={user.fullName}
-        className="w-12 h-12 rounded-full object-cover"
-      />
-    );
-  }
-
-  const initials = (user.fullName || '')
-    .split(" ")
-    .filter(n => n)
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase() || '?';
-
-  return (
-    <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center">
-      <span className="text-primary-foreground font-bold text-lg">{initials}</span>
-    </div>
-  );
+  return <UserAvatar user={user} size="lg" />;
 };
 
 // SWR Fetcher

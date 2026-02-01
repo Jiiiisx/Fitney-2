@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { likePost, savePost } from "../hooks/useCommunity";
 import CommentSection from "./CommentSection";
+import UserAvatar from "../../components/UserAvatar";
 
 interface PostData {
   id: number;
@@ -171,19 +172,11 @@ export default function PostCard({
 
       {/* Post Header */}
       <Link href={`/community/profile/${post.user.username}`} className="flex items-center mb-4 cursor-pointer group/user">
-        {post.user.avatar ? (
-          <img
-            src={post.user.avatar}
-            alt={post.user.name || post.user.username}
-            className="w-10 h-10 rounded-full mr-3 object-cover border border-border"
-          />
-        ) : (
-          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center mr-3 border border-primary/20">
-            <span className="font-bold text-primary">
-              {(post.user.name || post.user.username || 'U').charAt(0).toUpperCase()}
-            </span>
-          </div>
-        )}
+        <UserAvatar 
+            user={{ fullName: post.user.name, imageUrl: post.user.avatar }} 
+            size="md" 
+            className="mr-3" 
+        />
         <div>
           <div className="flex items-center gap-1.5">
             <p className="font-bold text-foreground text-sm group-hover/user:underline">{post.user.name || post.user.username}</p>

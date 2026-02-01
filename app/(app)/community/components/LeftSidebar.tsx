@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useMyGroups, deleteGroup, useFriends } from "../hooks/useCommunity";
 import CreateGroupModal from "./CreateGroupModal";
+import UserAvatar from "../../components/UserAvatar";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -74,13 +75,11 @@ const LeftSidebar = () => {
                     <div className="flex justify-center p-4"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
                 ) : profile ? (
                     <div className="text-center">
-                        <div className="w-20 h-20 mx-auto rounded-full bg-muted flex items-center justify-center overflow-hidden mb-3 border-2 border-primary/20">
-                            {profile.imageUrl ? (
-                                <img src={profile.imageUrl} alt={profile.fullName} className="w-full h-full object-cover" />
-                            ) : (
-                                <User className="w-10 h-10 text-muted-foreground" />
-                            )}
-                        </div>
+                        <UserAvatar 
+                            user={profile} 
+                            size="xl" 
+                            className="mx-auto mb-3" 
+                        />
                         <h2 className="font-bold text-lg text-foreground truncate">{profile.fullName || "User"}</h2>
                         <p className="text-sm text-muted-foreground mb-4 truncate">{profile.email}</p>
 
@@ -218,13 +217,7 @@ const LeftSidebar = () => {
                         {friends.slice(0, 3).map((friend: any) => (
                             <Link href={`/community/messages/${friend.id}`} key={friend.id} className="flex items-center gap-3 cursor-pointer hover:bg-muted/50 p-2 rounded-lg transition-colors group">
                                 <div className="relative">
-                                    {friend.imageUrl ? (
-                                        <img src={friend.imageUrl} alt={friend.username} className="w-9 h-9 rounded-full object-cover border border-border" />
-                                    ) : (
-                                        <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center border border-border">
-                                            <User className="w-5 h-5 text-muted-foreground" />
-                                        </div>
-                                    )}
+                                    <UserAvatar user={friend} size="md" />
                                     <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-card"></div>
                                 </div>
                                 <div className="overflow-hidden">

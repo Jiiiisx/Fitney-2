@@ -1,7 +1,9 @@
 import { NextResponse, NextRequest } from "next/server";
 import { db } from "@/app/lib/db";
 import { verifyAuth } from "@/app/lib/auth";
-import { userProfiles,userSettings } from "@/app/lib/schema";
+import { users, userProfiles, userSettings, bodyMeasurements } from "@/app/lib/schema";
+import { eq, and, ne } from "drizzle-orm";
+import { format } from "date-fns";
 
 export async function POST(req: NextRequest) {
   const auth = await verifyAuth(req);
@@ -11,16 +13,46 @@ export async function POST(req: NextRequest) {
   const userId = auth.user.userId;
 
   try {
-    const { goal, level, location } = await req.json();
+    const { username, goal, level, location, gender, dob, weight, height } = await req.json();
 
-    if ( !goal || !level || !location ) {
+    if (!goal || !level || !location) {
       return NextResponse.json(
-        { error: 'Missing onboarding data' },
+        { error: 'Missing basic onboarding data' },
         { status: 400 }
       );
     }
 
+    // 1. Check if username is already taken (if provided)
+    if (username) {
+        const existingUsername = await db.query.users.findFirst({
+            where: and(
+                eq(users.username, username),
+                ne(users.id, userId) // exclude current user
+            )
+        });
+
+        if (existingUsername) {
+            return NextResponse.json(
+                { error: 'Username already taken' },
+                { status: 409 }
+            );
+        }
+    }
+
     await db.transaction(async (tx) => {
+      // 2. Update basic info di table USERS (Username, Gender & DOB)
+      const userUpdate: any = {
+          gender: gender || null,
+          dateOfBirth: dob || null
+      };
+      
+      if (username) userUpdate.username = username;
+
+      await tx.update(users)
+        .set(userUpdate)
+        .where(eq(users.id, userId));
+
+      // 3. Simpan Goal & Level di USER_PROFILES
       await tx
         .insert(userProfiles)
         .values({
@@ -28,17 +60,44 @@ export async function POST(req: NextRequest) {
           mainGoal: goal,
           experienceLevel: level,
           workoutLocation: location,
+          gender: gender || null,
+          weight: weight ? weight.toString() : null,
+          height: height ? height.toString() : null,
+          updatedAt: new Date(),
         })
         .onConflictDoUpdate({
           target: userProfiles.userId,
           set: {
-            mainGoal:goal,
+            mainGoal: goal,
             experienceLevel: level,
             workoutLocation: location,
+            gender: gender || null,
+            weight: weight ? weight.toString() : null,
+            height: height ? height.toString() : null,
             updatedAt: new Date(),
           },
         });
 
+      // 4. Simpan Tinggi & Berat di BODY_MEASUREMENTS
+      if (height || weight) {
+        const todayStr = format(new Date(), 'yyyy-MM-dd');
+        await tx.insert(bodyMeasurements)
+          .values({
+            userId: userId,
+            date: todayStr,
+            heightCm: height ? height.toString() : null,
+            weightKg: weight ? weight.toString() : null,
+          })
+          .onConflictDoUpdate({
+            target: [bodyMeasurements.userId, bodyMeasurements.date],
+            set: {
+              heightCm: height ? height.toString() : null,
+              weightKg: weight ? weight.toString() : null,
+            }
+          });
+      }
+
+      // 5. Tandai Onboarding Selesai
       await tx
         .insert(userSettings)
         .values({
@@ -54,7 +113,7 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({
-      message: 'Onboarding completed and profile saved succesfully.',
+      message: 'Onboarding completed and profile saved successfully.',
     });
   } catch (error) {
     console.error('API_COMPLETE_ONBOARDING_ERROR', error);

@@ -53,7 +53,7 @@ export default function TodaysPlanBanner({ stats, plan, isLoading }: TodaysPlanB
     )
   }
 
-  // Jika ada plan aktif hari ini
+  // If there is an active plan today
   if (plan) {
     return (
         <Card className="bg-gradient-to-r from-gray-900 to-gray-800 border-none shadow-lg mb-6 lg:mb-8 overflow-hidden relative group">
@@ -89,7 +89,7 @@ export default function TodaysPlanBanner({ stats, plan, isLoading }: TodaysPlanB
       );
   }
 
-  // Jika TIDAK ada plan hari ini (Rest Day atau belum set program)
+  // If there is NO plan today (Rest Day or no program set)
   return (
     <Card className="bg-gradient-to-r from-blue-500 to-blue-700 border-none shadow-lg mb-6 lg:mb-8 overflow-hidden relative text-white">
       <div className="absolute top-0 right-0 p-4 lg:p-8 opacity-10 pointer-events-none">

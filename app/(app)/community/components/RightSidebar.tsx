@@ -4,6 +4,7 @@ import { verifyAuth } from "@/app/lib/auth";
 import { cookies } from "next/headers";
 import { getSuggestions, getTrendingHashtags, getTopAchievers } from "@/app/lib/community-data";
 import FollowButton from "./FollowButton";
+import UserAvatar from "../../components/UserAvatar";
 
 export default async function RightSidebar() {
     // Auth Check Server Side
@@ -49,17 +50,7 @@ export default async function RightSidebar() {
                         {suggestions.slice(0, 3).map((user: any) => (
                             <li key={user.id} className="flex items-center justify-between">
                                 <div className="flex items-center gap-3 overflow-hidden">
-                                    {user.imageUrl ? (
-                                        <img
-                                            src={user.imageUrl}
-                                            alt={user.fullName}
-                                            className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                                        />
-                                    ) : (
-                                        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                                            <User className="w-5 h-5 text-muted-foreground" />
-                                        </div>
-                                    )}
+                                    <UserAvatar user={user} size="md" />
                                     <div className="min-w-0">
                                         <p className="font-bold text-foreground text-sm truncate">{user.fullName || user.username}</p>
                                         <p className="text-xs text-muted-foreground truncate">Level {user.level || 1}</p>

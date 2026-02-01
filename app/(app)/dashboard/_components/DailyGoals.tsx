@@ -82,7 +82,7 @@ export default function DailyGoals({ stats }: DailyGoalsProps) {
           <CardContent className="p-4 flex flex-col items-center justify-center text-center space-y-3">
             <div className="relative">
               <CircularProgress
-                size={80} // Sedikit lebih besar
+                size={80} // Slightly larger
                 strokeWidth={8}
                 percentage={item.percentage}
                 color={item.stroke}
