@@ -13,7 +13,7 @@ const PLANS = [
     {
         id: 'pro',
         name: 'Fitney PRO',
-        price: 'Rp 49.000',
+        price: '$2.99',
         period: '/month',
         desc: 'Perfect for daily consistency warriors.',
         features: ['AI Workout Auditor', 'Premium Analytics', 'AI Coach Priority', 'Ad-Free'],
@@ -23,7 +23,7 @@ const PLANS = [
     {
         id: 'elite',
         name: 'Fitney ELITE',
-        price: 'Rp 499.000',
+        price: '$24.99',
         period: '/year',
         desc: 'For those serious about transformation.',
         features: ['All PRO Features', 'Exclusive ELITE Badge', 'Early Feature Access', 'Personal Consultation'],

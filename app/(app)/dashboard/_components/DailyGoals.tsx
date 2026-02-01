@@ -12,29 +12,35 @@ interface DailyGoalsProps {
     water?: number;
     steps?: number;
   };
+  targets?: {
+    calories: number;
+    water: number;
+    duration: number;
+    steps: number;
+  };
 }
 
-export default function DailyGoals({ stats }: DailyGoalsProps) {
+export default function DailyGoals({ stats, targets }: DailyGoalsProps) {
   // Defaults if no data
   const calories = stats?.calories || 0;
   const duration = stats?.duration || 0;
   const waterMl = stats?.water || 0;
-  
-  // Use backend provided steps if available, otherwise fallback to 0 (or simple estimation if you prefer)
-  // Backend now calculates steps based on workout type/distance which is more accurate.
   const steps = stats?.steps !== undefined ? stats.steps : (calories > 0 ? calories * 12 : 0); 
   
-  // Hardcoded targets for now
-  const targetCalories = 500; 
-  const targetDuration = 60; 
-  const targetSteps = 10000;
-  const targetWater = 2.5; // Liters
+  // Use provided targets or fallbacks
+  const targetCalories = targets?.calories || 2000; 
+  const targetDuration = targets?.duration || 45; 
+  const targetSteps = targets?.steps || 10000;
+  const targetWaterMl = targets?.water || 2500;
 
   const calPercentage = Math.min(100, (calories / targetCalories) * 100);
   const durPercentage = Math.min(100, (duration / targetDuration) * 100);
   const stepsPercentage = Math.min(100, (steps / targetSteps) * 100);
+  
+  // For water, we show in Liters for better UI but compare in Ml
   const waterL = parseFloat((waterMl / 1000).toFixed(1));
-  const waterPercentage = Math.min(100, (waterL / targetWater) * 100);
+  const targetWaterL = parseFloat((targetWaterMl / 1000).toFixed(1));
+  const waterPercentage = Math.min(100, (waterMl / targetWaterMl) * 100);
 
   const items = [
     {
@@ -43,7 +49,7 @@ export default function DailyGoals({ stats }: DailyGoalsProps) {
       target: `/ ${targetCalories} kcal`,
       percentage: calPercentage,
       icon: Flame,
-      color: "text-orange-500", // Tailwind class
+      color: "text-orange-500",
       stroke: "#f97316"
     },
     {
@@ -67,7 +73,7 @@ export default function DailyGoals({ stats }: DailyGoalsProps) {
     {
       label: "Water",
       value: `${waterL}`,
-      target: `/ ${targetWater} L`,
+      target: `/ ${targetWaterL} L`,
       percentage: waterPercentage,
       icon: Droplets,
       color: "text-cyan-500",

@@ -10,11 +10,12 @@ import {
     users, 
     bodyMeasurements, 
     foodLogs, 
-    foods 
+    foods,
+    userProfiles
 } from "@/app/lib/schema";
 import { eq, and, gte, lte, desc, sql } from "drizzle-orm";
-import { subDays, startOfDay, endOfDay, format } from "date-fns";
-import { updateUserStreak } from "@/app/lib/streaks";
+import { subDays, startOfDay, endOfDay, format, differenceInYears } from "date-fns";
+import { calculateTDEE } from "@/app/lib/nutrition-calculator";
 
 export const dynamic = 'force-dynamic';
 
@@ -24,15 +25,53 @@ export async function GET(req: NextRequest) {
     if (auth.error) return auth.error;
     const userId = auth.user.userId;
 
-    const user = await db.query.users.findFirst({
+    // Fetch user and profile for role and personalization
+    const userData = await db.query.users.findFirst({
         where: eq(users.id, userId),
-        columns: { role: true }
+        columns: { role: true, gender: true, dateOfBirth: true }
     });
-    const isPremium = user?.role === 'pro' || user?.role === 'elite' || user?.role === 'premium' || user?.role === 'admin';
+    
+    const profileData = await db.query.userProfiles.findFirst({
+        where: eq(userProfiles.userId, userId)
+    });
+
+    // Fetch latest body measurements
+    const latestWeight = await db.query.bodyMeasurements.findFirst({
+        where: eq(bodyMeasurements.userId, userId),
+        orderBy: [desc(bodyMeasurements.date)]
+    });
+
+    const isPremium = userData?.role === 'pro' || userData?.role === 'elite' || userData?.role === 'premium' || userData?.role === 'admin';
+
+    // CALCULATE PERSONALIZED TARGETS
+    let targetCalories = 2000; // Fallback
+    let targetWater = 2500;    // Standard 2.5L
+    let targetDuration = 45;   // Standard 45 mins
+    let targetSteps = 10000;
+
+    if (userData?.gender && userData?.dateOfBirth && latestWeight?.weightKg && latestWeight?.heightCm) {
+        const age = differenceInYears(new Date(), new Date(userData.dateOfBirth));
+        const weight = parseFloat(latestWeight.weightKg);
+        const height = parseFloat(latestWeight.heightCm);
+        
+        // Map activity level from profile or default to moderate
+        const activityLevel: any = profileData?.experienceLevel === 'advanced' ? 'very_active' : 
+                             profileData?.experienceLevel === 'intermediate' ? 'moderately_active' : 'lightly_active';
+
+        targetCalories = calculateTDEE({
+            gender: userData.gender as any,
+            age,
+            weight,
+            height,
+            activityLevel
+        });
+
+        // Water recommendation: ~35ml per kg of body weight
+        targetWater = Math.round(weight * 35);
+    }
 
     const todayStart = startOfDay(new Date());
     const sevenDaysAgo = subDays(todayStart, 6);
-    const fourteenDaysAgo = subDays(todayStart, 13);
     const fiftyDaysAgo = subDays(todayStart, 50);
     const thirtyDaysAgo = subDays(todayStart, 30);
     const todayStr = format(new Date(), 'yyyy-MM-dd');
@@ -55,8 +94,8 @@ export async function GET(req: NextRequest) {
     
     let totalSteps = 0;
     todayLogs.forEach(log => {
-        if (log.distance && Number(log.distance) > 0) {
-            totalSteps += Math.floor(Number(log.distance) * 1250);
+        if (log.distanceKm && Number(log.distanceKm) > 0) {
+            totalSteps += Math.floor(Number(log.distanceKm) * 1250);
         } else {
             const duration = log.durationMin || 0;
             totalSteps += log.type === 'Cardio' ? duration * 100 : duration * 30;
@@ -74,7 +113,7 @@ export async function GET(req: NextRequest) {
       steps: totalSteps
     };
 
-    // 2. Weekly Activity & Insights
+    // 2. Weekly Activity
     const weeklyLogs = await db.select().from(workoutLogs).where(and(eq(workoutLogs.userId, userId), gte(workoutLogs.date, sevenDaysAgo)));
     const activityMap = new Map();
     weeklyLogs.forEach(log => {
@@ -104,17 +143,15 @@ export async function GET(req: NextRequest) {
     // 4. PREMUM: Fitness Radar
     const monthlyLogs = await db.select().from(workoutLogs).where(and(eq(workoutLogs.userId, userId), gte(workoutLogs.date, thirtyDaysAgo)));
     const consistency = Math.min(100, Math.round((monthlyLogs.length / 15) * 100)) || 5;
-    const strength = Math.round((monthlyLogs.filter(l => l.type === 'Strength').length / (monthlyLogs.length || 1)) * 100) || 10;
-    const cardio = Math.round((monthlyLogs.filter(l => l.type === 'Cardio').length / (monthlyLogs.length || 1)) * 100) || 10;
     const fitnessRadar = [
         { subject: 'Consistency', A: consistency },
-        { subject: 'Strength', A: strength },
-        { subject: 'Cardio', A: cardio },
+        { subject: 'Strength', A: Math.round((monthlyLogs.filter(l => l.type === 'Strength').length / (monthlyLogs.length || 1)) * 100) || 10 },
+        { subject: 'Cardio', A: Math.round((monthlyLogs.filter(l => l.type === 'Cardio').length / (monthlyLogs.length || 1)) * 100) || 10 },
         { subject: 'Variety', A: Math.min(100, new Set(monthlyLogs.map(l => l.type)).size * 20) },
         { subject: 'Intensity', A: Math.min(100, Math.round((monthlyLogs.reduce((a, b) => a + (b.durationMin || 0), 0) / (monthlyLogs.length || 1)) / 60 * 100)) },
     ];
 
-    // 5. PREMIUM: Trend Correlation (Weight vs Calories)
+    // 5. Trend correlation
     const weightLogs = await db.select().from(bodyMeasurements).where(and(eq(bodyMeasurements.userId, userId), gte(bodyMeasurements.date, thirtyDaysAgo))).orderBy(bodyMeasurements.date);
     const calorieLogs = await db.select({ date: foodLogs.date, cals: sql<number>`sum(${foodLogs.servingSizeG} * ${foods.caloriesPer100g} / 100)` }).from(foodLogs).innerJoin(foods, eq(foodLogs.foodId, foods.id)).where(and(eq(foodLogs.userId, userId), gte(foodLogs.date, thirtyDaysAgo))).groupBy(foodLogs.date);
 
@@ -133,13 +170,19 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
         isPremium,
-        role: user?.role || 'user',
+        role: userData?.role || 'user',
         today: todayStats,
+        targets: {
+            calories: targetCalories,
+            water: targetWater,
+            duration: targetDuration,
+            steps: targetSteps
+        },
         todaysPlan,
         weekly: weeklyActivity,
         recent: await db.select().from(workoutLogs).where(eq(workoutLogs.userId, userId)).orderBy(desc(workoutLogs.date)).limit(3),
         streak: currentStreak,
-        insight: "Keep it up!",
+        insight: `Your personalized daily target is ${targetCalories} kcal based on your profile.`,
         breakdown: { mostFrequent: "N/A", avgDuration: 0, heatmap: heatmapData },
         fitnessRadar,
         trendData

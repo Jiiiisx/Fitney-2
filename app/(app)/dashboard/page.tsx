@@ -188,7 +188,7 @@ export default function DashboardPage() {
 
           <GamificationStreak streak={safeStreak} isLoading={loading} />
 
-          <DailyGoals stats={safeStats} />
+          <DailyGoals stats={safeStats} targets={data?.targets} />
 
           <RecentActivityList workouts={safeRecent} isLoading={loading} />
 

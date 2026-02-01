@@ -6,7 +6,7 @@ import "../components/Pricing/Pricing.css";
 const plans = [
   {
     name: "Free",
-    price: "Rp0",
+    price: "$0",
     frequency: "/forever",
     description: "Try our basic features at no cost.",
     features: [
@@ -20,7 +20,7 @@ const plans = [
   },
   {
     name: "Monthly",
-    price: "Rp49,000",
+    price: "$2.99",
     frequency: "/month",
     description: "Full flexibility with access to all features.",
     features: [
@@ -35,7 +35,7 @@ const plans = [
   },
   {
     name: "Yearly",
-    price: "Rp399,000",
+    price: "$24.99",
     frequency: "/year",
     description: "Best choice for long-term commitment.",
     features: [
