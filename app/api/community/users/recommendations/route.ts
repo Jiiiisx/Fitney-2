@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/app/lib/auth";
 import { db } from "@/app/lib/db";
 import { users, followers } from "@/app/lib/schema";
-import { eq, not, and, notInArray, sql } from "drizzle-orm";
+import { eq, not, and, notInArray, sql, ne } from "drizzle-orm";
 
 export async function GET(req: NextRequest) {
   try {
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
     // Add current user to exclusion list
     const excludedIds = [...followingIds, currentUserId];
 
-    // 2. Fetch random users NOT in the excluded list
+    // 2. Fetch random users NOT in the excluded list AND not admins
     // Using simple RANDOM() ordering for recommendations
     const recommendations = await db
       .select({
@@ -32,7 +32,12 @@ export async function GET(req: NextRequest) {
         level: users.level,
       })
       .from(users)
-      .where(notInArray(users.id, excludedIds))
+      .where(
+        and(
+            notInArray(users.id, excludedIds),
+            ne(users.role, 'admin')
+        )
+      )
       .orderBy(sql`RANDOM()`)
       .limit(4);
 

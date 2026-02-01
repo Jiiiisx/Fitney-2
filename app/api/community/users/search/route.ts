@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/app/lib/auth";
 import { db } from "@/app/lib/db";
 import { users, followers } from "@/app/lib/schema";
-import { ilike, or, eq, and } from "drizzle-orm";
+import { ilike, or, eq, and, ne } from "drizzle-orm";
 
 export async function GET(req: NextRequest) {
   try {
@@ -27,9 +27,12 @@ export async function GET(req: NextRequest) {
       })
       .from(users)
       .where(
-        or(
-          ilike(users.username, `%${query}%`),
-          ilike(users.fullName, `%${query}%`)
+        and(
+            ne(users.role, 'admin'),
+            or(
+                ilike(users.username, `%${query}%`),
+                ilike(users.fullName, `%${query}%`)
+            )
         )
       )
       .limit(10);

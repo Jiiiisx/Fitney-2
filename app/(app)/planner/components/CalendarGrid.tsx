@@ -238,7 +238,25 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion, onPlan
         : workoutsForDay;
 
       return (
-        <div key={index} className="xl:flex xl:flex-col xl:flex-1 min-w-[140px]">
+        <div 
+          key={index} 
+          className="xl:flex xl:flex-col xl:flex-1 min-w-[140px]"
+          onDragOver={(e) => {
+              e.preventDefault();
+              e.currentTarget.classList.add("bg-primary/5");
+          }}
+          onDragLeave={(e) => {
+              e.currentTarget.classList.remove("bg-primary/5");
+          }}
+          onDrop={(e) => {
+              e.preventDefault();
+              e.currentTarget.classList.remove("bg-primary/5");
+              const workoutId = e.dataTransfer.getData("workoutId");
+              if (workoutId) {
+                  handleMoveWorkout(Number(workoutId), dayDate);
+              }
+          }}
+        >
           {/* Day Header */}
           <div className={`text-center mb-4 pb-2 border-b-2 ${isToday ? 'border-primary' : 'border-transparent'}`}>
             <h3 className={`font-bold text-sm ${isToday ? 'text-primary' : 'text-foreground'}`}>
@@ -250,7 +268,7 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion, onPlan
           </div>
 
           {/* Workouts Container */}
-          <div className="space-y-3 xl:flex-grow h-full min-h-[200px] rounded-xl bg-muted/20 p-2">
+          <div className="space-y-3 xl:flex-grow h-full min-h-[200px] rounded-xl bg-muted/20 p-2 transition-colors">
             {filteredWorkouts.length > 0 ? (
               filteredWorkouts.map((workout, idx) => (
                 <WorkoutCard 

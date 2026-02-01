@@ -103,8 +103,14 @@ export default function WorkoutCard({ workout, onDelete, onComplete, onMove }: W
 
   return (
     <>
-    <div className={cn(
-      "relative p-3 rounded-xl border transition-all duration-200 shadow-sm hover:shadow-md w-full flex flex-col justify-between group/card",
+    <div 
+      draggable="true"
+      onDragStart={(e) => {
+          e.dataTransfer.setData("workoutId", workout.id.toString());
+          e.dataTransfer.effectAllowed = "move";
+      }}
+      className={cn(
+      "relative p-3 rounded-xl border transition-all duration-200 shadow-sm hover:shadow-md w-full flex flex-col justify-between group/card cursor-grab active:cursor-grabbing",
       statusStyles[workout.status] || statusStyles.scheduled,
       isDeleting && "opacity-50 pointer-events-none"
     )}>

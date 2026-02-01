@@ -17,9 +17,12 @@ export const getSuggestions = cache(async (currentUserId: string) => {
     // Tambahkan ID user sendiri agar tidak muncul di saran
     followingIds.push(currentUserId);
 
-    // 2. Ambil user yang TIDAK ada di daftar followingIds
+    // 2. Ambil user yang TIDAK ada di daftar followingIds dan bukan admin
     const suggestions = await db.query.users.findMany({
-        where: (users, { notInArray }) => notInArray(users.id, followingIds),
+        where: (users, { notInArray, ne, and }) => and(
+            notInArray(users.id, followingIds),
+            ne(users.role, "admin")
+        ),
         limit: 5,
         columns: {
             id: true,
@@ -54,8 +57,9 @@ export const getTrendingHashtags = cache(async () => {
 
 // Global Leaderboard logic
 export const getTopAchievers = cache(async (currentUserId: string) => {
-    // Fetch all users sorted by Level/XP for a Global Leaderboard
+    // Fetch all users sorted by Level/XP for a Global Leaderboard, excluding admins
     const topUsers = await db.query.users.findMany({
+        where: (users, { ne }) => ne(users.role, "admin"),
         orderBy: (users, { desc }) => [desc(users.level), desc(users.xp)],
         limit: 5,
         columns: {
