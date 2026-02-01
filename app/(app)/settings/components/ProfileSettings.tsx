@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Mail, User, Lock, Calendar, Weight, Ruler, PersonStanding, Loader } from "lucide-react";
 import { fetchWithAuth } from "@/app/lib/fetch-helper";
+import FitnessPassport from "./FitnessPassport";
 
 const SettingsCard = ({
   title,
@@ -55,14 +56,24 @@ export default function ProfileSettings() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [profile, setProfile] = useState({
     fullName: "",
+    username: "",
     email: "",
     dob: "",
     gender: "",
     height: "",
     weight: "",
     imageUrl: "",
+    level: 1,
+    xp: 0,
+    createdAt: new Date(),
   });
   
+  const [stats, setStats] = useState({
+      totalWorkouts: 0,
+      streak: 0,
+      totalMinutes: 0
+  });
+
   const [passwords, setPasswords] = useState({
     current: "",
     new: "",
@@ -76,8 +87,20 @@ export default function ProfileSettings() {
     const fetchProfile = async () => {
       setIsLoading(true);
       try {
+        // Fetch Profile
         const data = await fetchWithAuth('/api/users/profile');
-        setProfile(data);
+        setProfile(prev => ({ ...prev, ...data }));
+        
+        // Fetch Stats (Assuming we can get this from dashboard or sidebar stats endpoint)
+        // For now, let's try sidebar stats as it usually has streak and basic info
+        const statsRes = await fetchWithAuth('/api/stats/sidebar');
+        if (statsRes) {
+             setStats({
+                 totalWorkouts: statsRes.weeklyWorkouts || 0, // Fallback logic or separate endpoint needed
+                 streak: statsRes.streak || 0,
+                 totalMinutes: statsRes.activeMinutes || 0
+             });
+        }
       } catch (error) {
         console.error("Error fetching profile:", error);
       } finally {
@@ -205,6 +228,18 @@ export default function ProfileSettings() {
 
   return (
     <div className="space-y-10">
+      {/* Fitness Passport Badge */}
+      <FitnessPassport 
+        user={{
+            fullName: profile.fullName || "User",
+            username: profile.username || "fitney_user",
+            level: profile.level || 1,
+            xp: profile.xp || 0,
+            joinedAt: new Date(profile.createdAt || new Date())
+        }}
+        stats={stats}
+      />
+
       {/* Personal Information Card */}
       <SettingsCard
         title="Personal Information"

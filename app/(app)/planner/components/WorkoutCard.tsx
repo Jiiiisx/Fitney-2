@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import {
   CheckCircle2,
@@ -11,7 +9,11 @@ import {
   AlertCircle,
   Check,
   Loader2,
-  Coffee
+  Coffee,
+  MoreVertical,
+  Calendar as CalendarIcon,
+  Trash2,
+  ArrowRight
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -21,6 +23,22 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export type Workout = {
   id: number;
@@ -42,24 +60,32 @@ interface WorkoutCardProps {
   workout: Workout;
   onDelete: (id: number) => Promise<void> | void;
   onComplete?: () => void;
+  onMove?: (id: number, newDate: Date) => void;
 }
 
-export default function WorkoutCard({ workout, onDelete, onComplete }: WorkoutCardProps) {
+export default function WorkoutCard({ workout, onDelete, onComplete, onMove }: WorkoutCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
+  const [newDate, setNewDate] = useState("");
+  
   const config = typeConfig[workout.type];
   const hasExercises = workout.exercises && workout.exercises.length > 0;
 
-  const handleDeleteClick = async (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleDeleteClick = async () => {
     if (isDeleting) return;
-    
     setIsDeleting(true);
     try {
         await onDelete(workout.id);
     } catch (error) {
         setIsDeleting(false);
     }
+  };
+
+  const handleMoveConfirm = () => {
+    if (!newDate || !onMove) return;
+    onMove(workout.id, new Date(newDate));
+    setIsRescheduleOpen(false);
   };
 
   const handleCardClick = () => {
@@ -76,8 +102,9 @@ export default function WorkoutCard({ workout, onDelete, onComplete }: WorkoutCa
   };
 
   return (
+    <>
     <div className={cn(
-      "relative p-3 rounded-xl border transition-all duration-200 shadow-sm hover:shadow-md w-full flex flex-col justify-between",
+      "relative p-3 rounded-xl border transition-all duration-200 shadow-sm hover:shadow-md w-full flex flex-col justify-between group/card",
       statusStyles[workout.status] || statusStyles.scheduled,
       isDeleting && "opacity-50 pointer-events-none"
     )}>
@@ -104,7 +131,7 @@ export default function WorkoutCard({ workout, onDelete, onComplete }: WorkoutCa
             </TooltipProvider>
         </div>
         
-        <div className="flex items-center gap-0.5 shrink-0">
+        <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
           {hasExercises && (
             <button className="p-1 text-muted-foreground hover:bg-muted rounded-full transition-colors">
                  <ChevronDown
@@ -113,14 +140,29 @@ export default function WorkoutCard({ workout, onDelete, onComplete }: WorkoutCa
                  />
             </button>
           )}
-          <button 
-            onClick={handleDeleteClick} 
-            disabled={isDeleting}
-            className="p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full transition-colors disabled:opacity-50"
-            aria-label="Delete workout"
-          >
-            {isDeleting ? <Loader2 size={16} className="animate-spin" /> : <X size={16} />}
-          </button>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <button 
+                    className="p-1 text-muted-foreground hover:bg-muted rounded-full transition-colors opacity-0 group-hover/card:opacity-100 focus:opacity-100"
+                    aria-label="Options"
+                >
+                    <MoreVertical size={16} />
+                </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40 rounded-xl">
+                {onMove && (
+                    <DropdownMenuItem onClick={() => setIsRescheduleOpen(true)} className="gap-2 cursor-pointer font-medium">
+                        <CalendarIcon size={14} />
+                        Reschedule
+                    </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={handleDeleteClick} className="gap-2 cursor-pointer text-destructive focus:text-destructive font-medium">
+                    <Trash2 size={14} />
+                    Delete
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -203,5 +245,40 @@ export default function WorkoutCard({ workout, onDelete, onComplete }: WorkoutCa
         </div>
       </div>
     </div>
+
+    {/* Reschedule Dialog */}
+    <Dialog open={isRescheduleOpen} onOpenChange={setIsRescheduleOpen}>
+        <DialogContent className="sm:max-w-[400px] rounded-2xl">
+            <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                    <CalendarIcon className="w-5 h-5 text-primary" />
+                    Reschedule Workout
+                </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+                <p className="text-sm text-muted-foreground">
+                    Move <span className="font-bold text-foreground">{workout.name}</span> to a new date.
+                </p>
+                <div className="space-y-2">
+                    <Label htmlFor="newDate">Select New Date</Label>
+                    <Input 
+                        id="newDate" 
+                        type="date" 
+                        value={newDate} 
+                        onChange={(e) => setNewDate(e.target.value)} 
+                        min={new Date().toISOString().split('T')[0]} // Only allow future dates
+                        className="rounded-xl"
+                    />
+                </div>
+            </div>
+            <DialogFooter>
+                <Button variant="outline" onClick={() => setIsRescheduleOpen(false)} className="rounded-xl font-bold">Cancel</Button>
+                <Button onClick={handleMoveConfirm} disabled={!newDate} className="rounded-xl font-bold gap-2">
+                    Move Workout <ArrowRight className="w-4 h-4" />
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+    </>
   );
 }

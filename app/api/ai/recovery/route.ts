@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/app/lib/db";
-import { workoutLogs, sleepLogs, userProfiles } from "@/app/lib/schema";
+import { workoutLogs, sleepLogs, userProfiles, aiRecoveryScans } from "@/app/lib/schema";
 import { eq, and, gte, desc } from "drizzle-orm";
 import { verifyAuth } from "@/app/lib/auth";
 import { subDays, format } from "date-fns";
@@ -13,6 +13,18 @@ export async function GET(req: NextRequest) {
     const userId = auth.user.userId;
 
     const today = new Date();
+    const todayStr = format(today, 'yyyy-MM-dd');
+
+    // 0. CHECK CACHE
+    const cached = await db.select().from(aiRecoveryScans)
+      .where(and(eq(aiRecoveryScans.userId, userId), eq(aiRecoveryScans.date, todayStr)))
+      .limit(1);
+
+    if (cached.length > 0) {
+      console.log("Serving RECOVERY from cache");
+      return NextResponse.json(cached[0].content);
+    }
+
     const sevenDaysAgo = subDays(today, 7);
     
     // Fetch 7 days of context for better fatigue prediction
@@ -52,6 +64,14 @@ export async function GET(req: NextRequest) {
     const data = extractJSON(aiText);
 
     if (!data) throw new Error("AI output failed");
+
+    // 3. SAVE TO CACHE
+    await db.insert(aiRecoveryScans).values({
+      userId,
+      date: todayStr,
+      content: data
+    }).onConflictDoNothing();
+
     return NextResponse.json(data);
 
   } catch (error) {

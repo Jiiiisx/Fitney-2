@@ -5,9 +5,9 @@ const genAI = new GoogleGenerativeAI(apiKey);
 
 export const model = genAI.getGenerativeModel(
   { 
-    model: "gemini-3-flash-preview",
+    model: "gemini-2.0-flash",
     generationConfig: {
-      maxOutputTokens: 1500, 
+      maxOutputTokens: 4000, 
       temperature: 0.1,
       responseMimeType: "application/json",
       // DEFINISI SKEMA FORMAL
@@ -57,16 +57,29 @@ export const model = genAI.getGenerativeModel(
 /**
  * Enhanced AI call with automatic retry logic
  */
-export async function safeGenerateContent(prompt: string, retries = 2): Promise<string> {
+export async function safeGenerateContent(prompt: string, retries = 3): Promise<string> {
   try {
     const result = await model.generateContent(prompt);
     const response = await result.response;
     return response.text();
   } catch (error: any) {
     // If overloaded (503) or rate limited (429), try again after a short delay
-    if ((error.message?.includes("503") || error.message?.includes("429")) && retries > 0) {
-      console.log(`AI busy, retrying... (${retries} attempts left)`);
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2s
+    const isOverloaded = error.message?.includes("503") || error.message?.includes("429");
+    
+    if (isOverloaded && retries > 0) {
+      // Extract wait time from error message if available, e.g. "Please retry in 16.2s"
+      const match = error.message?.match(/retry in (\d+(\.\d+)?)s/);
+      let waitTime = 10000; // Default 10s base
+      
+      if (match && match[1]) {
+        waitTime = Math.ceil(parseFloat(match[1])) * 1000 + 2000; // Wait suggested time + 2s buffer
+      } else {
+        // Fallback increasing backoff: 10s, 20s, 30s
+        waitTime = (4 - retries) * 10000;
+      }
+      
+      console.log(`AI busy (429/503), retrying in ${waitTime/1000}s... (${retries} attempts left)`);
+      await new Promise(resolve => setTimeout(resolve, waitTime)); 
       return safeGenerateContent(prompt, retries - 1);
     }
     throw error;

@@ -111,6 +111,23 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion, onPlan
     }
   };
 
+  const handleMoveWorkout = async (id: number, newDate: Date) => {
+      try {
+          const toastId = toast.loading('Rescheduling...');
+          await fetchWithAuth(`/api/users/profile/active-plan/days/${id}`, {
+              method: 'PATCH',
+              body: JSON.stringify({
+                  date: format(newDate, 'yyyy-MM-dd')
+              })
+          });
+          toast.success('Workout moved!', { id: toastId });
+          onPlanChange();
+      } catch (error) {
+          console.error(error);
+          toast.error('Failed to move workout');
+      }
+  };
+
   const handleSetRestDay = async (date: Date) => {
     try {
       await fetchWithAuth('/api/planner/day', {
@@ -240,7 +257,8 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion, onPlan
                     key={idx} 
                     workout={workout} 
                     onDelete={handleDelete} 
-                    onComplete={() => handleCompleteWorkout(workout, dayDate)} // PASS PROP BARU
+                    onComplete={() => handleCompleteWorkout(workout, dayDate)}
+                    onMove={handleMoveWorkout}
                 />
               ))
             ) : (

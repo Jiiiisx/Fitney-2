@@ -523,6 +523,70 @@ export const aiChatMessages = pgTable('ai_chat_messages', {
   };
 });
 
+// AI Daily Briefing Cache
+export const dailyBriefings = pgTable('daily_briefings', {
+  id: serial('id').primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  date: date('date').notNull(),
+  content: json('content').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, (table) => {
+  return {
+    dailyBriefingsUserDateIdx: uniqueIndex('daily_briefings_user_date_idx').on(table.userId, table.date),
+  };
+});
+
+// AI Auditor Cache
+export const aiAudits = pgTable('ai_audits', {
+  id: serial('id').primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  date: date('date').notNull(),
+  content: json('content').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, (table) => {
+  return {
+    aiAuditsUserDateIdx: uniqueIndex('ai_audits_user_date_idx').on(table.userId, table.date),
+  };
+});
+
+// AI Recovery Cache
+export const aiRecoveryScans = pgTable('ai_recovery_scans', {
+  id: serial('id').primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  date: date('date').notNull(),
+  content: json('content').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, (table) => {
+  return {
+    aiRecoveryUserDateIdx: uniqueIndex('ai_recovery_user_date_idx').on(table.userId, table.date),
+  };
+});
+
+// Challenges (Community Features)
+export const challenges = pgTable('challenges', {
+  id: serial('id').primaryKey(),
+  creatorId: uuid('creator_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  title: varchar('title', { length: 255 }).notNull(),
+  description: text('description'),
+  type: varchar('type', { length: 50 }).notNull(), // 'frequency', 'distance', 'volume'
+  goalValue: integer('goal_value').notNull(),
+  startDate: date('start_date').notNull(),
+  endDate: date('end_date').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+});
+
+export const userChallenges = pgTable('user_challenges', {
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  challengeId: integer('challenge_id').notNull().references(() => challenges.id, { onDelete: 'cascade' }),
+  progress: integer('progress').default(0),
+  joinedAt: timestamp('joined_at', { withTimezone: true }).defaultNow(),
+  isCompleted: boolean('is_completed').default(false),
+}, (table) => {
+  return {
+    pk: primaryKey({ columns: [table.userId, table.challengeId] }),
+  };
+});
+
 import { relations } from 'drizzle-orm';
 
 export const aiChatSessionsRelations = relations(aiChatSessions, ({ one, many }) => ({
@@ -562,6 +626,11 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   hiddenGroupMessages: many(hiddenGroupMessages),
   hiddenDirectMessages: many(hiddenDirectMessages),
   aiChatSessions: many(aiChatSessions),
+  dailyBriefings: many(dailyBriefings),
+  aiAudits: many(aiAudits),
+  aiRecoveryScans: many(aiRecoveryScans),
+  createdChallenges: many(challenges),
+  joinedChallenges: many(userChallenges),
 }));
 
 export const directMessagesRelations = relations(directMessages, ({ one }) => ({
@@ -742,4 +811,26 @@ export const achievementsRelations = relations(achievements, ({ many }) => ({
 export const userAchievementsRelations = relations(userAchievements, ({ one }) => ({
   user: one(users, { fields: [userAchievements.userId], references: [users.id] }),
   achievement: one(achievements, { fields: [userAchievements.achievementId], references: [achievements.id] }),
+}));
+
+export const dailyBriefingsRelations = relations(dailyBriefings, ({ one }) => ({
+  user: one(users, { fields: [dailyBriefings.userId], references: [users.id] }),
+}));
+
+export const aiAuditsRelations = relations(aiAudits, ({ one }) => ({
+  user: one(users, { fields: [aiAudits.userId], references: [users.id] }),
+}));
+
+export const aiRecoveryScansRelations = relations(aiRecoveryScans, ({ one }) => ({
+  user: one(users, { fields: [aiRecoveryScans.userId], references: [users.id] }),
+}));
+
+export const challengesRelations = relations(challenges, ({ one, many }) => ({
+  creator: one(users, { fields: [challenges.creatorId], references: [users.id] }),
+  participants: many(userChallenges),
+}));
+
+export const userChallengesRelations = relations(userChallenges, ({ one }) => ({
+  user: one(users, { fields: [userChallenges.userId], references: [users.id] }),
+  challenge: one(challenges, { fields: [userChallenges.challengeId], references: [challenges.id] }),
 }));

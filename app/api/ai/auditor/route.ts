@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/app/lib/db";
-import { workoutLogs, exercises, categories } from "@/app/lib/schema";
+import { workoutLogs, exercises, categories, aiAudits } from "@/app/lib/schema";
 import { eq, and, gte } from "drizzle-orm";
 import { verifyAuth } from "@/app/lib/auth";
-import { subDays } from "date-fns";
+import { subDays, format } from "date-fns";
 import { safeGenerateContent, extractJSON } from "@/app/lib/gemini";
 
 export async function GET(req: NextRequest) {
@@ -11,6 +11,18 @@ export async function GET(req: NextRequest) {
     const auth = await verifyAuth(req);
     if (auth.error) return auth.error;
     const userId = auth.user.userId;
+
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
+
+    // 0. CHECK CACHE
+    const cached = await db.select().from(aiAudits)
+      .where(and(eq(aiAudits.userId, userId), eq(aiAudits.date, todayStr)))
+      .limit(1);
+
+    if (cached.length > 0) {
+      console.log("Serving AUDITOR from cache");
+      return NextResponse.json(cached[0].content);
+    }
 
     // Fetch workouts with a bit more history for better balance analysis (14 days)
     const recentWorkouts = await db.select().from(workoutLogs)
@@ -53,6 +65,14 @@ export async function GET(req: NextRequest) {
     const data = extractJSON(aiText);
 
     if (!data) throw new Error("AI output failed");
+
+    // 3. SAVE TO CACHE
+    await db.insert(aiAudits).values({
+      userId,
+      date: todayStr,
+      content: data
+    }).onConflictDoNothing();
+
     return NextResponse.json(data);
 
   } catch (error: any) {

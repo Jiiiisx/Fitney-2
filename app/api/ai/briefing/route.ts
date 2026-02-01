@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/app/lib/db";
-import { sleepLogs, workoutLogs, foodLogs, foods, userProfiles, userGoals, users } from "@/app/lib/schema";
+import { sleepLogs, workoutLogs, foodLogs, foods, userProfiles, userGoals, users, dailyBriefings } from "@/app/lib/schema";
 import { eq, and, gte, sql, desc } from "drizzle-orm";
 import { verifyAuth } from "@/app/lib/auth";
 import { subDays, format, differenceInDays } from "date-fns";
@@ -16,6 +16,21 @@ export async function GET(req: NextRequest) {
     const yesterdayStr = format(subDays(today, 1), 'yyyy-MM-dd');
     const todayStr = format(today, 'yyyy-MM-dd');
     const sevenDaysAgo = subDays(today, 7);
+
+    // 0. CACHE CHECK: Check if briefing already exists for today
+    // This dramatically reduces API calls and avoids Rate Limits (429)
+    const existingBriefing = await db.select().from(dailyBriefings)
+      .where(and(eq(dailyBriefings.userId, userId), eq(dailyBriefings.date, todayStr)))
+      .limit(1);
+
+    if (existingBriefing.length > 0) {
+      console.log("Serving briefing from CACHE (DB)");
+      const cachedData = existingBriefing[0].content as any;
+      return NextResponse.json({
+        date: format(today, 'MMMM d, yyyy'),
+        ...cachedData
+      });
+    }
 
     // 1. Fetch RICH Context Data
     const [userProfile] = await db.select().from(userProfiles).where(eq(userProfiles.userId, userId));
@@ -74,6 +89,19 @@ export async function GET(req: NextRequest) {
 
         if (!briefing || typeof briefing !== 'object') {
             throw new Error("Invalid briefing structure");
+        }
+
+        // 3. SAVE TO CACHE
+        try {
+          await db.insert(dailyBriefings).values({
+            userId: userId,
+            date: todayStr,
+            content: briefing,
+          }).onConflictDoNothing(); // Prevent race conditions
+          console.log("Briefing saved to CACHE");
+        } catch (dbError) {
+          console.error("Failed to cache briefing:", dbError);
+          // Non-blocking error, continue serving response
         }
 
         return NextResponse.json({
