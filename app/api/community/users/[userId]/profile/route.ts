@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/app/lib/auth";
 import { db } from "@/app/lib/db";
-import { users, followers, posts, userProfiles, userAchievements, workoutLogs } from "@/app/lib/schema";
-import { eq, count, desc, and, or } from "drizzle-orm";
+import { users, followers, posts, userProfiles, userAchievements, workoutLogs, userStreaks } from "@/app/lib/schema";
+import { eq, count, desc, and, sum, gte } from "drizzle-orm";
+import { subDays, startOfDay, format } from "date-fns";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   try {
@@ -12,7 +13,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
     const { userId: identifier } = await params;
 
     // 1. Get User Basic Info (ID or Username)
-    // UUID format regex (relaxed to support any version)
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identifier);
 
     const user = await db.query.users.findFirst({
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
 
     const targetUserId = user.id;
 
-    // 2. Get Stats (Followers, Following, Posts, Workouts, Achievements)
+    // 2. Get Stats
     const [followersCount] = await db
       .select({ count: count() })
       .from(followers)
@@ -44,10 +44,17 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
         .from(posts)
         .where(eq(posts.userId, targetUserId));
 
-    const [workoutCount] = await db
-        .select({ value: count() })
+    const [workoutStats] = await db
+        .select({ 
+            count: count(),
+            totalCalories: sum(workoutLogs.caloriesBurned)
+        })
         .from(workoutLogs)
         .where(eq(workoutLogs.userId, targetUserId));
+
+    const streakInfo = await db.query.userStreaks.findFirst({
+        where: eq(userStreaks.userId, targetUserId)
+    });
 
     const userAcc = await db.query.userAchievements.findMany({
         where: eq(userAchievements.userId, targetUserId),
@@ -56,7 +63,38 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
         }
     });
 
-    // 3. Check if current user is following this user
+    // 3. Get Heatmap Data (Last 28 days)
+    const last28Days = subDays(startOfDay(new Date()), 27);
+    const recentLogs = await db
+        .select({
+            date: workoutLogs.date,
+        })
+        .from(workoutLogs)
+        .where(
+            and(
+                eq(workoutLogs.userId, targetUserId),
+                gte(workoutLogs.date, last28Days)
+            )
+        );
+
+    // Map logs to a simple date activity map
+    const activityMap: Record<string, boolean> = {};
+    recentLogs.forEach(log => {
+        const dateKey = format(new Date(log.date), 'yyyy-MM-dd');
+        activityMap[dateKey] = true;
+    });
+
+    const heatmap = [];
+    for (let i = 0; i < 28; i++) {
+        const d = subDays(new Date(), 27 - i);
+        const dateKey = format(d, 'yyyy-MM-dd');
+        heatmap.push({
+            date: dateKey,
+            active: !!activityMap[dateKey]
+        });
+    }
+
+    // 4. Check if current user is following
     let isFollowing = false;
     if (currentUserId !== targetUserId) {
         const followCheck = await db.query.followers.findFirst({
@@ -68,7 +106,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
         isFollowing = !!followCheck;
     }
 
-    // 4. Get recent posts
+    // 5. Get recent posts
     const userPosts = await db.query.posts.findMany({
         where: eq(posts.userId, targetUserId),
         orderBy: [desc(posts.createdAt)],
@@ -95,8 +133,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
         followers: followersCount.count,
         following: followingCount.count,
         posts: postsCount.count,
-        totalWorkouts: workoutCount.value,
-        achievements: userAcc.length
+        totalWorkouts: workoutStats.count || 0,
+        totalCalories: Number(workoutStats.totalCalories) || 0,
+        streak: streakInfo?.currentStreak || 0,
+        achievements: userAcc.length,
+        heatmap: heatmap
       },
       isFollowing,
       posts: userPosts,

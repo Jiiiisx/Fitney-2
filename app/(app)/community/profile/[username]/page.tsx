@@ -112,8 +112,8 @@ export default function PublicProfilePage() {
                         }}
                         stats={{
                             totalWorkouts: stats.totalWorkouts,
-                            streak: 5, // Mock for now, could be from DB
-                            totalMinutes: stats.totalWorkouts * 45 // Estimation
+                            streak: stats.streak || 0,
+                            totalMinutes: stats.totalCalories ? Math.floor(stats.totalCalories / 7) : 0 // Rough estimation based on calories
                         }}
                     />
                 </div>
@@ -192,7 +192,7 @@ export default function PublicProfilePage() {
                             </div>
                             <div className="flex justify-between items-end border-b pb-2">
                                 <span className="text-sm font-bold text-muted-foreground">Est. Calories Burned</span>
-                                <span className="text-3xl font-black italic">{stats.totalWorkouts * 350} <span className="text-sm uppercase not-italic">kcal</span></span>
+                                <span className="text-3xl font-black italic">{stats.totalCalories} <span className="text-sm uppercase not-italic">kcal</span></span>
                             </div>
                         </div>
                     </div>
@@ -200,13 +200,17 @@ export default function PublicProfilePage() {
                         <h3 className="text-lg font-black mb-6 flex items-center gap-2">
                             <Calendar className="w-5 h-5 text-emerald-500" /> Consistency
                         </h3>
-                        <p className="text-sm text-muted-foreground mb-4">Member since {new Date(user.createdAt).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}</p>
+                        <p className="text-sm text-muted-foreground mb-4">Activity in last 28 days</p>
                         <div className="grid grid-cols-7 gap-2">
-                            {/* Simple activity squares mock */}
-                            {[...Array(28)].map((_, i) => (
-                                <div key={i} className={`h-4 rounded-sm ${i % 3 === 0 ? 'bg-primary opacity-60' : 'bg-muted'}`} />
+                            {stats.heatmap?.map((day: any, i: number) => (
+                                <div 
+                                    key={i} 
+                                    title={day.date}
+                                    className={`h-4 rounded-sm transition-all ${day.active ? 'bg-primary shadow-[0_0_8px_rgba(234,179,8,0.4)]' : 'bg-muted opacity-40'}`} 
+                                />
                             ))}
                         </div>
+                        <p className="text-[10px] text-muted-foreground mt-4 uppercase font-bold tracking-widest">Member since {new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
                     </div>
                 </TabsContent>
             </Tabs>
