@@ -10,13 +10,13 @@ const calculateXpForNextLevel = (level: number) => {
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { userId: string } }
+  context: { params: Promise<{ userId: string }> }
 ) {
   const auth = await verifyAdmin(req);
   if (auth.error) return auth.error;
 
   try {
-    const { userId } = params;
+    const { userId } = await context.params;
     const { amount, reason } = await req.json();
 
     const user = await db.query.users.findFirst({

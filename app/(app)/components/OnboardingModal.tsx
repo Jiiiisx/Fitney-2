@@ -211,25 +211,25 @@ const UsernameStep = ({ data, setData, onNext, progress }: { data: OnboardingDat
     >
       <ProgressBar progress={progress} />
       <div className="w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center mb-6">
-        <AtSign className="w-8 h-8 text-blue-500" />
+        <User className="w-8 h-8 text-blue-500" />
       </div>
-      <h2 className="text-3xl font-black text-center mb-2 tracking-tight italic">Choose your identity</h2>
-      <p className="text-muted-foreground text-center mb-8">This is how you will be known in the community.</p>
+      <h2 className="text-3xl font-black text-center mb-2 tracking-tight italic">How should we call you?</h2>
+      <p className="text-muted-foreground text-center mb-8">Choose a display name for the community.</p>
       
       <div className="w-full max-w-sm space-y-4 mb-10">
         <div className="space-y-2">
           <Label className="font-bold uppercase text-[10px] tracking-widest text-muted-foreground ml-1">
-            Username
+            Display Name / Username
           </Label>
           <Input 
             type="text" 
-            placeholder="e.g. fitness_warrior" 
+            placeholder="e.g. FitWarrior" 
             value={data.username} 
-            onChange={(e) => setData({...data, username: e.target.value.toLowerCase().replace(/\s+/g, '_')})}
+            onChange={(e) => setData({...data, username: e.target.value.replace(/\s+/g, '_')})}
             className="rounded-xl h-14 font-bold text-lg px-6"
           />
           <p className="text-[10px] text-muted-foreground ml-1">
-            Minimum 3 characters. No spaces allowed.
+            Minimum 3 characters. This will be your identity in Fitney.
           </p>
         </div>
       </div>

@@ -22,12 +22,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 1. Check if username is already taken (if provided)
+    // 1. Check if username is already taken
     if (username) {
         const existingUsername = await db.query.users.findFirst({
             where: and(
                 eq(users.username, username),
-                ne(users.id, userId) // exclude current user
+                ne(users.id, userId)
             )
         });
 
@@ -40,13 +40,17 @@ export async function POST(req: NextRequest) {
     }
 
     await db.transaction(async (tx) => {
-      // 2. Update basic info di table USERS (Username, Gender & DOB)
+      // 2. Update table USERS (Username, FullName, Gender & DOB)
+      // Sync fullName with username to ensure consistent display name
       const userUpdate: any = {
           gender: gender || null,
           dateOfBirth: dob || null
       };
       
-      if (username) userUpdate.username = username;
+      if (username) {
+          userUpdate.username = username;
+          userUpdate.fullName = username; // SINKRONISASI NAMA
+      }
 
       await tx.update(users)
         .set(userUpdate)
@@ -61,6 +65,7 @@ export async function POST(req: NextRequest) {
           experienceLevel: level,
           workoutLocation: location,
           gender: gender || null,
+          fullName: username || null, // Juga simpan di profile jika ada kolomnya
           weight: weight ? weight.toString() : null,
           height: height ? height.toString() : null,
           updatedAt: new Date(),

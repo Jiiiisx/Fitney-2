@@ -157,8 +157,8 @@ const Header = () => {
 
   const handleOnboardingComplete = useCallback(() => {
     setShowOnboarding(false);
-    fetchUser();
-  }, [fetchUser]);
+    window.location.reload(); // Force reload to sync all components
+  }, []);
 
   return (
     <>

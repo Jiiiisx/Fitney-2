@@ -55,13 +55,24 @@ export const getTrendingHashtags = cache(async () => {
     return trending;
 });
 
-// Global Leaderboard logic
+// Friend Leaderboard logic
 export const getTopAchievers = cache(async (currentUserId: string) => {
-    // Fetch all users sorted by Level/XP for a Global Leaderboard, excluding admins
+    // 1. Ambil daftar ID user yang sudah difollow
+    const following = await db
+        .select({ id: followers.userId })
+        .from(followers)
+        .where(eq(followers.followerId, currentUserId));
+
+    const friendIds = following.map((f) => f.id);
+
+    // Tambahkan ID user sendiri agar muncul di leaderboard bersama teman
+    friendIds.push(currentUserId);
+
+    // 2. Ambil detail user (diri sendiri + teman) diurutkan berdasarkan Level/XP
     const topUsers = await db.query.users.findMany({
-        where: (users, { ne }) => ne(users.role, "admin"),
+        where: (users, { inArray }) => inArray(users.id, friendIds),
         orderBy: (users, { desc }) => [desc(users.level), desc(users.xp)],
-        limit: 5,
+        limit: 10, // Tampilkan lebih banyak jika list teman panjang
         columns: {
             id: true,
             username: true,
