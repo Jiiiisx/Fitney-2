@@ -133,7 +133,13 @@ export default function AddWaterForm({ onCompleted }: { onCompleted?: () => void
         <div className="space-y-3">
           <Label className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Custom Amount</Label>
           <div className="flex items-center space-x-3">
-            <Button variant="outline" size="icon" onClick={() => adjustAmount(-50)} className="h-10 w-10 shrink-0">
+            <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={() => adjustAmount(-50)} 
+                className="h-10 w-10 shrink-0"
+                aria-label="Decrease amount by 50ml"
+            >
               <Minus className="h-4 w-4" />
             </Button>
             <div className="relative flex-1">
@@ -145,7 +151,13 @@ export default function AddWaterForm({ onCompleted }: { onCompleted?: () => void
               />
               <span className="absolute right-3 top-2.5 text-xs text-muted-foreground">ml</span>
             </div>
-            <Button variant="outline" size="icon" onClick={() => adjustAmount(50)} className="h-10 w-10 shrink-0">
+            <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={() => adjustAmount(50)} 
+                className="h-10 w-10 shrink-0"
+                aria-label="Increase amount by 50ml"
+            >
               <Plus className="h-4 w-4" />
             </Button>
           </div>

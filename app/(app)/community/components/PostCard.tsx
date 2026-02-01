@@ -153,7 +153,10 @@ export default function PostCard({
         <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="text-muted-foreground hover:text-foreground p-1 rounded-full hover:bg-muted transition-colors">
+              <button 
+                className="text-muted-foreground hover:text-foreground p-1 rounded-full hover:bg-muted transition-colors"
+                aria-label="Post options"
+              >
                 <MoreHorizontal className="w-5 h-5" />
               </button>
             </DropdownMenuTrigger>
@@ -270,7 +273,10 @@ export default function PostCard({
           <MessageSquare className="w-5 h-5 group-hover:scale-110 transition-transform" />
           <span className="font-medium text-sm">{post.commentsCount}</span>
         </button>
-        <button className="flex items-center space-x-2 hover:text-green-500 transition-colors duration-300 group">
+        <button 
+            className="flex items-center space-x-2 hover:text-green-500 transition-colors duration-300 group"
+            aria-label="Share post"
+        >
           <Share2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
         </button>
         <button

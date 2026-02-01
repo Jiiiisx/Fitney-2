@@ -107,7 +107,10 @@ const LeftSidebar = () => {
                         {isMounted && (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <button className="p-1 hover:bg-muted rounded-full text-muted-foreground hover:text-foreground">
+                                    <button 
+                                        className="p-1 hover:bg-muted rounded-full text-muted-foreground hover:text-foreground"
+                                        aria-label="Filter groups"
+                                    >
                                         <Filter className="w-4 h-4" />
                                     </button>
                                 </DropdownMenuTrigger>

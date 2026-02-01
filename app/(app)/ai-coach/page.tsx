@@ -207,7 +207,12 @@ export default function AICoachHub() {
                 <div className="space-y-2 shrink-0">
                     <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest px-2 mb-4">Core Intelligence</p>
                     {AI_TOOLS.map((tool) => (
-                        <button key={tool.id} onClick={() => setActiveTool(tool.id)} className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all border group ${activeTool === tool.id ? 'bg-card border-primary/20 shadow-lg scale-[1.02]' : 'bg-transparent border-transparent hover:bg-card/50'}`}>
+                        <button 
+                            key={tool.id} 
+                            onClick={() => setActiveTool(tool.id)} 
+                            className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all border group ${activeTool === tool.id ? 'bg-card border-primary/20 shadow-lg scale-[1.02]' : 'bg-transparent border-transparent hover:bg-card/50'}`}
+                            aria-label={`Select ${tool.name} tool`}
+                        >
                             <div className={`p-2.5 rounded-xl bg-card shadow-sm group-hover:scale-110 transition-transform ${tool.color}`}><tool.icon className="w-5 h-5" /></div>
                             <div className="text-left"><p className="text-sm font-bold">{tool.name}</p><p className="text-[10px] text-muted-foreground line-clamp-1">{tool.desc}</p></div>
                         </button>
@@ -229,7 +234,13 @@ export default function AICoachHub() {
                         <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Neural Link: Connected</span>
                     </div>
                     <div className="flex items-center gap-4">
-                        <button onClick={() => window.location.reload()} className="p-2 hover:bg-muted rounded-xl transition-colors"><RefreshCcw className="w-4 h-4 text-muted-foreground" /></button>
+                        <button 
+                            onClick={() => window.location.reload()} 
+                            className="p-2 hover:bg-muted rounded-xl transition-colors"
+                            aria-label="Reload page"
+                        >
+                            <RefreshCcw className="w-4 h-4 text-muted-foreground" />
+                        </button>
                         <div className="h-8 w-px bg-border mx-2"></div>
                         <div className="flex items-center gap-2">
                             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center"><Activity className="w-4 h-4 text-primary" /></div>
@@ -312,7 +323,13 @@ export default function AICoachHub() {
                                         {ingredientTags.map((tag) => (
                                             <motion.div key={tag} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }} className="pl-3 pr-2 py-1.5 bg-primary/10 text-primary text-sm font-bold rounded-xl flex items-center gap-1">
                                                 {tag}
-                                                <button onClick={() => removeTag(tag)} className="p-0.5 hover:bg-primary/20 rounded-full transition-colors"><X className="w-3 h-3" /></button>
+                                                <button 
+                                                    onClick={() => removeTag(tag)} 
+                                                    className="p-0.5 hover:bg-primary/20 rounded-full transition-colors"
+                                                    aria-label={`Remove ${tag}`}
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </button>
                                             </motion.div>
                                         ))}
                                     </AnimatePresence>

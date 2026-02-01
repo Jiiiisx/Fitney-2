@@ -51,6 +51,7 @@ export default function AIAssistantWidget() {
             <button 
                 onClick={() => setShowBubble(false)}
                 className="absolute top-1 right-1 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Close tip"
             >
                 <X className="w-3 h-3" />
             </button>
@@ -63,6 +64,7 @@ export default function AIAssistantWidget() {
         whileTap={{ scale: 0.9 }}
         onClick={() => setShowBubble(!showBubble)}
         className="pointer-events-auto h-12 w-12 rounded-full bg-gradient-to-br from-zinc-900 to-black dark:from-primary dark:to-yellow-600 flex items-center justify-center shadow-lg border-2 border-white/20 relative group"
+        aria-label="Toggle AI Assistant"
       >
         <BrainCircuit className="w-6 h-6 text-white dark:text-zinc-900" />
         

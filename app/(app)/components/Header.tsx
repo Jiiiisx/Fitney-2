@@ -217,6 +217,7 @@ const Header = () => {
             <button 
               onClick={() => setIsMobileMenuOpen(true)}
               className="lg:hidden p-2 hover:bg-muted rounded-xl"
+              aria-label="Open mobile menu"
             >
               <Menu size={24} />
             </button>
@@ -255,7 +256,10 @@ const Header = () => {
             
             <Popover>
               <PopoverTrigger asChild>
-                <button className="p-2 lg:p-4 rounded-full hover:bg-muted/50 relative transition-colors">
+                <button 
+                  className="p-2 lg:p-4 rounded-full hover:bg-muted/50 relative transition-colors"
+                  aria-label="Notifications"
+                >
                   <Bell size={20} className="lg:w-6 lg:h-6 text-muted-foreground" />
                   {unreadCount > 0 && (
                     <span className="absolute top-2 right-2 lg:top-3 lg:right-3 bg-red-500 text-white text-[10px] font-bold w-4 h-4 lg:w-5 lg:h-5 flex items-center justify-center rounded-full border-2 border-card">
@@ -273,7 +277,10 @@ const Header = () => {
               <Popover>
                 <PopoverTrigger asChild>
                   <div className="relative cursor-pointer">
-                    <button className="rounded-full focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                    <button 
+                      className="rounded-full focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                      aria-label="User profile menu"
+                    >
                       <Avatar user={user} />
                     </button>
                     <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full border-2 border-card">

@@ -213,6 +213,7 @@ export default function StoryTray() {
                     <button
                         onClick={closeStory}
                         className="absolute top-6 right-6 text-white hover:text-gray-300 p-2 z-50 transition-colors"
+                        aria-label="Close story viewer"
                     >
                         <X className="w-10 h-10" />
                     </button>
@@ -221,6 +222,7 @@ export default function StoryTray() {
                     <button 
                         onClick={handlePrev}
                         className="absolute left-8 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full hidden md:flex items-center justify-center text-white transition-all z-50"
+                        aria-label="Previous story"
                     >
                         <ChevronLeft className="w-8 h-8" />
                     </button>
@@ -228,6 +230,7 @@ export default function StoryTray() {
                     <button 
                         onClick={handleNext}
                         className="absolute right-8 top-1/2 -translate-y-1/2 w-12 h-12 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full hidden md:flex items-center justify-center text-white transition-all z-50"
+                        aria-label="Next story"
                     >
                         <ChevronRight className="w-8 h-8" />
                     </button>

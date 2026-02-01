@@ -67,6 +67,7 @@ export default function MainFeed() {
              <button 
                 onClick={clearHashtag}
                 className="text-sm flex items-center gap-1 text-muted-foreground hover:text-destructive transition-colors"
+                aria-label="Clear hashtag filter"
              >
                 <X className="w-4 h-4" /> Clear Filter
              </button>
