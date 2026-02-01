@@ -5,45 +5,45 @@ import "../components/Pricing/Pricing.css";
 
 const plans = [
   {
-    name: "Gratis",
+    name: "Free",
     price: "Rp0",
-    frequency: "/selamanya",
-    description: "Coba fitur dasar kami tanpa biaya.",
+    frequency: "/forever",
+    description: "Try our basic features at no cost.",
     features: [
-      "Akses ke rencana latihan standar",
-      "Pelacak progres dasar",
-      "Akses ke komunitas",
-      "Sinkronisasi dengan 1 aplikasi kesehatan",
+      "Access to standard workout plans",
+      "Basic progress tracker",
+      "Community access",
+      "Sync with 1 health app",
     ],
-    cta: "Mulai Gratis",
+    cta: "Start for Free",
     mostPopular: false,
   },
   {
-    name: "Bulanan",
+    name: "Monthly",
     price: "Rp49.000",
-    frequency: "/bulan",
-    description: "Fleksibilitas penuh dengan akses ke semua fitur.",
+    frequency: "/month",
+    description: "Full flexibility with access to all features.",
     features: [
-      "Semua fitur di paket Gratis",
-      "Rencana latihan dan nutrisi yang dipersonalisasi",
-      "Analisis progres mendalam",
-      "Sinkronisasi tanpa batas",
-      "Mode offline",
+      "All features in Free plan",
+      "Personalized workout & nutrition plans",
+      "Deep progress analytics",
+      "Unlimited sync",
+      "Offline mode",
     ],
-    cta: "Pilih Paket Bulanan",
+    cta: "Choose Monthly Plan",
     mostPopular: false,
   },
   {
-    name: "Tahunan",
+    name: "Yearly",
     price: "Rp399.000",
-    frequency: "/tahun",
-    description: "Pilihan terbaik untuk komitmen jangka panjang.",
+    frequency: "/year",
+    description: "Best choice for long-term commitment.",
     features: [
-      "Semua fitur di paket Bulanan",
-      "Akses awal ke fitur baru",
-      "Dukungan prioritas",
+      "All features in Monthly plan",
+      "Early access to new features",
+      "Priority support",
     ],
-    cta: "Pilih Paket Tahunan",
+    cta: "Choose Yearly Plan",
     mostPopular: true,
   },
 ];
@@ -54,15 +54,14 @@ export default function Pricing() {
       <div className="container mx-auto px-6 lg:px-12">
         <div className="mx-auto max-w-4xl text-center">
           <h2 className="text-sm lg:text-base font-black uppercase tracking-[0.2em] text-yellow-600">
-            Harga
+            Pricing
           </h2>
           <p className="mt-4 text-3xl font-black tracking-tight text-gray-900 sm:text-5xl">
-            Pilih Paket yang Tepat untuk Anda
+            Choose the Right Plan for You
           </p>
         </div>
         <p className="mx-auto mt-6 max-w-2xl text-center text-base lg:text-lg leading-8 text-gray-600">
-          Mulai perjalanan fitness Anda dengan paket yang dirancang untuk setiap
-          level komitmen dan tujuan.
+          Start your fitness journey with a plan designed for every level of commitment and goal.
         </p>
         <div className="isolate mx-auto mt-12 lg:mt-16 grid max-w-md grid-cols-1 gap-8 lg:mx-0 lg:max-w-none lg:grid-cols-3">
           {plans.map((plan) => (
@@ -77,7 +76,7 @@ export default function Pricing() {
               {plan.mostPopular && (
                 <div className="absolute top-0 right-0 -mt-4 -mr-2">
                   <div className="rounded-full bg-yellow-500 px-4 py-1 text-sm font-semibold text-white shadow-lg">
-                    Paling Populer
+                    Most Popular
                   </div>
                 </div>
               )}
@@ -95,9 +94,9 @@ export default function Pricing() {
                   {plan.frequency}
                 </span>
               </p>
-              {plan.name === "Tahunan" && (
+              {plan.name === "Yearly" && (
                 <p className="mt-1 text-sm font-semibold text-green-600">
-                  Hemat ~32%
+                  Save ~32%
                 </p>
               )}
               <a

@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Users, Dumbbell, Star, TrendingUp, Trophy, Award, Bell, ChevronLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import DisclaimerModal from "@/components/DisclaimerModal";
 
 const stats = [
     { name: 'Active Users', value: '10K+', icon: Users },
@@ -39,6 +40,7 @@ export default function AuthLayout({
 
   return (
     <div className="min-h-screen w-full grid grid-cols-1 lg:grid-cols-2 bg-gradient-to-b from-white to-[#fff9e6]">
+      <DisclaimerModal />
       {/* Left Panel */}
       <div className="hidden lg:flex flex-col items-center justify-center gap-8 p-12">
         <div className="w-full max-w-md flex flex-col items-center">

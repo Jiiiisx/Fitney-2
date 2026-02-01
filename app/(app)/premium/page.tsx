@@ -14,9 +14,9 @@ const PLANS = [
         id: 'pro',
         name: 'Fitney PRO',
         price: 'Rp 49.000',
-        period: '/bulan',
-        desc: 'Cocok untuk pejuang konsistensi harian.',
-        features: ['AI Workout Auditor', 'Premium Analytics', 'Prioritas AI Coach', 'Tanpa Iklan'],
+        period: '/month',
+        desc: 'Perfect for daily consistency warriors.',
+        features: ['AI Workout Auditor', 'Premium Analytics', 'AI Coach Priority', 'Ad-Free'],
         color: 'bg-indigo-500',
         popular: true
     },
@@ -24,9 +24,9 @@ const PLANS = [
         id: 'elite',
         name: 'Fitney ELITE',
         price: 'Rp 499.000',
-        period: '/tahun',
-        desc: 'Untuk mereka yang serius bertransformasi.',
-        features: ['Semua Fitur PRO', 'Badge Eksklusif ELITE', 'Early Access Fitur Baru', 'Simulasi Konsultasi'],
+        period: '/year',
+        desc: 'For those serious about transformation.',
+        features: ['All PRO Features', 'Exclusive ELITE Badge', 'Early Feature Access', 'Personal Consultation'],
         color: 'bg-purple-600',
         popular: false
     }
@@ -62,7 +62,7 @@ export default function PremiumPage() {
     const handleMockPayment = async () => {
         setLoadingPlan(selectedPlan.id);
         try {
-            // Simulasi proses bank
+            // Simulate bank process
             await new Promise(resolve => setTimeout(resolve, 2000));
 
             const res = await fetch("/api/premium/upgrade", {
@@ -72,15 +72,16 @@ export default function PremiumPage() {
             });
 
             if (res.ok) {
-                toast.success(`Berhasil Upgrade ke ${selectedPlan.name}!`);
+                toast.success(`Successfully Upgraded to ${selectedPlan.name}!`);
                 router.push("/dashboard");
                 router.refresh();
             } else {
-                toast.error("Gagal memproses upgrade.");
+                toast.error("Failed to process upgrade.");
             }
         } catch (err) {
-            toast.error("Terjadi kesalahan sistem.");
-        } finally {
+            toast.error("A system error occurred.");
+        }
+        finally {
             setLoadingPlan(null);
         }
     };
@@ -101,7 +102,7 @@ export default function PremiumPage() {
                     Premium Experience
                 </div>
                 <h1 className="text-5xl font-black italic tracking-tighter text-indigo-600 dark:text-indigo-400">LEVEL UP YOUR GAME</h1>
-                <p className="text-muted-foreground text-lg max-w-2xl mx-auto font-medium">Buka seluruh potensi AI Fitney dan raih target kebugaranmu lebih cepat dengan fitur eksklusif.</p>
+                <p className="text-muted-foreground text-lg max-w-2xl mx-auto font-medium">Unlock the full potential of Fitney AI and achieve your fitness goals faster with exclusive features.</p>
             </div>
 
             {!showCheckout ? (
@@ -109,7 +110,7 @@ export default function PremiumPage() {
                     (currentRole === 'pro' || currentRole === 'premium') ? 'grid-cols-1 max-w-md' : 'grid-cols-1 md:grid-cols-2'
                 }`}>
                     {PLANS.map((plan) => {
-                        // Logic Sembunyikan Paket
+                        // Plan Hiding Logic
                         if ((currentRole === 'pro' || currentRole === 'premium') && plan.id === 'pro') return null;
                         if (currentRole === 'elite') return null;
 
@@ -119,7 +120,7 @@ export default function PremiumPage() {
                             <motion.div key={plan.id} whileHover={{ y: -10 }} transition={{ type: "spring", stiffness: 300 }}>
                                 <Card className={`relative overflow-hidden border-2 ${plan.popular || isEliteUpgrade ? 'border-indigo-500 shadow-2xl shadow-indigo-500/20' : 'border-border'} rounded-[2.5rem]`}>
                                     {(plan.popular && currentRole === 'user') && (
-                                        <div className="absolute top-0 right-0 bg-indigo-500 text-white px-6 py-1.5 rounded-bl-2xl text-[10px] font-black uppercase tracking-tighter">Paling Populer</div>
+                                        <div className="absolute top-0 right-0 bg-indigo-500 text-white px-6 py-1.5 rounded-bl-2xl text-[10px] font-black uppercase tracking-tighter">Most Popular</div>
                                     )}
                                     {isEliteUpgrade && (
                                         <div className="absolute top-0 right-0 bg-purple-600 text-white px-6 py-1.5 rounded-bl-2xl text-[10px] font-black uppercase tracking-tighter">Recommended Upgrade</div>
@@ -150,7 +151,7 @@ export default function PremiumPage() {
                                             onClick={() => handleSelectPlan(plan)}
                                             className={`w-full rounded-2xl py-7 font-bold text-lg ${plan.id === 'pro' ? 'bg-indigo-600 hover:bg-indigo-700 shadow-xl shadow-indigo-500/20' : 'bg-purple-600 hover:bg-purple-700 shadow-xl shadow-purple-500/20 text-white'}`}
                                         >
-                                            {isEliteUpgrade ? "Upgrade Sekarang" : "Pilih Paket Ini"}
+                                            {isEliteUpgrade ? "Upgrade Now" : "Select This Plan"}
                                         </Button>
                                     </CardContent>
                                 </Card>
@@ -162,7 +163,7 @@ export default function PremiumPage() {
                         <div className="col-span-full text-center py-20 bg-purple-500/5 rounded-[3rem] border-2 border-dashed border-purple-500/20">
                             <Crown className="w-16 h-16 text-purple-500 mx-auto mb-4 animate-bounce" />
                             <h2 className="text-3xl font-black italic mb-2">YOU ARE AN ELITE ATHLETE</h2>
-                            <p className="text-muted-foreground font-medium">Seluruh fitur Fitney telah terbuka untukmu. Nikmati pengalaman tanpa batas.</p>
+                            <p className="text-muted-foreground font-medium">All Fitney features are unlocked for you. Enjoy the ultimate experience.</p>
                         </div>
                     )}
                 </div>
@@ -171,11 +172,11 @@ export default function PremiumPage() {
                     <Card className="rounded-[2.5rem] border-none shadow-2xl p-8 bg-card">
                         <h2 className="text-2xl font-black mb-6 flex items-center gap-3">
                             <ShieldCheck className="w-8 h-8 text-emerald-500" />
-                            Simulasi Pembayaran
+                            Payment Simulation
                         </h2>
                         <div className="bg-muted/50 p-4 rounded-2xl mb-8 space-y-2">
                             <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground font-bold uppercase tracking-widest text-[10px]">Paket Terpilih</span>
+                                <span className="text-muted-foreground font-bold uppercase tracking-widest text-[10px]">Selected Plan</span>
                                 <span className="font-black">{selectedPlan.name}</span>
                             </div>
                             <div className="flex justify-between text-xl">
@@ -188,19 +189,19 @@ export default function PremiumPage() {
                             <div className="p-4 border-2 border-indigo-500 rounded-2xl bg-indigo-500/5 flex items-center justify-between cursor-pointer">
                                 <div className="flex items-center gap-3">
                                     <div className="w-4 h-4 rounded-full border-4 border-indigo-500" />
-                                    <span className="font-bold text-sm text-indigo-600">Simulasi Kartu Kredit (Dev Mode)</span>
+                                    <span className="font-bold text-sm text-indigo-600">Mock Credit Card (Dev Mode)</span>
                                 </div>
                                 <Star className="w-4 h-4 text-indigo-500 fill-current" />
                             </div>
                             <p className="text-[10px] text-center text-muted-foreground font-medium px-4">
-                                Ini adalah lingkungan simulasi untuk tugas sekolah. Tidak ada dana asli yang akan ditarik.
+                                This is a simulation environment for a school project. No real funds will be charged.
                             </p>
                         </div>
 
                         <div className="flex gap-3">
-                            <Button variant="ghost" onClick={() => setShowCheckout(false)} className="flex-1 rounded-2xl py-6 font-bold">Batal</Button>
+                            <Button variant="ghost" onClick={() => setShowCheckout(false)} className="flex-1 rounded-2xl py-6 font-bold">Cancel</Button>
                             <Button onClick={handleMockPayment} disabled={!!loadingPlan} className="flex-[2] rounded-2xl py-6 font-bold bg-emerald-600 hover:bg-emerald-700 text-white">
-                                {loadingPlan ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : "Bayar Sekarang"}
+                                {loadingPlan ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : "Pay Now"}
                             </Button>
                         </div>
                     </Card>

@@ -2,10 +2,10 @@
 
 const navigation = {
   links: [
-    { name: "Tentang", href: "#" },
-    { name: "Harga", href: "#" },
-    { name: "Kebijakan Privasi", href: "#" },
-    { name: "Kontak", href: "#" },
+    { name: "About", href: "#" },
+    { name: "Pricing", href: "#" },
+    { name: "Privacy Policy", href: "#" },
+    { name: "Contact", href: "#" },
   ],
   social: [
     {
@@ -45,7 +45,7 @@ export default function Footer() {
           <div className="flex flex-col items-center lg:items-start text-center lg:text-left max-w-sm mx-auto lg:mx-0">
             <h1 className="text-3xl font-black text-yellow-500 tracking-tighter">Fitney</h1>
             <p className="mt-4 text-sm leading-relaxed text-gray-600">
-              Transformasikan perjalanan kebugaran Anda dengan Fitney. Pantau latihan, nutrisi, dan raih gol kesehatan Anda dengan bantuan teknologi cerdas.
+              Transform your fitness journey with Fitney. Track workouts, nutrition, and reach your health goals with the help of smart technology.
             </p>
             <div className="mt-6 flex space-x-5">
               {navigation.social.map((item) => (
@@ -65,7 +65,7 @@ export default function Footer() {
           <div className="grid grid-cols-2 gap-x-8 gap-y-10 sm:gap-x-16 mx-auto lg:mx-0">
             <div>
               <h3 className="text-sm font-black uppercase tracking-widest text-gray-900 border-b-2 border-yellow-400 pb-1 inline-block">
-                Navigasi
+                Navigation
               </h3>
               <ul role="list" className="mt-6 space-y-4">
                 {navigation.links.slice(0, 2).map((item) => (
@@ -82,7 +82,7 @@ export default function Footer() {
             </div>
             <div>
               <h3 className="text-sm font-black uppercase tracking-widest text-gray-900 border-b-2 border-yellow-400 pb-1 inline-block">
-                Bantuan
+                Support
               </h3>
               <ul role="list" className="mt-6 space-y-4">
                 {navigation.links.slice(2).map((item) => (
@@ -103,11 +103,11 @@ export default function Footer() {
         {/* Copyright */}
         <div className="mt-16 border-t border-gray-900/10 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-center">
           <p className="text-xs font-medium text-gray-500">
-            &copy; 2025 Fitney Inc. Semua hak dilindungi.
+            &copy; 2025 Fitney Inc. All rights reserved.
           </p>
           <div className="flex gap-6">
-             <a href="#" className="text-[10px] font-bold text-gray-400 hover:text-gray-600 uppercase tracking-widest">Kebijakan</a>
-             <a href="#" className="text-[10px] font-bold text-gray-400 hover:text-gray-600 uppercase tracking-widest">Ketentuan</a>
+             <a href="#" className="text-[10px] font-bold text-gray-400 hover:text-gray-600 uppercase tracking-widest">Policy</a>
+             <a href="#" className="text-[10px] font-bold text-gray-400 hover:text-gray-600 uppercase tracking-widest">Terms</a>
           </div>
         </div>
       </div>

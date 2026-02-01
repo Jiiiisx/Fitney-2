@@ -1,4 +1,5 @@
 import Navbar from "./Navbar";
+import DisclaimerModal from "@/components/DisclaimerModal";
 
 // This is the layout for the marketing pages.
 // It includes the Navbar and then renders the page content.
@@ -10,6 +11,7 @@ export default function MarketingLayout({
 }) {
   return (
     <>
+      <DisclaimerModal />
       <Navbar />
       {children}
     </>

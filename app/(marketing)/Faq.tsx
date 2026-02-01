@@ -5,31 +5,36 @@ import { PlusIcon, MinusIcon } from "@heroicons/react/24/outline";
 
 const faqs = [
   {
-    question: "Apakah saya bisa membatalkan langganan kapan saja?",
+    question: "Can I cancel my subscription at any time?",
     answer:
-      "Tentu saja. Anda bisa membatalkan langganan Anda kapan pun tanpa denda. Anda akan tetap memiliki akses ke fitur premium hingga akhir periode penagihan Anda.",
+      "Absolutely. You can cancel your subscription whenever you want without any penalty. You will still have access to premium features until the end of your billing cycle.",
   },
   {
     question:
-      "Apakah data latihan saya akan hilang kalau berhenti berlangganan?",
+      "Will I lose my workout data if I stop subscribing?",
     answer:
-      "Tidak. Semua data progres, riwayat latihan, dan pencapaian Anda akan tetap tersimpan dengan aman di akun Anda. Jika Anda memutuskan untuk berlangganan kembali di masa depan, Anda bisa langsung melanjutkannya.",
+      "No. All your progress data, workout history, and achievements will be safely stored in your account. If you decide to resubscribe in the future, you can pick up right where you left off.",
   },
   {
-    question: "Apa bedanya versi gratis dan premium Fitney?",
+    question: "What is the difference between the free and premium versions of Fitney?",
     answer:
-      "Versi gratis memberikan Anda akses ke fitur-fitur dasar seperti pelacak latihan dan komunitas. Versi premium membuka semua potensi Fitney, termasuk rencana latihan dan nutrisi yang dipersonalisasi, analisis mendalam, konsultasi dengan pelatih, dan banyak lagi.",
+      "The free version gives you access to basic features like workout tracking and community. The premium version unlocks Fitney's full potential, including personalized workout and nutrition plans, in-depth analytics, coach consultations, and much more.",
   },
   {
-    question: "Metode pembayaran apa saja yang diterima?",
+    question: "What payment methods are accepted?",
     answer:
-      "Kami menerima semua kartu kredit utama (Visa, MasterCard, American Express), serta pembayaran melalui dompet digital populer seperti GoPay, OVO, dan Dana.",
+      "We accept all major credit cards (Visa, MasterCard, American Express), as well as payments via popular digital wallets like PayPal, Apple Pay, and Google Pay.",
   },
   {
-    question: "Apakah ada kebijakan pengembalian dana (refund)?",
+    question: "Is there a refund policy?",
     answer:
-      "Kami tidak menawarkan refund untuk paket yang sudah aktif. Namun, Anda dapat membatalkan langganan kapan saja untuk menghentikan tagihan pada periode berikutnya, dan Anda tetap bisa menikmati fitur premium hingga akhir periode yang telah dibayar.",
+      "We do not offer refunds for active plans. However, you can cancel your subscription at any time to stop billing for the next period, and you can still enjoy premium features until the end of the paid term.",
   },
+  {
+    question: "Can I use Fitney offline?",
+    answer:
+      "Yes, the Premium plan allows you to download workout plans and access them even without an internet connection.",
+  }
 ];
 
 export default function Faq() {
@@ -44,15 +49,15 @@ export default function Faq() {
       <div className="container mx-auto px-6 lg:px-12">
         <div className="mx-auto max-w-4xl text-center">
           <h2 className="text-3xl lg:text-4xl font-black leading-10 tracking-tight text-gray-900">
-            Ada Pertanyaan?
+            Got Questions?
           </h2>
           <p className="mt-4 text-sm lg:text-base leading-7 text-gray-600">
-            Tidak menemukan jawaban yang Anda cari? Hubungi tim dukungan kami{" "}
+            Can't find the answer you're looking for? Contact our support team{" "}
             <a
               href="#"
               className="font-bold text-yellow-600 hover:text-yellow-500"
             >
-              di sini
+              here
             </a>
             .
           </p>

@@ -6,9 +6,9 @@ import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const navigation = [
-  { name: "Fitur", href: "#features" }, 
-  { name: "Testimonial", href: "#testimonials" }, 
-  { name: "Harga", href: "#pricing" }, 
+  { name: "Features", href: "#features" }, 
+  { name: "Testimonials", href: "#testimonials" }, 
+  { name: "Pricing", href: "#pricing" }, 
   { name: "FAQ", href: "#faq" }, 
 ];
 

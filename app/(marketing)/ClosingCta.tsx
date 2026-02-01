@@ -60,20 +60,19 @@ export default function ClosingCta() {
           </svg>
           <div className="mx-auto max-w-md text-center lg:mx-0 lg:flex-auto lg:py-32 lg:text-left">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white leading-tight">
-              Tubuh ideal tak datang dari niat, tapi dari tindakan pertama.
+              An ideal body doesn't come from intent, but from action.
               <br className="hidden lg:block" />
-              <span className="text-yellow-400"> Mulai hari ini.</span>
+              <span className="text-yellow-400"> Start today.</span>
             </h2>
             <p className="mt-6 text-sm sm:text-base lg:text-lg leading-relaxed text-gray-300">
-              Ambil langkah pertama Anda menuju versi diri yang lebih sehat dan
-              lebih kuat bersama Fitney.
+              Take your first step towards a healthier and stronger version of yourself with Fitney.
             </p>
             <div className="mt-10 flex items-center justify-center lg:justify-start gap-x-6">
               <a
                 href="#"
                 className="rounded-full bg-yellow-400 px-8 py-4 text-sm sm:text-base font-black text-gray-900 shadow-xl shadow-yellow-400/30 hover:bg-yellow-300 transition-all hover:scale-105 active:scale-95"
               >
-                Coba Gratis Sekarang
+                Try for Free Now
               </a>
             </div>
           </div>

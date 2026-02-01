@@ -9,10 +9,10 @@ export default function HowItWorks() {
             <div className="flex items-center justify-center h-12 w-12 lg:h-16 lg:w-16 rounded-full bg-yellow-400 text-gray-800 font-black text-xl lg:text-2xl mb-4 lg:mb-6 shadow-lg shadow-yellow-400/20">
               1
             </div>
-            <h3 className="text-lg lg:text-xl font-bold mb-2 text-white tracking-tight">Personalisasi</h3>
+            <h3 className="text-lg lg:text-xl font-bold mb-2 text-white tracking-tight">Personalization</h3>
             <p className="text-gray-400 text-sm lg:text-base leading-relaxed">
-              Isi profil & tujuanmu (menurunkan berat, membentuk otot, dll)
-              untuk mendapatkan pengalaman yang sepenuhnya disesuaikan.
+              Fill out your profile & goals (lose weight, build muscle, etc.)
+              to get a completely customized experience.
             </p>
           </div>
           {/* Step 2 */}
@@ -21,11 +21,11 @@ export default function HowItWorks() {
               2
             </div>
             <h3 className="text-lg lg:text-xl font-bold mb-2 text-white tracking-tight">
-              Latihan Terarah
+              Guided Training
             </h3>
             <p className="text-gray-400 text-sm lg:text-base leading-relaxed">
-              Dapatkan rencana latihan & nutrisi harian yang dibuat khusus untuk
-              mencapai target unik Anda.
+              Get daily workout & nutrition plans specially created to
+              reach your unique targets.
             </p>
           </div>
           {/* Step 3 */}
@@ -34,11 +34,11 @@ export default function HowItWorks() {
               3
             </div>
             <h3 className="text-lg lg:text-xl font-bold mb-2 text-white tracking-tight">
-              Pantau Progres
+              Monitor Progress
             </h3>
             <p className="text-gray-400 text-sm lg:text-base leading-relaxed">
-              Lihat perkembanganmu setiap minggu dengan grafik dan data yang
-              mudah dipahami. Rayakan setiap pencapaian!
+              See your progress every week with easy-to-understand charts and
+              data. Celebrate every achievement!
             </p>
           </div>
         </div>

@@ -150,43 +150,43 @@ export default function BenefitSection() {
       <div className="container mx-auto px-6 lg:px-12 pt-12 lg:pt-40">
         <div className="text-center mb-12 lg:mb-20">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-gray-800 tracking-tight">
-            Kenapa Fitney Layak Dicoba?
+            Why Choose Fitney?
           </h2>
           <p className="text-gray-600 mt-4 text-base lg:text-lg">
-            Value lebih baik, hasil lebih nyata.
+            Better value, real results.
           </p>
         </div>
 
         {/* New Benefits Card Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12 max-w-6xl mx-auto">
-          <BenefitCard icon={<RoadmapIcon />} title="Peta Jalan Pribadi Anda">
-            Algoritma kami merancang latihan yang beradaptasi dengan kemajuan,
-            kesibukan, dan bahkan mood Anda. Lupakan tebakan, fokus pada hasil.
+          <BenefitCard icon={<RoadmapIcon />} title="Your Personal Roadmap">
+            Our algorithm designs workouts that adapt to your progress,
+            schedule, and even your mood. Forget guesswork, focus on results.
           </BenefitCard>
-          <BenefitCard icon={<MotivationIcon />} title="Motivasi Cerdas">
-            Fitney tahu kapan harus memberi data kemajuan dan kapan harus
-            mengirim pengingat lembut. Kami menjaga momentum Anda tetap menyala.
+          <BenefitCard icon={<MotivationIcon />} title="Smart Motivation">
+            Fitney knows when to provide progress data and when to
+            send gentle reminders. We keep your momentum burning.
           </BenefitCard>
-          <BenefitCard icon={<ResultsIcon />} title="Hasil Nyata Terukur">
-            Lacak metrik yang penting. Lihat grafik kekuatan yang menanjak dan
-            lingkar pinggang yang menyusut. Rayakan setiap pencapaian kecil.
+          <BenefitCard icon={<ResultsIcon />} title="Measurable Real Results">
+            Track metrics that matter. See rising strength charts and
+            shrinking waistlines. Celebrate every small win.
           </BenefitCard>
         </div>
 
         {/* Enhanced Comparison Table */}
         <div className="max-w-6xl mx-auto mt-16 lg:mt-24 mb-16 lg:mb-24">
           <h3 className="text-2xl sm:text-3xl font-black text-gray-800 text-center mb-10 tracking-tight">
-            Lihat Perbedaannya Secara Langsung
+            See the Difference Directly
           </h3>
           <div className="overflow-x-auto rounded-2xl shadow-xl border border-gray-200">
             <table className="min-w-full bg-white divide-y divide-gray-200 text-sm lg:text-base">
               <thead className="bg-gray-800 text-white">
                 <tr>
                   <th className="text-left py-4 px-4 lg:py-6 lg:px-8 uppercase font-bold text-xs lg:text-sm tracking-wider">
-                    Fitur
+                    Feature
                   </th>
                   <th className="text-center py-4 px-4 lg:py-6 lg:px-8 uppercase font-bold text-xs lg:text-sm tracking-wider">
-                    Gratis
+                    Free
                   </th>
                   <th className="text-center py-4 px-4 lg:py-6 lg:px-8 uppercase font-bold text-xs lg:text-sm tracking-wider">
                     Gym/PT
@@ -199,16 +199,16 @@ export default function BenefitSection() {
               <tbody className="text-gray-700 divide-y divide-gray-200">
                 <tr className="hover:bg-gray-50 transition-colors">
                   <td className="text-left py-4 px-4 lg:py-6 lg:px-8 font-bold text-sm lg:text-lg">
-                    Biaya
+                    Cost
                   </td>
                   <td className="text-center py-4 px-4 lg:py-6 lg:px-8">
-                    <span className="text-[10px] lg:text-xs font-black uppercase text-yellow-600 bg-yellow-50 px-2 py-1 rounded">Gratis</span>
+                    <span className="text-[10px] lg:text-xs font-black uppercase text-yellow-600 bg-yellow-50 px-2 py-1 rounded">Free</span>
                   </td>
                   <td className="text-center py-4 px-4 lg:py-6 lg:px-8">
-                    <span className="text-[10px] lg:text-xs font-black uppercase text-red-600 bg-red-50 px-2 py-1 rounded">Mahal</span>
+                    <span className="text-[10px] lg:text-xs font-black uppercase text-red-600 bg-red-50 px-2 py-1 rounded">Expensive</span>
                   </td>
                   <td className="text-center py-4 px-4 lg:py-6 lg:px-8 bg-yellow-50/30">
-                    <span className="text-[10px] lg:text-xs font-black uppercase text-green-600 bg-green-50 px-2 py-1 rounded">Hemat</span>
+                    <span className="text-[10px] lg:text-xs font-black uppercase text-green-600 bg-green-50 px-2 py-1 rounded">Affordable</span>
                   </td>
                 </tr>
                 <tr className="hover:bg-gray-50 transition-colors">
@@ -227,16 +227,16 @@ export default function BenefitSection() {
                 </tr>
                 <tr className="hover:bg-gray-50 transition-colors">
                   <td className="text-left py-4 px-4 lg:py-6 lg:px-8 font-bold text-sm lg:text-lg">
-                    Waktu
+                    Time
                   </td>
                   <td className="text-center py-4 px-4 lg:py-6 lg:px-8">
-                    <span className="text-[10px] lg:text-xs font-black uppercase text-green-600 bg-green-50 px-2 py-1 rounded">Bebas</span>
+                    <span className="text-[10px] lg:text-xs font-black uppercase text-green-600 bg-green-50 px-2 py-1 rounded">Flexible</span>
                   </td>
                   <td className="text-center py-4 px-4 lg:py-6 lg:px-8">
-                    <span className="text-[10px] lg:text-xs font-black uppercase text-red-600 bg-red-50 px-2 py-1 rounded">Terikat</span>
+                    <span className="text-[10px] lg:text-xs font-black uppercase text-red-600 bg-red-50 px-2 py-1 rounded">Fixed</span>
                   </td>
                   <td className="text-center py-4 px-4 lg:py-6 lg:px-8 bg-yellow-50/30">
-                    <span className="text-[10px] lg:text-xs font-black uppercase text-green-600 bg-green-50 px-2 py-1 rounded">Bebas</span>
+                    <span className="text-[10px] lg:text-xs font-black uppercase text-green-600 bg-green-50 px-2 py-1 rounded">Flexible</span>
                   </td>
                 </tr>
               </tbody>

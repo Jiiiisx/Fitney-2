@@ -59,11 +59,11 @@ const OnboardingModal = ({ onComplete }: OnboardingModalProps) => {
       case 2:
         return <QuestionStep
           key="goal"
-          title="Apa tujuan utamamu saat ini?"
+          title="What is your main goal right now?"
           options={[
-            { value: 'build_muscle', label: 'Bentuk Otot', icon: Dumbbell, description: 'Fokus pada latihan kekuatan untuk membangun massa otot.' },
-            { value: 'lose_weight', label: 'Turun Berat Badan', icon: Wind, description: 'Prioritaskan kardio dan pembakaran kalori.' },
-            { value: 'get_fit', label: 'Bugar & Sehat', icon: Heart, description: 'Kombinasi seimbang antara kekuatan dan kardio.' },
+            { value: 'build_muscle', label: 'Build Muscle', icon: Dumbbell, description: 'Focus on strength training to build muscle mass.' },
+            { value: 'lose_weight', label: 'Lose Weight', icon: Wind, description: 'Prioritize cardio and calorie burning.' },
+            { value: 'get_fit', label: 'Fit & Healthy', icon: Heart, description: 'Balanced combination of strength and cardio.' },
           ]}
           onSelect={(value) => handleSelect('goal', value)}
           progress={(step -1) / totalSteps}
@@ -71,10 +71,10 @@ const OnboardingModal = ({ onComplete }: OnboardingModalProps) => {
       case 3:
         return <QuestionStep
           key="location"
-          title="Di mana kamu biasanya berolahraga?"
+          title="Where do you usually work out?"
           options={[
-            { value: 'home', label: 'Di Rumah', icon: Home, description: 'Latihan dengan alat minimal atau tanpa alat.' },
-            { value: 'gym', label: 'Di Gym', icon: Building, description: 'Akses penuh ke semua jenis peralatan latihan.' },
+            { value: 'home', label: 'At Home', icon: Home, description: 'Workout with minimal or no equipment.' },
+            { value: 'gym', label: 'At Gym', icon: Building, description: 'Full access to all types of workout equipment.' },
           ]}
           onSelect={(value) => handleSelect('location', value)}
           progress={(step -1) / totalSteps}
@@ -82,11 +82,11 @@ const OnboardingModal = ({ onComplete }: OnboardingModalProps) => {
       case 4:
         return <QuestionStep
           key="level"
-          title="Seperti apa level kebugaranmu?"
+          title="What is your fitness level?"
           options={[
-            { value: 'beginner', label: 'Baru Memulai', icon: Leaf, description: 'Memulai perjalanan kebugaran dari awal.' },
-            { value: 'intermediate', label: 'Kadang-kadang', icon: Zap, description: 'Sudah terbiasa dengan beberapa jenis latihan.' },
-            { value: 'advanced', label: 'Sudah Rutin', icon: Mountain, description: 'Berlatih secara konsisten dengan intensitas tinggi.' },
+            { value: 'beginner', label: 'Just Starting', icon: Leaf, description: 'Starting the fitness journey from scratch.' },
+            { value: 'intermediate', label: 'Sometimes', icon: Zap, description: 'Already familiar with some types of exercises.' },
+            { value: 'advanced', label: 'Consistent', icon: Mountain, description: 'Training consistently with high intensity.' },
           ]}
           onSelect={(value) => handleSelect('level', value)}
           progress={(step -1) / totalSteps}
@@ -122,9 +122,9 @@ const WelcomeStep = ({ onStart, progress }: { onStart: () => void; progress: num
     <div className="w-full mb-8">
       <ProgressBar progress={progress} />
     </div>
-    <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Selamat Datang di Fitney!</h1>
-    <p className="text-gray-600 dark:text-gray-300 mb-8">Hanya 3 langkah singkat untuk pengalaman yang lebih personal.</p>
-    <Button onClick={onStart} size="lg">Mulai</Button>
+    <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Welcome to Fitney!</h1>
+    <p className="text-gray-600 dark:text-gray-300 mb-8">Only 3 quick steps for a more personalized experience.</p>
+    <Button onClick={onStart} size="lg">Start</Button>
   </motion.div>
 );
 
@@ -179,8 +179,8 @@ const FinishStep = ({ onFinish }: { onFinish: () => void }) => {
       className="w-full h-full flex flex-col items-center justify-center text-center p-8"
     >
       <CheckCircle className="w-20 h-20 text-green-500 mb-6" />
-      <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Selesai!</h1>
-      <p className="text-gray-600 dark:text-gray-300">Profilmu sedang kami siapkan...</p>
+      <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Done!</h1>
+      <p className="text-gray-600 dark:text-gray-300">Setting up your profile...</p>
     </motion.div>
   );
 };

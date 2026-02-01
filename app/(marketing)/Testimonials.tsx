@@ -8,30 +8,30 @@ import "../components/ShapeDivider/ShapeDivider.css";
 const testimonials = [
   {
     quote:
-      "Awalnya saya ragu, tapi Fitney benar-benar mengubah cara saya melihat fitness. Saya tidak pernah se-konsisten ini sebelumnya!",
+      "I was skeptical at first, but Fitney completely changed how I view fitness. I've never been this consistent before!",
     name: "Sarah J.",
-    result: "Turun 8kg dalam 3 Bulan",
+    result: "Lost 8kg in 3 Months",
     imageSrc: "/assets/Testimonial/sarah-j.jpg",
   },
   {
     quote:
-      "Rencana latihan yang dibuat khusus untuk saya sangat efektif. Saya bisa merasakan kekuatan saya bertambah setiap minggu.",
+      "The workout plan tailored just for me was incredibly effective. I can feel my strength increasing every single week.",
     name: "Michael B.",
-    result: "Angkat Beban Naik 20%",
+    result: "Strength Up 20%",
     imageSrc: "/assets/Testimonial/michael-b.jpg",
   },
   {
     quote:
-      "Fitur pelacak nutrisi adalah game-changer. Akhirnya saya sadar apa yang masuk ke tubuh saya dan bisa membuat pilihan yang lebih baik.",
+      "The nutrition tracking feature is a game-changer. I finally realized what I was putting into my body and could make better choices.",
     name: "Emily K.",
-    result: "Berhasil Lari 5k Pertama",
+    result: "Ran First 5k",
     imageSrc: "/assets/Testimonial/emily-k.jpg",
   },
   {
     quote:
-      "Dukungan komunitasnya luar biasa. Rasanya seperti punya tim sorak pribadi yang membuat saya terus termotivasi.",
+      "The community support is amazing. It feels like having a personal cheerleading squad keeping me motivated.",
     name: "David L.",
-    result: "Konsisten Latihan 4x Seminggu",
+    result: "Consistent 4x/Week",
     imageSrc: "/assets/Testimonial/david-l.jpg",
   },
 ];
@@ -132,11 +132,10 @@ export default function Testimonials() {
       </div>
       <div className="container mx-auto px-6 lg:px-12 text-center pt-16 mt-16 lg:mt-24">
         <h2 className="text-3xl lg:text-4xl font-black mb-4 tracking-tight">
-          Kisah Mereka yang Telah Bertransformasi
+          Real Stories, Real Results
         </h2>
         <p className="text-gray-400 text-sm lg:text-base max-w-2xl mx-auto mb-12 lg:mb-16">
-          Lihat bagaimana Fitney membantu orang-orang seperti Anda mencapai
-          tujuan mereka.
+          See how Fitney has helped people just like you achieve their goals.
         </p>
       </div>
 
