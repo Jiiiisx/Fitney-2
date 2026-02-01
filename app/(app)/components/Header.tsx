@@ -134,26 +134,30 @@ const Header = () => {
   }, []);
 
   useEffect(() => {
-    if (notifications) {
-      const unread = notifications.filter((n: any) => !n.isRead);
-      setUnreadCount(unread.length);
+    try {
+      if (notifications && Array.isArray(notifications)) {
+        const unread = notifications.filter((n: any) => !n.isRead);
+        setUnreadCount(unread.length);
 
-      if (unread.length > 0) {
-        const newest = unread[0];
-        // Only notify if it's a truly NEW notification ID we haven't seen this session
-        if (newest.id !== lastNotifId.current) {
-           // Prevent sound on first load
-           if (lastNotifId.current !== null) {
-              playNotificationSound(notificationSound);
-              toast.success(`${newest.sender?.fullName || 'System'}: ${newest.message}`, {
-                icon: '🔔',
-                duration: 5000,
-                position: 'top-right'
-              });
-           }
-           lastNotifId.current = newest.id;
+        if (unread.length > 0) {
+          const newest = unread[0];
+          // Only notify if it's a truly NEW notification ID we haven't seen this session
+          if (newest.id !== lastNotifId.current) {
+             // Prevent sound on first load
+             if (lastNotifId.current !== null) {
+                playNotificationSound(notificationSound);
+                toast.success(`${newest.sender?.fullName || 'System'}: ${newest.message}`, {
+                  icon: '🔔',
+                  duration: 5000,
+                  position: 'top-right'
+                });
+             }
+             lastNotifId.current = newest.id;
+          }
         }
       }
+    } catch (err) {
+      console.error("Notification filter error:", err);
     }
   }, [notifications, notificationSound, playNotificationSound]);
 
