@@ -51,3 +51,36 @@ export async function sendSmartNotification(userId: string, type: ContextType, d
 
     return { title, message };
 }
+
+export async function createNotification({
+    recipientId,
+    senderId,
+    type,
+    message,
+    resourceId,
+    linkUrl
+}: {
+    recipientId: string;
+    senderId: string;
+    type: string;
+    message: string;
+    resourceId?: number;
+    linkUrl?: string;
+}) {
+    try {
+        await db.insert(notifications).values({
+            userId: recipientId,
+            senderId: senderId,
+            type: type,
+            resourceId: resourceId,
+            message: message,
+            linkUrl: linkUrl,
+            isRead: false,
+            createdAt: new Date(),
+        });
+        return { success: true };
+    } catch (error) {
+        console.error("Error creating notification:", error);
+        return { success: false };
+    }
+}
