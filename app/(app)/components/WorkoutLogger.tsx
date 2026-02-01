@@ -20,7 +20,7 @@ export default function WorkoutLogger({
 
   const handleFormSubmit = async (formData: FormData) => {
     const result = await logWorkoutAction(formData);
-    if (result.success) {
+    if ('success' in result && result.success) {
       toast.success(`Workout Logged! +${result.awardedXp} XP`);
       setIsFormVisible(false);
     } else {
