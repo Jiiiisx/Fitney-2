@@ -73,6 +73,7 @@ export async function GET(req: NextRequest) {
             username: true,
             fullName: true,
             imageUrl: true,
+            role: true,
           }
         },
         likes: true,
@@ -101,7 +102,8 @@ export async function GET(req: NextRequest) {
       user: {
         name: post.user.fullName || post.user.username,
         avatar: post.user.imageUrl,
-        username: post.user.username
+        username: post.user.username,
+        role: post.user.role
       },
       likesCount: post.likes.length,
       commentsCount: post.comments.length,

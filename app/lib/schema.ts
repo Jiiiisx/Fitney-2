@@ -50,6 +50,8 @@ export const users = pgTable('users', {
   role: varchar('role', { length: 50 }).default('user').notNull(),
   level: integer('level').default(1).notNull(),
   xp: integer('xp').default(0).notNull(),
+  premiumSince: timestamp('premium_since', { withTimezone: true }),
+  premiumUntil: timestamp('premium_until', { withTimezone: true }),
 });
 
 // Exercise and Category Tables

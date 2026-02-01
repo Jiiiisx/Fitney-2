@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { Heart, MessageSquare, Share2, MoreHorizontal, Trash2, Bookmark, ChevronLeft, ChevronRight } from "lucide-react";
+import { Heart, MessageSquare, Share2, MoreHorizontal, Trash2, Bookmark, ChevronLeft, ChevronRight, Crown } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import toast from "react-hot-toast";
 import {
@@ -22,6 +22,7 @@ interface PostData {
     name: string;
     avatar?: string;
     username: string;
+    role?: string;
   };
   likesCount: number;
   commentsCount: number;
@@ -169,22 +170,30 @@ export default function PostCard({
       )}
 
       {/* Post Header */}
-      <Link href={`/community/profile/${post.userId}`} className="flex items-center mb-4 cursor-pointer group/user">
+      <Link href={`/community/profile/${post.user.username}`} className="flex items-center mb-4 cursor-pointer group/user">
         {post.user.avatar ? (
           <img
             src={post.user.avatar}
-            alt={post.user.name}
+            alt={post.user.name || post.user.username}
             className="w-10 h-10 rounded-full mr-3 object-cover border border-border"
           />
         ) : (
           <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center mr-3 border border-primary/20">
             <span className="font-bold text-primary">
-              {post.user.name.charAt(0)}
+              {(post.user.name || post.user.username || 'U').charAt(0).toUpperCase()}
             </span>
           </div>
         )}
         <div>
-          <p className="font-bold text-foreground text-sm group-hover/user:underline">{post.user.name}</p>
+          <div className="flex items-center gap-1.5">
+            <p className="font-bold text-foreground text-sm group-hover/user:underline">{post.user.name || post.user.username}</p>
+            {(post.user.role === 'premium' || post.user.role === 'admin') && (
+                <div className="flex items-center gap-0.5 px-1.5 py-0.5 bg-yellow-500/10 text-yellow-600 rounded-md border border-yellow-500/20 shadow-sm" title="Premium Member">
+                    <Crown className="w-3 h-3 fill-current" />
+                    <span className="text-[8px] font-black uppercase tracking-tighter">PRO</span>
+                </div>
+            )}
+          </div>
           <p className="text-xs text-muted-foreground">
             {formatDate(post.createdAt)}
           </p>

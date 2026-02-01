@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BrainCircuit, Sparkles, Loader2, CheckCircle2, Lock } from "lucide-react";
 import toast from "react-hot-toast";
+import Link from "next/link";
 
 export default function AIWorkoutGenerator({ isPremium }: { isPremium: boolean }) {
     const [loading, setLoading] = useState(false);
@@ -55,7 +56,9 @@ export default function AIWorkoutGenerator({ isPremium }: { isPremium: boolean }
                         </div>
                         <p className="text-sm font-bold text-foreground mb-1">Exclusive for Pro Members</p>
                         <p className="text-xs text-muted-foreground max-w-[250px] mb-4">Upgrade to unlock AI-powered personal training and advanced analytics.</p>
-                        <Button className="rounded-full font-bold px-8">Upgrade to Pro</Button>
+                        <Link href="/premium">
+                            <Button className="rounded-full font-bold px-8">Upgrade to Pro</Button>
+                        </Link>
                     </div>
                 ) : (
                     <>

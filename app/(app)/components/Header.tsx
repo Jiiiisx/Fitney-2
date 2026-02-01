@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Settings, Bell, User, LogOut, Menu, X } from "lucide-react";
+import { Settings, Bell, User, LogOut, Menu, X, Search, Trophy, Users as UsersIcon, ExternalLink, Crown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Popover,
@@ -70,9 +70,20 @@ const Header = () => {
   const [notificationSound, setNotificationSound] = useState("default");
   const [hasInteracted, setHasInteracted] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
   const lastNotifId = useRef<number | null>(null);
 
-  // SWR Polling (Replaces manual setInterval)
+  const navItems = [
+    { href: "/dashboard", label: "Dashboard" },
+    { href: "/ai-coach", label: "AI Coach" },
+    { href: "/planner", label: "Planner" },
+    { href: "/goals", label: "Goals" },
+    { href: "/nutrition", label: "Nutrition" },
+    { href: "/history", label: "History" },
+    { href: "/community", label: "Community" },
+  ];
+
+  // SWR Polling
   const { data: notifications } = useSWR('/api/notifications', fetcher, {
     refreshInterval: 5000, // Poll every 5s
     revalidateOnFocus: true,
@@ -101,7 +112,6 @@ const Header = () => {
       const userData = await fetchWithAuth('/api/users/profile');
       setUser(userData);
       
-      // Also fetch settings for sound preference
       const settings = await fetchWithAuth('/api/users/settings');
       setNotificationSound(settings.notificationSound || "default");
 
@@ -118,12 +128,10 @@ const Header = () => {
     
     const audio = new Audio(`/sounds/${soundName}.wav`);
     audio.play().catch(err => {
-      // Quietly log or ignore autoplay block
       console.log("Autoplay blocked or audio failed.");
     });
   }, [hasInteracted]);
 
-  // Fetch gamification stats
   const fetchLevel = useCallback(async () => {
     try {
       const gamificationData = await fetchWithAuth('/api/users/gamification-stats');
@@ -141,9 +149,7 @@ const Header = () => {
 
         if (unread.length > 0) {
           const newest = unread[0];
-          // Only notify if it's a truly NEW notification ID we haven't seen this session
           if (newest.id !== lastNotifId.current) {
-             // Prevent sound on first load
              if (lastNotifId.current !== null) {
                 playNotificationSound(notificationSound);
                 toast.success(`${newest.sender?.fullName || 'System'}: ${newest.message}`, {
@@ -170,7 +176,7 @@ const Header = () => {
     try {
       await fetchWithAuth("/api/auth/logout", { method: "POST" });
       router.push("/login");
-      router.refresh(); // Refresh to clear server component cache if any
+      router.refresh();
     } catch (error) {
       console.error("Logout failed", error);
       router.push("/login");
@@ -181,16 +187,6 @@ const Header = () => {
     setShowOnboarding(false);
     fetchUser();
   }, [fetchUser]);
-
-  const navItems = [
-    { href: "/dashboard", label: "Dashboard" },
-    { href: "/ai-coach", label: "AI Coach" },
-    { href: "/planner", label: "Planner" },
-    { href: "/goals", label: "Goals" },
-    { href: "/nutrition", label: "Nutrition" },
-    { href: "/history", label: "History" },
-    { href: "/community", label: "Community" },
-  ];
 
   return (
     <>
@@ -245,7 +241,6 @@ const Header = () => {
 
       <header className="w-full px-6 lg:px-8 pt-6 pb-2">
         <div className="flex items-center justify-between w-full mx-auto bg-card/50 backdrop-blur-sm border rounded-3xl lg:rounded-full p-3 lg:p-4">
-          {/* Logo & Mobile Toggle */}
           <div className="flex items-center gap-2 pl-2">
             <button 
               onClick={() => setIsMobileMenuOpen(true)}
@@ -255,13 +250,12 @@ const Header = () => {
             </button>
             <Link
               href="/dashboard"
-              className="text-2xl lg:text-3xl font-black text-foreground tracking-tight"
+              className="text-2xl lg:text-3xl font-black text-foreground tracking-tight shrink-0"
             >
               Fitney
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center bg-background/60 border rounded-full px-2 py-2">
             {navItems.map((item) => (
               <Link
@@ -285,11 +279,7 @@ const Header = () => {
             ))}
           </nav>
 
-          {/* User Actions */}
           <div className="flex items-center space-x-1 lg:space-x-3 pr-2 lg:pr-4">
-            <Link href="/settings" className="p-2 lg:p-4 rounded-full hover:bg-muted/50 transition-colors">
-              <Settings size={20} className="lg:w-6 lg:h-6 text-muted-foreground" />
-            </Link>
             
             <Popover>
               <PopoverTrigger asChild>
@@ -319,23 +309,32 @@ const Header = () => {
                     </span>
                   </div>
                 </PopoverTrigger>
-                <PopoverContent className="w-56" align="end">
-                  <div className="p-4 border-b">
-                    <p className="font-bold text-foreground">{user?.fullName || 'Guest'}</p>
-                    <p className="text-sm text-muted-foreground">{user?.email}</p>
+                <PopoverContent className="w-64 p-2 rounded-2xl" align="end">
+                  <div className="p-4 border-b mb-2">
+                    <p className="font-bold text-foreground leading-tight">{user?.fullName || 'Guest'}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
                   </div>
+                  
+                  <Link href="/settings">
+                    <Button variant="ghost" className="w-full justify-start gap-3 rounded-xl py-6 font-semibold">
+                        <Settings size={18} className="text-muted-foreground" />
+                        Settings
+                    </Button>
+                  </Link>
+
+                  <div className="h-px bg-border my-1" />
+
                   <Button
                     variant="ghost"
-                    className="w-full justify-start p-4"
+                    className="w-full justify-start gap-3 rounded-xl py-6 font-semibold text-destructive hover:text-destructive hover:bg-destructive/10"
                     onClick={handleLogout}
                   >
-                    <LogOut className="mr-2 h-4 w-4" />
+                    <LogOut size={18} />
                     Log Out
                   </Button>
                 </PopoverContent>
               </Popover>
             </div>
-
           </div>
         </div>
       </header>

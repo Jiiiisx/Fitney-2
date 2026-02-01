@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, FileSpreadsheet, Lock, Crown, Smartphone, Zap } from "lucide-react";
 import toast from "react-hot-toast";
+import Link from "next/link";
 
 export default function PremiumTools({ isPremium }: { isPremium: boolean }) {
     const [exporting, setExporting] = useState(false);
@@ -50,19 +51,31 @@ export default function PremiumTools({ isPremium }: { isPremium: boolean }) {
                             <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">Export to CSV</p>
                         </div>
                     </div>
-                    <Button 
-                        onClick={handleExport}
-                        disabled={exporting}
-                        variant={isPremium ? "default" : "outline"}
-                        className="rounded-xl h-10 px-4 font-bold text-xs flex gap-2"
-                    >
-                        {exporting ? "Generating..." : (
-                            <>
-                                {isPremium ? <Download className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-                                {isPremium ? "Download" : "Unlock"}
-                            </>
-                        )}
-                    </Button>
+                    {isPremium ? (
+                        <Button 
+                            onClick={handleExport}
+                            disabled={exporting}
+                            variant="default"
+                            className="rounded-xl h-10 px-4 font-bold text-xs flex gap-2"
+                        >
+                            {exporting ? "Generating..." : (
+                                <>
+                                    <Download className="w-4 h-4" />
+                                    Download
+                                </>
+                            )}
+                        </Button>
+                    ) : (
+                        <Link href="/premium">
+                            <Button 
+                                variant="outline"
+                                className="rounded-xl h-10 px-4 font-bold text-xs flex gap-2"
+                            >
+                                <Lock className="w-4 h-4" />
+                                Unlock
+                            </Button>
+                        </Link>
+                    )}
                 </CardContent>
             </Card>
 

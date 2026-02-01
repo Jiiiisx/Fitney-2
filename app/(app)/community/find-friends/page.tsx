@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, UserPlus, UserCheck, Loader2, Users, ArrowLeft } from "lucide-react";
+import { Search, UserPlus, UserCheck, Loader2, Users, ArrowLeft, Crown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -16,6 +16,7 @@ type UserResult = {
   fullName: string | null;
   imageUrl: string | null;
   level: number;
+  role?: string;
   isFollowing: boolean;
   isMe: boolean;
 };
@@ -209,7 +210,12 @@ export default function FindFriendsPage() {
                       <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <h4 className="font-semibold text-lg leading-none">{user.fullName || user.username}</h4>
+                      <div className="flex items-center gap-1.5">
+                        <h4 className="font-semibold text-lg leading-none">{user.fullName || user.username}</h4>
+                        {(user.role === 'premium' || user.role === 'admin') && (
+                            <Crown className="h-4 w-4 text-yellow-500 fill-current" />
+                        )}
+                      </div>
                       <p className="text-sm text-muted-foreground">@{user.username} • Lvl {user.level}</p>
                     </div>
                   </div>
@@ -301,7 +307,12 @@ export default function FindFriendsPage() {
                         <AvatarFallback className="bg-primary/10 text-primary font-medium">{user.username[0].toUpperCase()}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-semibold text-sm truncate">{user.fullName || user.username}</h4>
+                        <div className="flex items-center gap-1">
+                            <h4 className="font-semibold text-sm truncate">{user.fullName || user.username}</h4>
+                            {(user.role === 'premium' || user.role === 'admin') && (
+                                <Crown className="h-3 w-3 text-yellow-500 fill-current shrink-0" />
+                            )}
+                        </div>
                         <p className="text-xs text-muted-foreground truncate">@{user.username} • Lvl {user.level}</p>
                       </div>
                       <Button
@@ -342,7 +353,12 @@ export default function FindFriendsPage() {
                   <AvatarFallback>{user.username[0].toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <h4 className="font-semibold text-lg leading-none">{user.fullName || user.username}</h4>
+                  <div className="flex items-center gap-1.5">
+                    <h4 className="font-semibold text-lg leading-none">{user.fullName || user.username}</h4>
+                    {(user.role === 'premium' || user.role === 'admin') && (
+                        <Crown className="h-4 w-4 text-yellow-500 fill-current" />
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground">@{user.username} • Lvl {user.level}</p>
                 </div>
               </div>

@@ -1,12 +1,13 @@
 "use server";
 
 import { db } from "@/app/lib/db";
-import { users, workoutLogs, exercises, posts } from "@/app/lib/schema";
-import { eq } from "drizzle-orm";
+import { users, workoutLogs, exercises, posts, userChallenges } from "@/app/lib/schema";
+import { eq, and, count } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { getUserFromToken } from "@/app/lib/auth";
 import { workoutLogSchema } from "@/app/lib/validators";
+import { checkWorkoutAchievements } from "@/app/lib/achievements";
 
 const calculateXpForNextLevel = (level: number) => {
   return Math.floor(100 * Math.pow(level, 1.5));
@@ -149,6 +150,10 @@ export async function logWorkoutAction(formData: FormData) {
           }
       }
       // ------------------------------------
+
+      // --- ACHIEVEMENT CHECK ---
+      const [allWorkouts] = await tx.select({ value: count() }).from(workoutLogs).where(eq(workoutLogs.userId, userId));
+      await checkWorkoutAchievements(userId, allWorkouts.value);
 
       // Auto Share Logic
       if (shareToCommunity) {

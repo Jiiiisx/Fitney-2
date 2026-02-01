@@ -11,6 +11,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Crown, Lock, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 interface PremiumAnalyticsProps {
     data: any[];
@@ -59,9 +60,11 @@ export default function PremiumAnalytics({ data, isPremium }: PremiumAnalyticsPr
                         <p className="text-sm text-muted-foreground mb-6 max-w-[250px]">
                             Unlock deep insights into your fitness balance and track your evolution over time.
                         </p>
-                        <Button className="rounded-full px-8 font-bold shadow-lg shadow-primary/20">
-                            Upgrade to Pro
-                        </Button>
+                        <Link href="/premium">
+                            <Button className="rounded-full px-8 font-bold shadow-lg shadow-primary/20">
+                                Upgrade to Pro
+                            </Button>
+                        </Link>
                     </div>
                 )}
             </CardContent>

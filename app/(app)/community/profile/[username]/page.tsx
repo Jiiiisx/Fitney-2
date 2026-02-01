@@ -87,6 +87,14 @@ export default function PublicProfilePage() {
                 <div className="h-48 w-full rounded-[2.5rem] bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 shadow-xl opacity-20 absolute top-0 left-0 -z-10" />
                 
                 <div className="pt-12 px-4">
+                    <div className="mb-4 flex justify-end">
+                        {(user.role === 'premium' || user.role === 'admin') && (
+                            <div className="bg-yellow-500 text-white px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest shadow-lg flex items-center gap-2 border-2 border-white/20 animate-bounce">
+                                <Crown className="w-4 h-4 fill-current" />
+                                PRO ATHLETE
+                            </div>
+                        )}
+                    </div>
                     <FitnessPassport 
                         user={{
                             fullName: user.fullName || user.username,
@@ -121,7 +129,19 @@ export default function PublicProfilePage() {
                 <TabsContent value="feed" className="space-y-6 max-w-2xl mx-auto">
                     {posts.length > 0 ? (
                         posts.map((post: any) => (
-                            <PostCard key={post.id} post={{...post, user: user}} currentUserId={null} />
+                            <PostCard 
+                                key={post.id} 
+                                post={{
+                                    ...post, 
+                                    user: {
+                                        name: user.fullName || user.username,
+                                        avatar: user.imageUrl,
+                                        username: user.username,
+                                        role: user.role
+                                    }
+                                }} 
+                                currentUserId={null} 
+                            />
                         ))
                     ) : (
                         <div className="text-center py-20 bg-muted/20 rounded-[2rem] border-2 border-dashed">

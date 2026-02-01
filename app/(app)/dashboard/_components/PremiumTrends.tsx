@@ -13,6 +13,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingDown, Scale, Utensils, Lock, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 interface PremiumTrendsProps {
     data: any[];
@@ -92,7 +93,9 @@ export default function PremiumTrends({ data, isPremium }: PremiumTrendsProps) {
                         <p className="text-[10px] text-muted-foreground mb-4 max-w-[200px]">
                             Understand how your nutrition directly affects your physical progress.
                         </p>
-                        <Button size="sm" className="rounded-full font-bold h-8 text-xs">Unlock Analysis</Button>
+                        <Link href="/premium">
+                            <Button size="sm" className="rounded-full font-bold h-8 text-xs">Unlock Analysis</Button>
+                        </Link>
                     </div>
                 )}
             </CardContent>

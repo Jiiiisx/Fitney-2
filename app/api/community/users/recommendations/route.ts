@@ -30,6 +30,7 @@ export async function GET(req: NextRequest) {
         fullName: users.fullName,
         imageUrl: users.imageUrl,
         level: users.level,
+        role: users.role,
       })
       .from(users)
       .where(

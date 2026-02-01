@@ -842,13 +842,14 @@ export default function AdminDashboard() {
                                                     <th className="px-8 py-6">User Identity</th>
                                                     <th className="px-8 py-6">Account Role</th>
                                                     <th className="px-8 py-6">Growth Rank</th>
+                                                    <th className="px-8 py-6">Subscription Period</th>
                                                     <th className="px-8 py-6">Onboarding</th>
                                                     <th className="px-8 py-6 text-right">Actions</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-border/50">
                                                 {contentLoading ? (
-                                                    <tr><td colSpan={5} className="py-32 text-center"><Loader2 className="w-12 h-12 animate-spin mx-auto text-primary opacity-50" /></td></tr>
+                                                    <tr><td colSpan={6} className="py-32 text-center"><Loader2 className="w-12 h-12 animate-spin mx-auto text-primary opacity-50" /></td></tr>
                                                 ) : userList.length > 0 ? (
                                                     userList.map((u: any) => (
                                                         <tr key={u.id} className="hover:bg-muted/20 transition-colors group">
@@ -879,6 +880,18 @@ export default function AdminDashboard() {
                                                                 <div className="w-24 h-1.5 bg-muted rounded-full mt-1.5 overflow-hidden">
                                                                     <div className="h-full bg-primary" style={{ width: `${(u.xp % 100)}%` }} />
                                                                 </div>
+                                                            </td>
+                                                            <td className="px-8 py-6">
+                                                                {u.role === 'premium' && u.premiumSince ? (
+                                                                    <div className="space-y-1">
+                                                                        <p className="text-[10px] font-bold text-emerald-600 uppercase">Active</p>
+                                                                        <p className="text-[10px] text-muted-foreground font-medium">
+                                                                            {format(new Date(u.premiumSince), "MMM d, yy")} - {u.premiumUntil ? format(new Date(u.premiumUntil), "MMM d, yy") : '∞'}
+                                                                        </p>
+                                                                    </div>
+                                                                ) : (
+                                                                    <span className="text-xs text-muted-foreground opacity-50">-</span>
+                                                                )}
                                                             </td>
                                                             <td className="px-8 py-6">
                                                                 <span className="text-xs font-bold text-muted-foreground">{format(new Date(u.createdAt), "MMM dd, yyyy")}</span>
