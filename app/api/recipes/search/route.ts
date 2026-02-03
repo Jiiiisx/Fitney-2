@@ -34,7 +34,10 @@ export async function GET(req: NextRequest) {
   const spoonacularUrl = new URL('https://api.spoonacular.com/recipes/complexSearch');
   spoonacularUrl.searchParams.append('apiKey', apiKey);
   spoonacularUrl.searchParams.append('maxCalories', String(mealCalories)); // Use per-meal calories
-  spoonacularUrl.searchParams.append('number', '9'); // Fetch 9 recipes
+  spoonacularUrl.searchParams.append('number', '12'); // Fetch 12 recipes
+  spoonacularUrl.searchParams.append('addRecipeNutrition', 'true'); // CRITICAL: This was missing!
+  spoonacularUrl.searchParams.append('fillIngredients', 'true');
+  
   if (query) {
     spoonacularUrl.searchParams.append('query', query);
   }

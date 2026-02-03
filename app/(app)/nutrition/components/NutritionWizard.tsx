@@ -203,10 +203,7 @@ export default function NutritionWizard({ onComplete, onCancel }: NutritionWizar
         <Button 
           type="button"
           variant="outline" 
-          onClick={() => {
-            console.log("Back clicked, current step:", step);
-            prevStep();
-          }} 
+          onClick={prevStep} 
           className="h-14 rounded-2xl px-8 font-bold border-2 border-border hover:bg-muted"
         >
           Back
