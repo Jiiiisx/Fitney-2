@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Lock, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Turnstile } from "@marsidev/react-turnstile";
 
 // A simple SVG for the Google icon
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -25,6 +26,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [turnstileToken, setTurnstileToken] = useState<string>("");
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 500);
@@ -76,13 +78,18 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
 
+    if (!turnstileToken) {
+      setError("Please complete the security check.");
+      return;
+    }
+
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ identifier, password }),
+        body: JSON.stringify({ identifier, password, turnstileToken }),
       });
 
       if (res.ok) {
@@ -166,7 +173,15 @@ export default function LoginPage() {
               </button>
             </div>
           </div>
-          {error && <p className="text-red-500 text-sm">{error}</p>}
+          
+          <div className="flex justify-center py-2">
+            <Turnstile 
+              siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!} 
+              onVerify={(token) => setTurnstileToken(token)}
+            />
+          </div>
+
+          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
           <Button type="submit" className="w-full py-6 text-lg font-semibold bg-yellow-400 text-yellow-900 hover:bg-yellow-500">
             Sign In
           </Button>

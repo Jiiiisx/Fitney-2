@@ -29,7 +29,27 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const validatedFields = loginSchema.safeParse(body);
+    const { turnstileToken, ...restBody } = body;
+
+    // 2. Cloudflare Turnstile Verification
+    if (process.env.NODE_ENV === 'production') {
+        const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                secret: process.env.TURNSTILE_SECRET_KEY,
+                response: turnstileToken,
+                remoteip: ip,
+            }),
+        });
+
+        const verifyData = await verifyRes.json();
+        if (!verifyData.success) {
+            return NextResponse.json({ error: "Security check failed. Please try again." }, { status: 403 });
+        }
+    }
+
+    const validatedFields = loginSchema.safeParse(restBody);
 
     if (!validatedFields.success) {
       return NextResponse.json({ 
