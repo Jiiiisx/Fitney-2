@@ -29,7 +29,7 @@ const steps = [
   { id: 'activity', title: 'How active are you?', icon: Activity },
 ];
 
-export default function NutritionWizard({ onComplete }: NutritionWizardProps) {
+export default function NutritionWizard({ onComplete, onCancel }: NutritionWizardProps) {
   const [step, setStep] = useState(0);
   const [formData, setFormData] = useState<WizardData>({
     gender: 'male',
