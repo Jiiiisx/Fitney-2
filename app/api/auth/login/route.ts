@@ -6,9 +6,28 @@ import { loginSchema } from '@/app/lib/validators';
 import bcrypt from 'bcryptjs';
 import { SignJWT } from 'jose';
 import { eq, or } from 'drizzle-orm'
+import { authRateLimit } from "@/app/lib/ratelimit";
 
 export async function POST(req: Request) {
   try {
+    // 1. Rate Limiting Check
+    const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
+    const { success, limit, reset, remaining } = await authRateLimit.limit(ip);
+    
+    if (!success) {
+      return NextResponse.json(
+        { error: "Too many attempts. Please try again in 10 minutes." },
+        { 
+          status: 429,
+          headers: {
+            "X-RateLimit-Limit": limit.toString(),
+            "X-RateLimit-Remaining": remaining.toString(),
+            "X-RateLimit-Reset": reset.toString(),
+          }
+        }
+      );
+    }
+
     const body = await req.json();
     const validatedFields = loginSchema.safeParse(body);
 
@@ -52,13 +71,13 @@ export async function POST(req: Request) {
 
     const { passwordHash, ...userWithoutPassword } = user;
 
-    // Set HttpOnly Cookie
+    // Set HttpOnly Cookie with stricter security
     const cookieStore = await cookies();
     cookieStore.set('token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 86400, // 1 day in seconds
+      secure: true, // Always true for better security
+      sameSite: 'strict', // Prevent CSRF attacks
+      maxAge: 86400, 
       path: '/',
     });
 
