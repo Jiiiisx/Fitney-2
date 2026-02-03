@@ -192,6 +192,17 @@ const Header = () => {
                     {item.label}
                   </Link>
                 ))}
+                
+                {/* Additional Mobile Links */}
+                <div className="h-px bg-muted my-2" />
+                <Link
+                  href="/settings"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`text-3xl font-bold py-2 flex items-center gap-3 ${pathname === '/settings' ? 'text-primary' : 'text-muted-foreground'}`}
+                >
+                  <Settings size={28} />
+                  Settings
+                </Link>
               </nav>
 
               <div className="mt-auto pt-8 border-t">
@@ -272,6 +283,10 @@ const Header = () => {
                 <NotificationPopup />
               </PopoverContent>
             </Popover>
+
+            <Link href="/settings" className="lg:hidden p-2 rounded-full hover:bg-muted/50 transition-colors">
+              <Settings size={20} className="text-muted-foreground" />
+            </Link>
 
             <div className="hidden lg:block">
               <Popover>
