@@ -4,6 +4,7 @@ import { users } from "@/app/lib/schema";
 import { verifyAuth } from "@/app/lib/auth";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
+import { authRateLimit } from "@/app/lib/ratelimit";
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,7 +12,32 @@ export async function POST(req: NextRequest) {
     if (auth.error) return auth.error;
     const userId = auth.user.userId;
 
-    const { currentPassword, newPassword } = await req.json();
+    const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
+    const { success } = await authRateLimit.limit(ip);
+    
+    if (!success) {
+      return NextResponse.json({ error: "Too many attempts. Please try again later." }, { status: 429 });
+    }
+
+    const body = await req.json();
+    const { currentPassword, newPassword, turnstileToken } = body;
+
+    // Turnstile Verification (Production Only)
+    if (process.env.NODE_ENV === 'production') {
+        const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                secret: process.env.TURNSTILE_SECRET_KEY,
+                response: turnstileToken,
+                remoteip: ip,
+            }),
+        });
+        const verifyData = await verifyRes.json();
+        if (!verifyData.success) {
+            return NextResponse.json({ error: "Security check failed." }, { status: 403 });
+        }
+    }
 
     if (!currentPassword || !newPassword) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
