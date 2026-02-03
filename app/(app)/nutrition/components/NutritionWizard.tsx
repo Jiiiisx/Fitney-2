@@ -201,9 +201,13 @@ export default function NutritionWizard({ onComplete }: NutritionWizardProps) {
 
       <div className="flex gap-4 mt-10">
         <Button 
+          type="button"
           variant="outline" 
-          onClick={prevStep} 
-          className="h-14 rounded-2xl px-8 font-bold border-2"
+          onClick={() => {
+            console.log("Back clicked, current step:", step);
+            prevStep();
+          }} 
+          className="h-14 rounded-2xl px-8 font-bold border-2 border-border hover:bg-muted"
         >
           Back
         </Button>

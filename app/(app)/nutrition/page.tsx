@@ -66,13 +66,16 @@ export default function NutritionPage() {
   };
 
   const handleCancel = async () => {
+    // Jika kita sampai di sini, artinya user ingin membatalkan edit.
+    // Kita coba ambil ulang data dari cache/DB.
     setLoading(true);
     try {
       const { profile } = await getNutritionProfile();
       if (profile) {
         setUserData(profile);
       } else {
-        // If no profile exists, just keep the wizard open
+        // Jika benar-benar tidak ada profile (user baru), 
+        // kita tidak bisa kemana-mana selain wizard ini.
         setUserData(null);
       }
     } catch (err) {
