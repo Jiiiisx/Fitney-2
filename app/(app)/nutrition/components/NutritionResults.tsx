@@ -400,6 +400,13 @@ export default function NutritionResults({ userData, onEdit }: NutritionResultsP
             </div>
           )}
 
+          {searchError && (
+            <div className="text-center py-8 text-red-500 bg-red-50 rounded-2xl border border-red-100 mb-6">
+              <p className="font-bold">Error finding recipes:</p>
+              <p className="text-sm">{searchError}</p>
+            </div>
+          )}
+
           {recipes.length === 0 && !isSearching && (
             <div className="text-center py-12 bg-muted/20 rounded-2xl border border-dashed border-border">
               <ChefHat className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-20" />

@@ -28,7 +28,12 @@ export async function GET(req: NextRequest) {
   }
 
   // Calculate per-meal calories (assuming 3 meals a day)
-  const mealCalories = Math.round(parseInt(targetCalories, 10) / 3);
+  let mealCalories = Math.round(parseInt(targetCalories, 10) / 3);
+  
+  // Fallback: If target is 0 or too low, use a default of 500 kcal per meal
+  if (mealCalories <= 0) {
+    mealCalories = 500;
+  }
 
   // Construct the Spoonacular API URL
   const spoonacularUrl = new URL('https://api.spoonacular.com/recipes/complexSearch');
