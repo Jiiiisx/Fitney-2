@@ -162,9 +162,15 @@ export default function NutritionResults({ userData, onEdit }: NutritionResultsP
   };
 
   // Calculations with Dynamic Adjustment
-  const adjustedTargets = calculateDailyAdjustedTargets(userData.tdee, activityType);
+  const adjustedTargets = calculateDailyAdjustedTargets(userData.tdee || 2000, activityType);
   const consumedCalories = summary?.consumed?.calories || 0;
-  const targetCalories = adjustedTargets.calories;
+  
+  // Prioritaskan target dari API Summary jika tersedia
+  const targetCalories = summary?.targets?.calories || adjustedTargets.calories;
+  const targetProtein = summary?.targets?.protein || adjustedTargets.protein;
+  const targetCarbs = summary?.targets?.carbs || adjustedTargets.carbs;
+  const targetFat = summary?.targets?.fat || adjustedTargets.fat;
+
   const calPercentage = Math.min(100, (consumedCalories / targetCalories) * 100);
 
   return (
@@ -207,18 +213,18 @@ export default function NutritionResults({ userData, onEdit }: NutritionResultsP
           <div className="grid grid-cols-3 gap-4 text-center">
             <div className="p-3 bg-white/50 dark:bg-black/20 rounded-xl relative overflow-hidden group">
               <p className="text-xs text-muted-foreground uppercase tracking-wider">Protein</p>
-              <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400">{summary?.consumed?.protein || 0}g <span className="text-[10px] font-normal opacity-50">/ {adjustedTargets.protein}g</span></p>
-              <div className="absolute bottom-0 left-0 h-1 bg-emerald-500 transition-all duration-500" style={{ width: `${Math.min(100, ((summary?.consumed?.protein || 0) / adjustedTargets.protein) * 100)}%` }} />
+              <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400">{summary?.consumed?.protein || 0}g <span className="text-[10px] font-normal opacity-50">/ {targetProtein}g</span></p>
+              <div className="absolute bottom-0 left-0 h-1 bg-emerald-500 transition-all duration-500" style={{ width: `${Math.min(100, ((summary?.consumed?.protein || 0) / targetProtein) * 100)}%` }} />
             </div>
             <div className="p-3 bg-white/50 dark:bg-black/20 rounded-xl relative overflow-hidden">
               <p className="text-xs text-muted-foreground uppercase tracking-wider">Carbs</p>
-              <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400">{summary?.consumed?.carbs || 0}g <span className="text-[10px] font-normal opacity-50">/ {adjustedTargets.carbs}g</span></p>
-              <div className="absolute bottom-0 left-0 h-1 bg-emerald-500 transition-all duration-500" style={{ width: `${Math.min(100, ((summary?.consumed?.carbs || 0) / adjustedTargets.carbs) * 100)}%` }} />
+              <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400">{summary?.consumed?.carbs || 0}g <span className="text-[10px] font-normal opacity-50">/ {targetCarbs}g</span></p>
+              <div className="absolute bottom-0 left-0 h-1 bg-emerald-500 transition-all duration-500" style={{ width: `${Math.min(100, ((summary?.consumed?.carbs || 0) / targetCarbs) * 100)}%` }} />
             </div>
             <div className="p-3 bg-white/50 dark:bg-black/20 rounded-xl relative overflow-hidden">
               <p className="text-xs text-muted-foreground uppercase tracking-wider">Fat</p>
-              <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400">{summary?.consumed?.fat || 0}g <span className="text-[10px] font-normal opacity-50">/ {adjustedTargets.fat}g</span></p>
-              <div className="absolute bottom-0 left-0 h-1 bg-emerald-500 transition-all duration-500" style={{ width: `${Math.min(100, ((summary?.consumed?.fat || 0) / adjustedTargets.fat) * 100)}%` }} />
+              <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400">{summary?.consumed?.fat || 0}g <span className="text-[10px] font-normal opacity-50">/ {targetFat}g</span></p>
+              <div className="absolute bottom-0 left-0 h-1 bg-emerald-500 transition-all duration-500" style={{ width: `${Math.min(100, ((summary?.consumed?.fat || 0) / targetFat) * 100)}%` }} />
             </div>
           </div>
         </CardContent>
