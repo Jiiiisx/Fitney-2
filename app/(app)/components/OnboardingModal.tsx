@@ -157,8 +157,8 @@ const OnboardingModal = ({ onComplete }: OnboardingModalProps) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-xl z-[100] flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl bg-card rounded-[2.5rem] shadow-2xl overflow-hidden border border-border/50">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-xl z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="w-full max-w-2xl bg-card rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden border-t sm:border border-border/50 max-h-[95vh] flex flex-col">
         <AnimatePresence mode="wait">
           {renderStep()}
         </AnimatePresence>
@@ -170,7 +170,7 @@ const OnboardingModal = ({ onComplete }: OnboardingModalProps) => {
 // Sub-components
 
 const ProgressBar = ({ progress }: { progress: number }) => (
-  <div className="w-full bg-muted rounded-full h-1.5 mb-8">
+  <div className="w-full bg-muted rounded-full h-1.5 mb-6 sm:mb-8">
     <motion.div
       className="bg-primary h-full rounded-full"
       initial={{ width: 0 }}
@@ -182,18 +182,18 @@ const ProgressBar = ({ progress }: { progress: number }) => (
 
 const WelcomeStep = ({ onStart, progress }: { onStart: () => void; progress: number }) => (
   <motion.div
-    initial={{ opacity: 0, scale: 0.95 }}
-    animate={{ opacity: 1, scale: 1 }}
-    exit={{ opacity: 0, scale: 1.05 }}
-    className="w-full p-12 flex flex-col items-center text-center"
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, scale: 0.95 }}
+    className="w-full p-8 sm:p-12 flex flex-col items-center text-center"
   >
     <ProgressBar progress={progress} />
     <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center mb-8">
         <Heart className="w-10 h-10 text-primary" />
     </div>
-    <h1 className="text-4xl font-black tracking-tight mb-4">Welcome to Fitney</h1>
-    <p className="text-muted-foreground text-lg mb-10 max-w-sm">Let&apos;s personalize your experience to help you reach your goals faster.</p>
-    <Button onClick={onStart} size="lg" className="rounded-2xl px-12 py-7 text-lg font-bold shadow-xl shadow-primary/20">
+    <h1 className="text-3xl sm:text-4xl font-black tracking-tight mb-4">Welcome to Fitney</h1>
+    <p className="text-muted-foreground text-base sm:text-lg mb-10 max-w-sm">Let&apos;s personalize your experience to help you reach your goals faster.</p>
+    <Button onClick={onStart} size="lg" className="rounded-2xl px-12 py-7 text-lg font-bold shadow-xl shadow-primary/20 w-full sm:w-auto">
       Get Started
     </Button>
   </motion.div>
@@ -207,14 +207,14 @@ const UsernameStep = ({ data, setData, onNext, progress }: { data: OnboardingDat
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
-      className="w-full p-10 flex flex-col items-center"
+      className="w-full p-6 sm:p-10 flex flex-col items-center"
     >
       <ProgressBar progress={progress} />
       <div className="w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center mb-6">
         <User className="w-8 h-8 text-blue-500" />
       </div>
-      <h2 className="text-3xl font-black text-center mb-2 tracking-tight italic">How should we call you?</h2>
-      <p className="text-muted-foreground text-center mb-8">Choose a display name for the community.</p>
+      <h2 className="text-2xl sm:text-3xl font-black text-center mb-2 tracking-tight italic">How should we call you?</h2>
+      <p className="text-muted-foreground text-sm sm:text-base text-center mb-8">Choose a display name for the community.</p>
       
       <div className="w-full max-w-sm space-y-4 mb-10">
         <div className="space-y-2">
@@ -226,7 +226,7 @@ const UsernameStep = ({ data, setData, onNext, progress }: { data: OnboardingDat
             placeholder="e.g. FitWarrior" 
             value={data.username} 
             onChange={(e) => setData({...data, username: e.target.value.replace(/\s+/g, '_')})}
-            className="rounded-xl h-14 font-bold text-lg px-6"
+            className="rounded-xl h-14 font-bold text-lg px-6 shadow-none border-2 focus:border-primary"
           />
           <p className="text-[10px] text-muted-foreground ml-1">
             Minimum 3 characters. This will be your identity in Fitney.
@@ -250,23 +250,28 @@ const QuestionStep = ({ title, options, onSelect, progress }: { title: string; o
     initial={{ opacity: 0, x: 20 }}
     animate={{ opacity: 1, x: 0 }}
     exit={{ opacity: 0, x: -20 }}
-    className="w-full p-10 flex flex-col"
+    className="w-full p-6 sm:p-10 flex flex-col h-full overflow-y-auto"
   >
     <ProgressBar progress={progress} />
-    <h2 className="text-3xl font-black text-center mb-10 tracking-tight italic">{title}</h2>
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {options.map(({ value, label, icon: Icon, description }) => (
-        <button
+    <h2 className="text-2xl sm:text-3xl font-black text-center mb-8 tracking-tight italic">{title}</h2>
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mb-4">
+      {options.map(({ value, label, icon: Icon, description }, idx) => (
+        <motion.button
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: idx * 0.1 }}
           key={value}
           onClick={() => onSelect(value)}
-          className="group p-6 rounded-3xl border-2 border-border hover:border-primary hover:bg-primary/5 transition-all text-center flex flex-col items-center gap-3"
+          className="group p-4 sm:p-6 rounded-3xl border-2 border-border hover:border-primary hover:bg-primary/5 transition-all text-left sm:text-center flex sm:flex-col items-center gap-4 sm:gap-3"
         >
-          <div className="p-4 bg-muted rounded-2xl group-hover:bg-primary/10 transition-colors">
-            <Icon className="w-8 h-8 text-muted-foreground group-hover:text-primary transition-colors" />
+          <div className="p-3 sm:p-4 bg-muted rounded-2xl group-hover:bg-primary/10 transition-colors shrink-0">
+            <Icon className="w-6 h-6 sm:w-8 sm:h-8 text-muted-foreground group-hover:text-primary transition-colors" />
           </div>
-          <h3 className="font-bold text-lg">{label}</h3>
-          <p className="text-xs text-muted-foreground leading-tight">{description}</p>
-        </button>
+          <div className="flex flex-col sm:items-center">
+            <h3 className="font-bold text-base sm:text-lg">{label}</h3>
+            <p className="text-[10px] sm:text-xs text-muted-foreground leading-tight">{description}</p>
+          </div>
+        </motion.button>
       ))}
     </div>
   </motion.div>
@@ -280,12 +285,12 @@ const PhysicalStatsStep = ({ data, setData, onNext, progress }: { data: Onboardi
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
-      className="w-full p-10"
+      className="w-full p-6 sm:p-10 h-full overflow-y-auto"
     >
       <ProgressBar progress={progress} />
-      <h2 className="text-3xl font-black text-center mb-10 tracking-tight italic">Tell us about yourself</h2>
+      <h2 className="text-2xl sm:text-3xl font-black text-center mb-8 tracking-tight italic">Tell us about yourself</h2>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-10">
         <div className="space-y-2">
           <Label className="flex items-center gap-2 font-bold mb-2 uppercase text-[10px] tracking-widest text-muted-foreground">
             <Calendar className="w-3 h-3" /> Birth Date
@@ -294,40 +299,40 @@ const PhysicalStatsStep = ({ data, setData, onNext, progress }: { data: Onboardi
             type="date" 
             value={data.dob} 
             onChange={(e) => setData({...data, dob: e.target.value})}
-            className="rounded-xl h-14 font-bold text-base"
+            className="rounded-xl h-14 font-bold text-base shadow-none border-2"
           />
         </div>
         <div className="space-y-2">
           <Label className="flex items-center gap-2 font-bold mb-2 uppercase text-[10px] tracking-widest text-muted-foreground">
-            <Ruler className="w-3 h-3" /> Height
+            <Ruler className="w-3 h-3" /> Height (cm)
           </Label>
           <Input 
             type="number" 
-            placeholder="cm" 
+            placeholder="170" 
             value={data.height} 
             onChange={(e) => setData({...data, height: e.target.value})}
-            className="rounded-xl h-14 font-bold text-lg"
+            className="rounded-xl h-14 font-bold text-lg shadow-none border-2"
           />
         </div>
         <div className="space-y-2">
           <Label className="flex items-center gap-2 font-bold mb-2 uppercase text-[10px] tracking-widest text-muted-foreground">
-            <WeightIcon className="w-3 h-3" /> Weight
+            <WeightIcon className="w-3 h-3" /> Weight (kg)
           </Label>
           <Input 
             type="number" 
-            placeholder="kg" 
+            placeholder="60" 
             value={data.weight} 
             onChange={(e) => setData({...data, weight: e.target.value})}
-            className="rounded-xl h-14 font-bold text-lg"
+            className="rounded-xl h-14 font-bold text-lg shadow-none border-2"
           />
         </div>
       </div>
 
-      <div className="flex justify-center">
+      <div className="flex justify-center pb-4">
         <Button 
           disabled={isInvalid} 
           onClick={onNext}
-          className="rounded-2xl px-12 h-14 font-bold text-lg w-full md:w-auto"
+          className="rounded-2xl px-12 h-14 font-bold text-lg w-full sm:w-auto shadow-lg shadow-primary/20"
         >
           Continue
         </Button>
