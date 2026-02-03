@@ -65,6 +65,23 @@ export default function NutritionPage() {
     setUserData(null);
   };
 
+  const handleCancel = async () => {
+    setLoading(true);
+    try {
+      const { profile } = await getNutritionProfile();
+      if (profile) {
+        setUserData(profile);
+      } else {
+        // If no profile exists, just keep the wizard open
+        setUserData(null);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const renderContent = () => {
     if (loading) {
       return (
@@ -78,7 +95,7 @@ export default function NutritionPage() {
     if (userData) {
       return <NutritionResults userData={userData} onEdit={handleEdit} />;
     } else {
-      return <NutritionWizard onComplete={handleWizardComplete} />;
+      return <NutritionWizard onComplete={handleWizardComplete} onCancel={handleCancel} />;
     }
   };
 

@@ -19,6 +19,7 @@ interface WizardData {
 
 interface NutritionWizardProps {
   onComplete: (data: WizardData) => void;
+  onCancel?: () => void;
 }
 
 const steps = [
@@ -39,7 +40,13 @@ export default function NutritionWizard({ onComplete }: NutritionWizardProps) {
   });
 
   const nextStep = () => setStep(prev => Math.min(prev + 1, steps.length - 1));
-  const prevStep = () => setStep(prev => Math.max(prev - 1, 0));
+  const prevStep = () => {
+    if (step === 0) {
+      if (onCancel) onCancel();
+      return;
+    }
+    setStep(prev => prev - 1);
+  };
 
   const handleFinish = () => {
     // Basic validation before completing
@@ -196,7 +203,6 @@ export default function NutritionWizard({ onComplete }: NutritionWizardProps) {
         <Button 
           variant="outline" 
           onClick={prevStep} 
-          disabled={step === 0}
           className="h-14 rounded-2xl px-8 font-bold border-2"
         >
           Back
