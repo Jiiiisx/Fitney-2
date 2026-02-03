@@ -8,12 +8,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import DisclaimerModal from "@/components/DisclaimerModal";
 
-const stats = [
-    { name: 'Active Users', value: '10K+', icon: Users },
-    { name: 'Workouts Logged', value: '1M+', icon: Dumbbell },
-    { name: 'App Rating', value: '4.9★', icon: Star },
-];
-
 const features = [
     { text: "Track your progress visually", icon: TrendingUp },
     { text: "Join fitness challenges", icon: Trophy },
@@ -62,20 +56,6 @@ export default function AuthLayout({
                             </p>
                         </motion.div>
                     </AnimatePresence>
-                </div>
-
-                {/* Stats */}
-                <div className="grid grid-cols-3 gap-6 text-center">
-                    {stats.map((stat) => {
-                        const StatIcon = stat.icon;
-                        return (
-                            <div key={stat.name} className="bg-white/50 p-4 rounded-lg border border-slate-200/80">
-                                <StatIcon className="w-8 h-8 mx-auto text-yellow-500" strokeWidth={1.5} />
-                                <p className="text-xl font-bold text-slate-800 mt-2">{stat.value}</p>
-                                <p className="text-xs text-slate-500">{stat.name}</p>
-                            </div>
-                        );
-                    })}
                 </div>
 
                 <p className="text-sm text-slate-500 italic pt-10">
