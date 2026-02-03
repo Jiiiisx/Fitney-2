@@ -1,7 +1,18 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import MainFeed from './components/MainFeed';
 import { Trophy, Search } from "lucide-react";
 import Link from 'next/link';
+import { Skeleton } from "@/components/ui/skeleton";
+
+function MainFeedFallback() {
+  return (
+    <div className="max-w-2xl mx-auto space-y-6">
+      <Skeleton className="h-[100px] w-full rounded-3xl" />
+      <Skeleton className="h-[200px] w-full rounded-3xl" />
+      <Skeleton className="h-[400px] w-full rounded-3xl" />
+    </div>
+  );
+}
 
 export default function CommunityDashboard() {
   return (
@@ -26,7 +37,9 @@ export default function CommunityDashboard() {
       </div>
 
       {/* MAIN FEED */}
-      <MainFeed />
+      <Suspense fallback={<MainFeedFallback />}>
+        <MainFeed />
+      </Suspense>
     </div>
   );
 }
