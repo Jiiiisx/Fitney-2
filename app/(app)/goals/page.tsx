@@ -145,6 +145,7 @@ export default function GoalsPage() {
         <GoalRecommendations 
             recommendations={recommendations} 
             onAccept={handleAcceptRecommendation}
+            onCreateCustom={handleOpenCreateModal}
             isLoading={recsLoading}
         />
       );
