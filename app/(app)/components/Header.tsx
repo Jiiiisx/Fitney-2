@@ -192,17 +192,6 @@ const Header = () => {
                     {item.label}
                   </Link>
                 ))}
-                
-                {/* Additional Mobile Links */}
-                <div className="h-px bg-muted my-2" />
-                <Link
-                  href="/settings"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`text-3xl font-bold py-2 flex items-center gap-3 ${pathname === '/settings' ? 'text-primary' : 'text-muted-foreground'}`}
-                >
-                  <Settings size={28} />
-                  Settings
-                </Link>
               </nav>
 
               <div className="mt-auto pt-8 border-t">

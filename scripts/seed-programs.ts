@@ -83,6 +83,78 @@ const programs: ProgramData[] = [
       { day_number: 7, name: 'Rest Day', description: 'A day to recover and rebuild.' },
     ],
   },
+  {
+    name: 'Strength & Hypertrophy',
+    description: 'A 4-day split designed for muscle growth and raw strength.',
+    weeks: 1,
+    days: [
+      {
+        day_number: 1,
+        name: 'Upper Body Power',
+        description: 'Heavy compound movements for the upper body.',
+        exercises: [
+          { wger_id: 981, sets: 4, reps: '5-8' },
+          { wger_id: 57, sets: 4, reps: '5-8' },
+          { wger_id: 31, sets: 3, reps: '10-12' },
+        ],
+      },
+      {
+        day_number: 2,
+        name: 'Lower Body Power',
+        description: 'Heavy compound movements for the lower body.',
+        exercises: [
+          { wger_id: 981, sets: 4, reps: '5-8' },
+          { wger_id: 805, sets: 4, reps: '8-10' },
+          { wger_id: 56, sets: 3, duration_seconds: 60 },
+        ],
+      },
+      { day_number: 3, name: 'Rest Day', description: 'Active recovery or rest.' },
+      {
+        day_number: 4,
+        name: 'Upper Body Hypertrophy',
+        description: 'Higher volume for muscle definition.',
+        exercises: [
+          { wger_id: 57, sets: 3, reps: '12-15' },
+          { wger_id: 31, sets: 3, reps: '12-15' },
+          { wger_id: 805, sets: 3, reps: '15' },
+        ],
+      },
+      {
+        day_number: 5,
+        name: 'Lower Body Hypertrophy',
+        description: 'Focusing on quad and hamstring development.',
+        exercises: [
+          { wger_id: 981, sets: 3, reps: '12-15' },
+          { wger_id: 56, sets: 4, duration_seconds: 45 },
+          { wger_id: 57, sets: 3, reps: '20' },
+        ],
+      },
+      { day_number: 6, name: 'Rest Day', description: 'Rest and recover.' },
+      { day_number: 7, name: 'Rest Day', description: 'Preparation for next week.' },
+    ],
+  },
+  {
+    name: 'Home Fitness Core',
+    description: 'Zero equipment needed. Focus on core stability and functional bodyweight strength.',
+    weeks: 1,
+    days: [
+      {
+        day_number: 1,
+        name: 'Core Foundations',
+        description: 'Stability exercises for the midsection.',
+        exercises: [
+          { wger_id: 56, sets: 3, duration_seconds: 60 },
+          { wger_id: 57, sets: 3, reps: '15' },
+        ],
+      },
+      { day_number: 2, name: 'Bodyweight Flow', description: 'Mobility and strength combined.', exercises: [{ wger_id: 31, sets: 3, reps: '12' }] },
+      { day_number: 3, name: 'Rest', description: 'Rest' },
+      { day_number: 4, name: 'Core Blast', description: 'Intense core circuit.', exercises: [{ wger_id: 56, sets: 5, duration_seconds: 45 }] },
+      { day_number: 5, name: 'Full Body Bodyweight', description: 'Total body conditioning.', exercises: [{ wger_id: 57, sets: 4, reps: '20' }] },
+      { day_number: 6, name: 'Rest', description: 'Rest' },
+      { day_number: 7, name: 'Rest', description: 'Rest' },
+    ],
+  },
 ];
 
 async function seedPrograms() {
