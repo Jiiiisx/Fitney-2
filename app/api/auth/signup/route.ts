@@ -5,10 +5,48 @@ import { users } from '@/app/lib/schema';
 import { eq, or } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
+import { authRateLimit } from "@/app/lib/ratelimit";
 
 export async function POST(req: Request) {
   try {
-    const { username, email, password, fullName } = await req.json();
+    // 1. Rate Limiting Check
+    const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
+    const { success, limit, reset, remaining } = await authRateLimit.limit(ip);
+    
+    if (!success) {
+      return NextResponse.json(
+        { error: "Too many attempts. Please try again later." },
+        { 
+          status: 429,
+          headers: {
+            "X-RateLimit-Limit": limit.toString(),
+            "X-RateLimit-Remaining": remaining.toString(),
+            "X-RateLimit-Reset": reset.toString(),
+          }
+        }
+      );
+    }
+
+    const body = await req.json();
+    const { username, email, password, fullName, turnstileToken } = body;
+
+    // 2. Cloudflare Turnstile Verification
+    if (process.env.NODE_ENV === 'production') {
+        const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                secret: process.env.TURNSTILE_SECRET_KEY,
+                response: turnstileToken,
+                remoteip: ip,
+            }),
+        });
+
+        const verifyData = await verifyRes.json();
+        if (!verifyData.success) {
+            return NextResponse.json({ error: "Security check failed. Please try again." }, { status: 403 });
+        }
+    }
 
     if (!username || !email || !password) {
       return NextResponse.json({ error: 'Missing username, email, password' }, { status: 400 });
@@ -64,8 +102,8 @@ export async function POST(req: Request) {
     const cookieStore = await cookies();
     cookieStore.set('token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: true,
+      sameSite: 'strict',
       maxAge: 86400, // 1 day
       path: '/',
     });
