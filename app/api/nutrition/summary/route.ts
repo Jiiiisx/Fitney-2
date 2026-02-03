@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "@/app/lib/auth";
 import { db } from "@/app/lib/db";
-import { foodLogs, foods } from "@/app/lib/schema";
+import { foodLogs, foods, userProfiles } from "@/app/lib/schema";
 import { eq, and } from "drizzle-orm";
 
 export async function GET(req: NextRequest) {
@@ -10,11 +10,16 @@ export async function GET(req: NextRequest) {
     if (auth.error) return auth.error;
     const userId = auth.user.userId;
 
+    // 1. Fetch User Targets from Profile
+    const profile = await db.query.userProfiles.findFirst({
+        where: eq(userProfiles.userId, userId)
+    });
+
     const TARGETS = {
-      calories: 2000,
-      protein: 150,
-      carbs: 250,
-      fat: 70
+      calories: profile?.calorieTarget || 2000,
+      protein: profile?.proteinTarget || 150,
+      carbs: profile?.carbsTarget || 250,
+      fat: profile?.fatTarget || 70
     };
 
     const today = new Date().toISOString().split('T')[0];

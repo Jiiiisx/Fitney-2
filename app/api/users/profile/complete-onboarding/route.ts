@@ -3,7 +3,8 @@ import { db } from "@/app/lib/db";
 import { verifyAuth } from "@/app/lib/auth";
 import { users, userProfiles, userSettings, bodyMeasurements } from "@/app/lib/schema";
 import { eq, and, ne } from "drizzle-orm";
-import { format } from "date-fns";
+import { format, differenceInYears } from "date-fns";
+import { calculateTDEE } from "@/app/lib/nutrition-calculator";
 
 export async function POST(req: NextRequest) {
   const auth = await verifyAuth(req);
@@ -21,6 +22,32 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    // --- CALCULATE TDEE & TARGETS ---
+    let tdee = 2000; // Default
+    if (gender && dob && weight && height) {
+        const age = differenceInYears(new Date(), new Date(dob));
+        const activityLevel: any = level === 'advanced' ? 'very_active' : 
+                             level === 'intermediate' ? 'moderately_active' : 'lightly_active';
+        
+        tdee = calculateTDEE({
+            gender: gender as any,
+            age,
+            weight: parseFloat(weight),
+            height: parseFloat(height),
+            activityLevel
+        });
+    }
+
+    // Calorie Target based on goal
+    let calorieTarget = tdee;
+    if (goal === 'lose_weight') calorieTarget -= 500;
+    if (goal === 'build_muscle') calorieTarget += 300;
+
+    // Macro Targets (Standard 40/30/30 split)
+    const proteinTarget = Math.round((calorieTarget * 0.30) / 4);
+    const carbsTarget = Math.round((calorieTarget * 0.40) / 4);
+    const fatTarget = Math.round((calorieTarget * 0.30) / 9);
 
     // 1. Check if username is already taken
     if (username) {
@@ -67,6 +94,11 @@ export async function POST(req: NextRequest) {
           gender: gender || null,
           weight: weight ? weight.toString() : null,
           height: height ? height.toString() : null,
+          tdee: tdee,
+          calorieTarget: calorieTarget,
+          proteinTarget: proteinTarget,
+          carbsTarget: carbsTarget,
+          fatTarget: fatTarget,
           updatedAt: new Date(),
         })
         .onConflictDoUpdate({
@@ -78,6 +110,11 @@ export async function POST(req: NextRequest) {
             gender: gender || null,
             weight: weight ? weight.toString() : null,
             height: height ? height.toString() : null,
+            tdee: tdee,
+            calorieTarget: calorieTarget,
+            proteinTarget: proteinTarget,
+            carbsTarget: carbsTarget,
+            fatTarget: fatTarget,
             updatedAt: new Date(),
           },
         });
