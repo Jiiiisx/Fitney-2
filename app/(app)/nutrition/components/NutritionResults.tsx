@@ -247,8 +247,8 @@ export default function NutritionResults({ userData, onEdit }: NutritionResultsP
                 <div className="absolute inset-0 bg-emerald-500/20 rounded-full blur-2xl opacity-20 scale-90" />
                 <CircularProgress 
                   percentage={calPercentage} 
-                  size={!mounted ? 180 : (window.innerWidth < 640 ? 160 : 220)} 
-                  strokeWidth={!mounted ? 12 : (window.innerWidth < 640 ? 12 : 16)} 
+                  size={typeof window !== 'undefined' && window.innerWidth < 640 ? 160 : 220} 
+                  strokeWidth={typeof window !== 'undefined' && window.innerWidth < 640 ? 12 : 16} 
                   color="text-emerald-500"
                 >
                    <div className="text-center">

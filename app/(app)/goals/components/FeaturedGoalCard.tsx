@@ -51,7 +51,7 @@ export function FeaturedGoalCard({ goal }: FeaturedGoalCardProps) {
              <div className={cn("absolute inset-0 rounded-full blur-3xl opacity-20 scale-110", details.bg.replace('/10', '/40'))} />
              <CircularProgress 
                 percentage={progressPercentage} 
-                size={!mounted ? 200 : (window.innerWidth < 640 ? 180 : 220)} 
+                size={typeof window !== 'undefined' && window.innerWidth < 640 ? 180 : 220} 
                 strokeWidth={14} 
                 color={details.ring}
              >

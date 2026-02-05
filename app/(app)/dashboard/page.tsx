@@ -15,7 +15,7 @@ import PremiumAnalytics from "./_components/PremiumAnalytics";
 import AIWorkoutGenerator from "./_components/AIWorkoutGenerator";
 import PremiumTrends from "./_components/PremiumTrends";
 import PremiumTools from "./_components/PremiumTools";
-import { Megaphone, X, Loader2, Share2 } from "lucide-center";
+import { Megaphone, X, Loader2, Share2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ShareModal from "../components/sharing/ShareModal";
 import { Button } from "@/components/ui/button";
