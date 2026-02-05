@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,7 @@ interface WizardData {
 interface NutritionWizardProps {
   onComplete: (data: WizardData) => void;
   onCancel?: () => void;
+  initialData?: any; // New prop for pre-filling
 }
 
 const steps = [
@@ -29,7 +30,7 @@ const steps = [
   { id: 'activity', title: 'How active are you?', icon: Activity },
 ];
 
-export default function NutritionWizard({ onComplete, onCancel }: NutritionWizardProps) {
+export default function NutritionWizard({ onComplete, onCancel, initialData }: NutritionWizardProps) {
   const [step, setStep] = useState(0);
   const [formData, setFormData] = useState<WizardData>({
     gender: 'male',
@@ -38,6 +39,19 @@ export default function NutritionWizard({ onComplete, onCancel }: NutritionWizar
     height: '',
     activityLevel: 'sedentary',
   });
+
+  // Sync with initialData (pre-filling from main onboarding)
+  useEffect(() => {
+    if (initialData) {
+      setFormData(prev => ({
+        ...prev,
+        gender: initialData.gender || prev.gender,
+        age: initialData.age?.toString() || prev.age,
+        weight: initialData.weight?.toString() || prev.weight,
+        height: initialData.height?.toString() || prev.height,
+      }));
+    }
+  }, [initialData]);
 
   const nextStep = () => setStep(prev => Math.min(prev + 1, steps.length - 1));
   const prevStep = () => {
@@ -49,11 +63,9 @@ export default function NutritionWizard({ onComplete, onCancel }: NutritionWizar
   };
 
   const handleFinish = () => {
-    // Basic validation before completing
     if (formData.age && formData.weight && formData.height) {
       onComplete(formData);
     } else {
-      // Simple alert for now, can be improved
       alert("Please fill in all fields.");
     }
   };
