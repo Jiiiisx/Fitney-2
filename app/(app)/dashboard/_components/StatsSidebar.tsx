@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from "react";
 import { useAI } from "@/app/lib/AIContext";
-import { TrendingUp, TrendingDown, Zap, Trophy, Quote, Info } from "lucide-react";
+import { TrendingUp, TrendingDown, Zap, Quote, Info } from "lucide-react";
 import CircularProgress from "../../components/CircularProgress";
 import { cn } from "@/app/lib/utils";
 
@@ -98,11 +98,6 @@ const StatsSidebar = () => {
                  <p className="text-5xl font-black text-neutral-900 dark:text-white tracking-tighter">{stats.level}</p>
               </div>
            </CircularProgress>
-           
-           {/* Floating Badge */}
-           <div className="absolute -bottom-2 -right-2 bg-white dark:bg-neutral-800 p-3 rounded-2xl shadow-xl border border-neutral-100 dark:border-neutral-700 animate-bounce">
-              <Trophy className="w-5 h-5 text-yellow-500 fill-yellow-500" />
-           </div>
         </div>
 
         <div className="mt-8 space-y-2">
