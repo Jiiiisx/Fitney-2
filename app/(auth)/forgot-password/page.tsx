@@ -1,10 +1,69 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Loader2, CheckCircle2 } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 export default function ForgotPasswordPage() {
+  const [email, setEmail] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Something went wrong");
+      }
+
+      setIsSubmitted(true);
+      toast.success("Reset link sent!");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to send reset link");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isSubmitted) {
+    return (
+      <div className="w-full max-w-md mx-auto text-center space-y-6">
+        <div className="flex justify-center">
+          <div className="bg-green-100 p-3 rounded-full">
+            <CheckCircle2 className="text-green-600" size={48} />
+          </div>
+        </div>
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+            Check Your Email
+          </h1>
+          <p className="text-slate-500 mt-2">
+            If an account exists with <strong>{email}</strong>, we&apos;ve sent a link to reset your password.
+          </p>
+        </div>
+        <div className="pt-4">
+          <Link href="/login" className="text-sm font-semibold text-yellow-600 hover:text-yellow-700">
+            Back to Sign In
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-md mx-auto">
       <div className="text-center mb-8">
@@ -16,13 +75,32 @@ export default function ForgotPasswordPage() {
         </p>
       </div>
 
-      <form className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="email">Email Address</Label>
-          <Input id="email" type="email" placeholder="name@example.com" required />
+          <Input 
+            id="email" 
+            type="email" 
+            placeholder="name@example.com" 
+            required 
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={isLoading}
+          />
         </div>
-        <Button type="submit" className="w-full py-6 text-lg font-semibold bg-yellow-400 text-yellow-900 hover:bg-yellow-500">
-          Send Reset Link
+        <Button 
+          type="submit" 
+          className="w-full py-6 text-lg font-semibold bg-yellow-400 text-yellow-900 hover:bg-yellow-500"
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Sending...
+            </>
+          ) : (
+            "Send Reset Link"
+          )}
         </Button>
       </form>
 

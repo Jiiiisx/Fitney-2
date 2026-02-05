@@ -4,6 +4,7 @@ import { Poppins } from "next/font/google";
 import Script from "next/script";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
+import { Toaster } from "react-hot-toast";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -48,6 +49,7 @@ export default function RootLayout({
             shadow="0 0 10px #FFD54F,0 0 5px #FFD54F"
         />
         {children}
+        <Toaster position="top-center" />
         <SpeedInsights />
         <Analytics />
       </body>

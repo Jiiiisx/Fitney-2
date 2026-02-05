@@ -1,1 +1,0 @@
-CREATE INDEX "workout_logs_user_date_idx" ON "workout_logs" USING btree ("user_id","date");

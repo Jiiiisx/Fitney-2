@@ -3,31 +3,10 @@
   "dialect": "postgresql",
   "entries": [
     {
-      "idx": 1,
+      "idx": 0,
       "version": "7",
-      "when": 1765625540567,
-      "tag": "0001_tiresome_green_goblin",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1769001238309,
-      "tag": "0002_same_the_captain",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1769093351792,
-      "tag": "0003_new_odin",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1769879994129,
-      "tag": "0004_dry_madripoor",
+      "when": 1770296236118,
+      "tag": "0000_light_shinobi_shaw",
       "breakpoints": true
     }
   ]

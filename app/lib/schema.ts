@@ -471,6 +471,14 @@ export const achievements = pgTable('achievements', {
   iconUrl: varchar('icon_url', { length: 255 }),
 });
 
+export const passwordResetTokens = pgTable('password_reset_tokens', {
+  id: serial('id').primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  token: varchar('token', { length: 255 }).notNull().unique(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+});
+
 export const userAchievements = pgTable('user_achievements', {
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   achievementId: integer('achievement_id').notNull().references(() => achievements.id, { onDelete: 'cascade' }),
@@ -646,6 +654,11 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   aiRecoveryScans: many(aiRecoveryScans),
   createdChallenges: many(challenges),
   joinedChallenges: many(userChallenges),
+  passwordResetTokens: many(passwordResetTokens),
+}));
+
+export const passwordResetTokensRelations = relations(passwordResetTokens, ({ one }) => ({
+  user: one(users, { fields: [passwordResetTokens.userId], references: [users.id] }),
 }));
 
 export const directMessagesRelations = relations(directMessages, ({ one }) => ({

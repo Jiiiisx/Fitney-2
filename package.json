@@ -16,7 +16,7 @@
     "db:check": "ts-node -r dotenv/config -r tsconfig-paths/register scripts/check-db.ts",
     "test": "jest",
     "test:watch": "jest --watch",
-    "drizzle:generate": "drizzle-kit generate:pg"
+    "drizzle:generate": "drizzle-kit generate"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

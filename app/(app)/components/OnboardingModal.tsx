@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { fetchWithAuth } from '@/app/lib/fetch-helper';
+import { BirthDatePicker } from '@/components/BirthDatePicker';
 
 // Define types for onboarding state
 interface OnboardingData {
@@ -291,15 +292,13 @@ const PhysicalStatsStep = ({ data, setData, onNext, progress }: { data: Onboardi
       <h2 className="text-2xl sm:text-3xl font-black text-center mb-8 tracking-tight italic">Tell us about yourself</h2>
       
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-10">
-        <div className="space-y-2">
+        <div className="sm:col-span-3 space-y-2">
           <Label className="flex items-center gap-2 font-bold mb-2 uppercase text-[10px] tracking-widest text-muted-foreground">
             <Calendar className="w-3 h-3" /> Birth Date
           </Label>
-          <Input 
-            type="date" 
+          <BirthDatePicker 
             value={data.dob} 
-            onChange={(e) => setData({...data, dob: e.target.value})}
-            className="rounded-xl h-14 font-bold text-base shadow-none border-2"
+            onChange={(val) => setData({...data, dob: val})} 
           />
         </div>
         <div className="space-y-2">
