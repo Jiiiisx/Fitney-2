@@ -88,9 +88,25 @@ export default function NutritionPage() {
   const renderContent = () => {
     if (loading) {
       return (
-        <div className="h-[60vh] flex flex-col items-center justify-center gap-4">
-          <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-          <p className="text-muted-foreground animate-pulse">Synchronizing nutrition data...</p>
+        <div className="space-y-8 animate-in fade-in duration-500">
+          {/* Summary Card Skeleton */}
+          <div className="h-80 w-full bg-muted animate-pulse rounded-[2.5rem]" />
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Meals Skeleton */}
+            <div className="md:col-span-2 h-96 bg-muted animate-pulse rounded-3xl" />
+            {/* Water Skeleton */}
+            <div className="md:col-span-1 h-96 bg-muted animate-pulse rounded-3xl" />
+          </div>
+
+          <div className="space-y-4">
+            <div className="h-8 w-48 bg-muted animate-pulse rounded-full" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="h-32 bg-muted animate-pulse rounded-2xl" />
+              ))}
+            </div>
+          </div>
         </div>
       );
     }

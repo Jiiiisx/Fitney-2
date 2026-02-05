@@ -94,9 +94,22 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-[80vh] flex flex-col items-center justify-center gap-4">
-        <Loader2 className="w-10 h-10 animate-spin text-primary" />
-        <p className="text-muted-foreground font-medium animate-pulse">Preparing your dashboard...</p>
+      <div className="flex flex-col lg:grid lg:grid-cols-3 min-h-screen lg:h-full animate-in fade-in duration-500">
+        <div className="lg:col-span-2 p-6 lg:p-8 space-y-8 overflow-hidden">
+          <div className="h-48 w-full bg-muted animate-pulse rounded-3xl" />
+          <div className="h-32 w-full bg-muted animate-pulse rounded-3xl" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="h-64 bg-muted animate-pulse rounded-3xl" />
+            <div className="h-64 bg-muted animate-pulse rounded-3xl" />
+          </div>
+        </div>
+        <div className="lg:col-span-1 p-8 bg-muted/30 space-y-8">
+          <div className="flex flex-col items-center space-y-4">
+            <div className="h-40 w-40 rounded-full bg-muted animate-pulse" />
+            <div className="h-8 w-3/4 bg-muted animate-pulse rounded-full" />
+          </div>
+          <div className="h-32 w-full bg-muted animate-pulse rounded-3xl" />
+        </div>
       </div>
     );
   }
