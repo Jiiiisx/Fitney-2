@@ -61,7 +61,17 @@ export async function POST(req: Request) {
     const { identifier, password } = validatedFields.data;
 
     const userResult = await db
-      .select()
+      .select({
+        id: users.id,
+        email: users.email,
+        username: users.username,
+        passwordHash: users.passwordHash,
+        role: users.role,
+        fullName: users.fullName,
+        imageUrl: users.imageUrl,
+        level: users.level,
+        xp: users.xp
+      })
       .from(users)
       .where(or(eq(users.email, identifier), eq(users.username, identifier)));
 

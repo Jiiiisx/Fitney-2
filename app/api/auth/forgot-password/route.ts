@@ -63,7 +63,7 @@ export async function POST(req: Request) {
     }
 
     const userResult = await db
-      .select()
+      .select({ id: users.id, email: users.email })
       .from(users)
       .where(eq(users.email, email))
       .limit(1);

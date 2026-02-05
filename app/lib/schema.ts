@@ -238,7 +238,10 @@ export const stories = pgTable('stories', {
   mediaType: varchar('media_type', { length: 50 }).default('image'), // image, video
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
-});
+}, (table) => ({
+  storiesUserIdIdx: index('stories_user_id_idx').on(table.userId),
+  storiesExpiresAtIdx: index('stories_expires_at_idx').on(table.expiresAt),
+}));
 
 export const storyViews = pgTable('story_views', {
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
@@ -246,6 +249,7 @@ export const storyViews = pgTable('story_views', {
   viewedAt: timestamp('viewed_at', { withTimezone: true }).defaultNow(),
 }, (table) => ({
   pk: primaryKey({ columns: [table.userId, table.storyId] }),
+  storyViewsStoryIdIdx: index('story_views_story_id_idx').on(table.storyId),
 }));
 
 export const savedPosts = pgTable('saved_posts', {
@@ -477,7 +481,9 @@ export const passwordResetTokens = pgTable('password_reset_tokens', {
   token: varchar('token', { length: 255 }).notNull().unique(),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
-});
+}, (table) => ({
+  passwordResetTokensUserIdIdx: index('password_reset_tokens_user_id_idx').on(table.userId),
+}));
 
 export const userAchievements = pgTable('user_achievements', {
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
@@ -596,7 +602,9 @@ export const challenges = pgTable('challenges', {
   startDate: date('start_date').notNull(),
   endDate: date('end_date').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
-});
+}, (table) => ({
+  challengesCreatorIdIdx: index('challenges_creator_id_idx').on(table.creatorId),
+}));
 
 export const userChallenges = pgTable('user_challenges', {
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),

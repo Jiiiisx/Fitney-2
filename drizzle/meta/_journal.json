@@ -8,6 +8,13 @@
       "when": 1770296236118,
       "tag": "0000_light_shinobi_shaw",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1770300766381,
+      "tag": "0001_married_chimera",
+      "breakpoints": true
     }
   ]
 }

@@ -6,8 +6,12 @@ import { useAI } from "@/app/lib/AIContext";
 import { TrendingUp, TrendingDown, Zap, Quote, Info } from "lucide-react";
 import CircularProgress from "../../components/CircularProgress";
 import { cn } from "@/app/lib/utils";
+import useSWR from 'swr';
+import { fetchWithAuth } from "@/app/lib/fetch-helper";
 
 const DynamicQuickActions = dynamic(() => import('./QuickActions'), { ssr: false });
+
+const fetcher = (url: string) => fetchWithAuth(url);
 
 // Helper to get greeting based on time
 const getGreeting = () => {
@@ -19,13 +23,9 @@ const getGreeting = () => {
 
 const StatsSidebar = () => {
   const { currentTip } = useAI();
-  const [userName, setUserName] = useState("User");
-  const [stats, setStats] = useState({
-    level: 1,
-    progressPercentage: 0,
-    consistencyChange: 0,
-  });
-  const [loading, setLoading] = useState(true);
+  const { data: userData, isLoading: userLoading } = useSWR('/api/users/profile', fetcher);
+  const { data: statsData, isLoading: statsLoading } = useSWR('/api/stats/sidebar', fetcher);
+  
   const [mounted, setMounted] = useState(false);
   const [greeting, setGreeting] = useState("Hello");
 
@@ -34,39 +34,9 @@ const StatsSidebar = () => {
     setGreeting(getGreeting());
   }, []);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch user profile for name
-        const userRes = await fetch('/api/users/profile', {
-          credentials: 'include'
-        });
-        if (userRes.ok) {
-          const userData = await userRes.json();
-          const fullName = userData.full_name || userData.username || "User";
-          setUserName(fullName.split(' ')[0]);
-        }
+  const loading = userLoading || statsLoading;
 
-        // Fetch stats
-        const statsRes = await fetch('/api/stats/sidebar', {
-          credentials: 'include'
-        });
-        if (statsRes.ok) {
-          const statsData = await statsRes.json();
-          setStats(statsData);
-        }
-
-      } catch (err: any) {
-        console.error("Failed to fetch sidebar data", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  if (loading) {
+  if (loading && !statsData) {
     return (
       <div className="h-full flex flex-col items-center justify-center space-y-6 animate-pulse p-8">
         <div className="rounded-full bg-neutral-200 dark:bg-neutral-800 h-40 w-40"></div>
@@ -76,7 +46,8 @@ const StatsSidebar = () => {
     );
   }
 
-  const isPositive = stats.consistencyChange >= 0;
+  const isPositive = (statsData?.consistencyChange || 0) >= 0;
+  const userName = (userData?.fullName || userData?.username || "User").split(' ')[0];
 
   return (
     <div className="h-full flex flex-col space-y-10 relative">
@@ -88,14 +59,14 @@ const StatsSidebar = () => {
         
         <div className="relative transform group-hover:scale-105 transition-transform duration-500">
            <CircularProgress
-             percentage={stats.progressPercentage}
+             percentage={statsData?.progressPercentage || 0}
              size={160}
              strokeWidth={12}
              color="text-primary"
            >
               <div className="text-center">
                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Level</p>
-                 <p className="text-5xl font-black text-neutral-900 dark:text-white tracking-tighter">{stats.level}</p>
+                 <p className="text-5xl font-black text-neutral-900 dark:text-white tracking-tighter">{statsData?.level || 1}</p>
               </div>
            </CircularProgress>
         </div>
@@ -136,7 +107,7 @@ const StatsSidebar = () => {
                  <span className="text-lg block mb-1">Great Work!</span>
                  Your consistency is {isPositive ? 'up' : 'down'} by{' '}
                  <span className="text-xl font-black tracking-tighter bg-white/20 px-2 rounded-lg ml-1">
-                   {Math.abs(stats.consistencyChange)}%
+                   {Math.abs(statsData?.consistencyChange || 0)}%
                  </span>
                  {' '}from last week.
               </p>
