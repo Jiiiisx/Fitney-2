@@ -1,19 +1,18 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { db } from '@/app/lib/db';
-import { users, userSettings, bodyMeasurements } from '@/app/lib/schema';
+import { users, userSettings, bodyMeasurements, userProfiles } from '@/app/lib/schema';
 
 import { eq, desc, sql, and } from 'drizzle-orm';
 import { format } from 'date-fns';
 import { verifyAuth } from '@/app/lib/auth';
-import { Weight } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
     const auth = await verifyAuth(req);
-    if (auth.error || !verifyAuth) {
-      return auth.error || NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (auth.error) {
+      return auth.error;
     }
     const userId = auth.user.userId;
 
@@ -25,9 +24,19 @@ export async function GET(req: NextRequest) {
         gender: users.gender,
         hasCompletedOnboarding: userSettings.hasCompletedOnboarding,
         imageUrl: users.imageUrl,
+        nutritionProfile: {
+            tdee: userProfiles.tdee,
+            calorieTarget: userProfiles.calorieTarget,
+            proteinTarget: userProfiles.proteinTarget,
+            carbsTarget: userProfiles.carbsTarget,
+            fatTarget: userProfiles.fatTarget,
+            activityLevel: userProfiles.activityLevel,
+            mainGoal: userProfiles.mainGoal,
+        }
       })
       .from(users)
       .leftJoin(userSettings, eq(users.id, userSettings.userId))
+      .leftJoin(userProfiles, eq(users.id, userProfiles.userId))
       .where(eq(users.id, userId));
 
     if (userResult.length === 0) {
@@ -62,6 +71,7 @@ export async function GET(req: NextRequest) {
       weight: measurementData.weight || '',
       hasCompletedOnboarding: userData.hasCompletedOnboarding || false,
       imageUrl: userData.imageUrl || '',
+      nutritionProfile: userData.nutritionProfile?.tdee ? userData.nutritionProfile : null
     };
 
     return NextResponse.json(profile);

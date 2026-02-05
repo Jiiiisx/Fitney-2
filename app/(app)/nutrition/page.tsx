@@ -13,33 +13,26 @@ export default function NutritionPage() {
   const { data: profileData, isLoading: loading, mutate } = useSWR('/api/users/profile', (url) => fetchWithAuth(url));
   const [userData, setUserData] = useState<any>(null);
   const [prefilledData, setPrefilledData] = useState<any>(null);
-  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    async function checkNutritionProfile() {
-      if (!profileData) return;
-      
-      try {
-        const res = await fetchWithAuth('/api/nutrition/profile');
-        if (res.profile && res.profile.tdee) {
-          setUserData(res.profile);
-        } else {
-          // If no nutrition profile, pre-fill from general onboarding data
-          setPrefilledData({
-            gender: profileData.gender || '',
-            weight: profileData.weight || '',
-            height: profileData.height || '',
-            age: profileData.dob ? Math.floor((new Date().getTime() - new Date(profileData.dob).getTime()) / 3.154e+10) : '',
-          });
-        }
-      } catch (err) {
-        console.error("Error checking nutrition profile", err);
-      } finally {
-        setIsChecking(false);
+    if (profileData) {
+      if (profileData.nutritionProfile && profileData.nutritionProfile.tdee) {
+        setUserData({
+            ...profileData.nutritionProfile,
+            // Ensure height/weight are numbers from the main profile measurements
+            weight: profileData.weight ? parseFloat(profileData.weight) : null,
+            height: profileData.height ? parseFloat(profileData.height) : null,
+        });
+      } else {
+        // If no nutrition profile, pre-fill from general onboarding data
+        setPrefilledData({
+          gender: profileData.gender || 'male',
+          weight: profileData.weight || '',
+          height: profileData.height || '',
+          age: profileData.dob ? Math.floor((new Date().getTime() - new Date(profileData.dob).getTime()) / 3.154e+10) : '',
+        });
       }
     }
-
-    checkNutritionProfile();
   }, [profileData]);
 
   const handleWizardComplete = async (wizardData: any) => { 
@@ -60,8 +53,9 @@ export default function NutritionPage() {
       });
 
       if (result.success) {
+        // Optimistic update
         setUserData({ ...wizardData, tdee });
-        mutate(); // Refresh SWR
+        mutate(); // Refresh SWR to get updated nutritionProfile from API
         toast.success("Nutrition profile saved!");
       } else {
         toast.error(result.error || "Failed to save profile");
@@ -78,13 +72,13 @@ export default function NutritionPage() {
   };
 
   const handleCancel = () => {
-    if (profileData) {
-        setUserData(prefilledData?.tdee ? prefilledData : null);
+    if (profileData?.nutritionProfile?.tdee) {
+        setUserData(profileData.nutritionProfile);
     }
   };
 
   const renderContent = () => {
-    if ((loading || isChecking) && !profileData) {
+    if (loading && !profileData) {
       return (
         <div className="h-[60vh] flex flex-col items-center justify-center gap-4">
           <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
@@ -96,7 +90,6 @@ export default function NutritionPage() {
     if (userData) {
       return <NutritionResults userData={userData} onEdit={handleEdit} />;
     } else {
-      // Wizard will use prefilledData if available
       return <NutritionWizard onComplete={handleWizardComplete} onCancel={handleCancel} initialData={prefilledData} />;
     }
   };
