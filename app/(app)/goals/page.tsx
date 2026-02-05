@@ -193,12 +193,16 @@ export default function GoalsPage() {
                 
                 <button 
                     onClick={handleOpenCreateModal}
-                    className="group relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-muted-foreground/25 bg-muted/10 p-6 hover:border-primary hover:bg-primary/5 transition-all duration-300 min-h-[200px]"
+                    className="group relative flex flex-col items-center justify-center gap-4 rounded-[2rem] border-4 border-dashed border-neutral-100 dark:border-neutral-800 bg-white dark:bg-neutral-900/50 p-8 hover:border-primary hover:bg-primary/5 transition-all duration-500 min-h-[260px] shadow-sm hover:shadow-xl overflow-hidden"
                 >
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted group-hover:bg-primary/20 transition-colors">
-                        <Plus className="h-6 w-6 text-muted-foreground group-hover:text-primary" />
+                    <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-neutral-50 dark:bg-neutral-800 group-hover:bg-primary group-hover:rotate-90 transition-all duration-500 shadow-inner">
+                        <Plus className="h-8 w-8 text-muted-foreground group-hover:text-white transition-colors" />
                     </div>
-                    <p className="font-medium text-muted-foreground group-hover:text-primary">Add New Goal</p>
+                    <div className="text-center relative z-10">
+                      <p className="font-black text-lg text-neutral-900 dark:text-white group-hover:text-primary transition-colors">Add New Goal</p>
+                      <p className="text-xs font-bold text-muted-foreground opacity-60">Start your next challenge</p>
+                    </div>
                 </button>
             </div>
         </div>
@@ -214,11 +218,23 @@ export default function GoalsPage() {
         onSave={handleSaveGoal}
         goalToEdit={goalToEdit}
       />
-      <div className="h-full">
-        <div className="space-y-6 overflow-y-auto px-6 py-8 md:p-8 scrollbar-hide">
-          <div className="flex items-center justify-between">
-              <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Your Goals</h1>
+      <div className="min-h-screen bg-gradient-to-b from-neutral-50/50 to-white dark:from-black dark:to-neutral-950">
+        <div className="max-w-[1600px] mx-auto space-y-8 overflow-y-auto px-6 py-10 md:p-12 scrollbar-hide animate-in fade-in duration-700">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+              <div className="space-y-1">
+                <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-neutral-900 dark:text-white">Your Goals</h1>
+                <p className="text-muted-foreground font-medium text-sm md:text-base">Track your progress and stay consistent.</p>
+              </div>
+              <Button 
+                onClick={handleOpenCreateModal}
+                className="rounded-full h-12 px-6 font-bold shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all active:scale-95"
+              >
+                <Plus className="w-5 h-5 mr-2 stroke-[3px]" /> Create New Goal
+              </Button>
           </div>
+          
+          <div className="h-px bg-neutral-200 dark:bg-neutral-800/50 w-full" />
+          
           {renderContent()}
         </div>
       </div>
