@@ -3,6 +3,9 @@ import { db } from '@/app/lib/db';
 import { users, passwordResetTokens } from '@/app/lib/schema';
 import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
+import { Resend } from 'resend';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: Request) {
   try {
@@ -20,30 +23,48 @@ export async function POST(req: Request) {
       .limit(1);
 
     if (userResult.length === 0) {
-      // For security reasons, don't reveal if the user exists or not
       return NextResponse.json({ message: 'If an account exists with that email, a reset link has been sent.' });
     }
 
     const user = userResult[0];
     const token = uuidv4();
     const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 1); // Token expires in 1 hour
+    expiresAt.setHours(expiresAt.getHours() + 1);
 
-    // Delete any existing reset tokens for this user
     await db.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, user.id));
 
-    // Insert new token
     await db.insert(passwordResetTokens).values({
       userId: user.id,
       token: token,
       expiresAt: expiresAt,
     });
 
-    // Generate reset link
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const resetLink = `${baseUrl}/reset-password?token=${token}`;
 
-    // TODO: Send email with resetLink
+    // Kirim email sungguhan menggunakan Resend
+    if (process.env.RESEND_API_KEY) {
+      await resend.emails.send({
+        from: 'Fitney <onboarding@resend.dev>', // Ganti dengan domain Anda jika sudah diverifikasi
+        to: email,
+        subject: 'Reset Your Fitney Password',
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333;">Password Reset Request</h2>
+            <p>Hello,</p>
+            <p>We received a request to reset your password for your Fitney account. Click the button below to choose a new password:</p>
+            <div style="margin: 30px 0;">
+              <a href="${resetLink}" style="background-color: #FFD54F; color: #333; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold;">Reset Password</a>
+            </div>
+            <p>This link will expire in 1 hour.</p>
+            <p>If you didn't request this, you can safely ignore this email.</p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+            <p style="color: #888; font-size: 12px;">Fitney App - Your Fitness Companion</p>
+          </div>
+        `
+      });
+    }
+
     console.log(`Password reset link for ${email}: ${resetLink}`);
 
     return NextResponse.json({ message: 'If an account exists with that email, a reset link has been sent.' });
