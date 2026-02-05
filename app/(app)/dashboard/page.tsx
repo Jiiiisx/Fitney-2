@@ -215,8 +215,8 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Stats Sidebar (Scrollable) */}
-        <div className="order-1 lg:order-2 lg:col-span-1 space-y-6 lg:space-y-8 px-6 py-16 sm:py-20 lg:p-8 bg-background lg:bg-muted lg:border-l border-border lg:overflow-y-auto scrollbar-hide [mask-image:linear-gradient(to_bottom,transparent,black_10%,black_90%,transparent)] lg:[mask-image:none]">
+        {/* Stats Sidebar (Hero Section in Mobile) */}
+        <div className="order-1 lg:order-2 lg:col-span-1 space-y-6 lg:space-y-8 px-6 py-12 sm:py-16 lg:p-8 bg-white dark:bg-neutral-950 lg:bg-muted lg:border-l border-border lg:overflow-y-auto scrollbar-hide rounded-b-[3rem] lg:rounded-none shadow-xl lg:shadow-none z-20 relative">
           <StatsSidebar />
         </div>
       </div>
