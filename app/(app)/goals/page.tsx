@@ -5,12 +5,12 @@ import { FeaturedGoalCard } from "./components/FeaturedGoalCard";
 import { NewGoalCard } from "./components/NewGoalCard";
 import GoalTimeline from "./components/GoalTimeline";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import { GoalFormModal } from "./components/GoalFormModal";
 import { GoalRecommendations } from "./components/GoalRecommendations";
-import { Card, CardContent } from "@/components/ui/card";
 import { fetchWithAuth } from "@/app/lib/fetch-helper";
 import { useAI } from "@/app/lib/AIContext";
+import useSWR from 'swr';
 
 export interface Goal {
   id: number;
@@ -36,37 +36,19 @@ export type GoalTemplate = {
 
 export default function GoalsPage() {
   const { sayActionTip } = useAI();
-  const [goals, setGoals] = useState<Goal[]>([]);
-  const [recommendations, setRecommendations] = useState<GoalTemplate[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [recsLoading, setRecsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const fetcher = (url: string) => fetchWithAuth(url);
+  
+  const { data: goalsData, mutate: mutateGoals, isLoading: loading } = useSWR('/api/goals', fetcher);
+  const { data: recsData, isLoading: recsLoading } = useSWR(
+    goalsData && goalsData.length === 0 ? '/api/goals/recommendations' : null, 
+    fetcher
+  );
+
   const [isModalOpen, setModalOpen] = useState(false);
   const [goalToEdit, setGoalToEdit] = useState<Goal | null>(null);
 
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      try {
-        setLoading(true);
-        const goalsData = await fetchWithAuth('/api/goals');
-        setGoals(goalsData);
-
-        if (goalsData.length === 0) {
-          setRecsLoading(true);
-          const recsData = await fetchWithAuth('/api/goals/recommendations');
-          setRecommendations(recsData.recommendations);
-          setRecsLoading(false);
-        }
-        
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unknown error');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchInitialData();
-  }, []);
+  const goals = goalsData || [];
+  const recommendations = recsData?.recommendations || [];
 
   const handleOpenCreateModal = () => {
     sayActionTip('add_goal');
@@ -80,81 +62,44 @@ export default function GoalsPage() {
   };
 
   const handleSaveGoal = (savedGoal: Goal) => {
-    const isEditing = goals.some(g => g.id === savedGoal.id);
-    if (isEditing) {
-      setGoals(goals.map(g => g.id === savedGoal.id ? savedGoal : g));
-    } else {
-      setGoals([savedGoal, ...goals]);
-    }
+    mutateGoals();
   };
 
   const handleGoalDeleted = async (goalId: number) => {
-    const previousGoals = goals;
-    setGoals(goals.filter(g => g.id !== goalId));
-
     try {
-      await fetchWithAuth(`/api/goals/${goalId}`, {
-        method: 'DELETE',
-      });
+      await fetchWithAuth(`/api/goals/${goalId}`, { method: 'DELETE' });
+      mutateGoals();
     } catch (err) {
       console.error("Failed to delete goal:", err);
-      setGoals(previousGoals);
       alert("Failed to delete goal. Please try again.");
     }
   };
   
   const handleAcceptRecommendation = async (recommendation: GoalTemplate) => {
     try {
-        const newGoal = await fetchWithAuth('/api/goals', {
+        await fetchWithAuth('/api/goals', {
             method: 'POST',
             body: JSON.stringify(recommendation),
         });
-        setGoals(prevGoals => [newGoal, ...prevGoals]);
-        setRecommendations([]);
+        mutateGoals();
     } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred');
+        alert("Failed to accept recommendation");
     }
   };
 
-  const weeklyGoals = goals.filter(g => g.category === 'weekly');
-  const longTermGoals = goals.filter(g => g.category === 'long_term');
+  const weeklyGoals = goals.filter((g: any) => g.category === 'weekly');
+  const longTermGoals = goals.filter((g: any) => g.category === 'long_term');
   const featuredGoal = weeklyGoals.length > 0 ? weeklyGoals[0] : null;
   const otherWeeklyGoals = weeklyGoals.slice(1);
 
   const renderContent = () => {
     if (loading) {
       return (
-        <div className="space-y-10 animate-in fade-in duration-500">
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-              <div className="xl:col-span-2 space-y-4">
-                  <div className="h-6 w-32 rounded-full bg-muted animate-pulse" />
-                  <div className="h-[320px] w-full rounded-[2.5rem] bg-muted animate-pulse" />
-              </div>
-              <div className="xl:col-span-1 space-y-4">
-                   <div className="h-6 w-40 rounded-full bg-muted animate-pulse" />
-                   <div className="h-[320px] w-full rounded-[2.5rem] bg-muted animate-pulse" />
-              </div>
-          </div>
-          <div className="space-y-6">
-              <div className="flex justify-between">
-                  <div className="h-8 w-48 rounded-full bg-muted animate-pulse" />
-                  <div className="h-6 w-20 rounded-full bg-muted animate-pulse" />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {[1, 2, 3, 4].map(i => (
-                      <div key={i} className="h-[260px] w-full rounded-[2rem] bg-muted animate-pulse" />
-                  ))}
-              </div>
-          </div>
+        <div className="min-h-[400px] flex flex-col items-center justify-center gap-4">
+          <Loader2 className="w-10 h-10 animate-spin text-primary" />
+          <p className="text-muted-foreground font-medium animate-pulse">Loading your goals...</p>
         </div>
       );
-    }
-    if (error) {
-        return (
-            <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center text-red-600 dark:border-red-900/30 dark:bg-red-900/10 dark:text-red-400">
-                <p>{error}</p>
-            </div>
-        );
     }
 
     if (goals.length === 0) {
@@ -201,10 +146,10 @@ export default function GoalsPage() {
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {otherWeeklyGoals.map(goal => (
+                {otherWeeklyGoals.map((goal: any) => (
                     <NewGoalCard key={goal.id} goal={goal} onEdit={handleOpenEditModal} onDelete={handleGoalDeleted} />
                 ))}
-                {longTermGoals.map(goal => (
+                {longTermGoals.map((goal: any) => (
                     <NewGoalCard key={goal.id} goal={goal} onEdit={handleOpenEditModal} onDelete={handleGoalDeleted} />
                 ))}
                 
@@ -249,9 +194,7 @@ export default function GoalsPage() {
                 <Plus className="w-5 h-5 mr-2 stroke-[3px]" /> Create New Goal
               </Button>
           </div>
-          
           <div className="h-px bg-neutral-200 dark:bg-neutral-800/50 w-full" />
-          
           {renderContent()}
         </div>
       </div>
