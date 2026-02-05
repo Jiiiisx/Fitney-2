@@ -124,11 +124,28 @@ export default function GoalsPage() {
   const renderContent = () => {
     if (loading) {
       return (
-        <div className="flex h-64 items-center justify-center">
-            <div className="flex flex-col items-center gap-2">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-                <p className="text-muted-foreground animate-pulse">Loading your goals...</p>
-            </div>
+        <div className="space-y-10 animate-in fade-in duration-500">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+              <div className="xl:col-span-2 space-y-4">
+                  <div className="h-6 w-32 rounded-full bg-muted animate-pulse" />
+                  <div className="h-[320px] w-full rounded-[2.5rem] bg-muted animate-pulse" />
+              </div>
+              <div className="xl:col-span-1 space-y-4">
+                   <div className="h-6 w-40 rounded-full bg-muted animate-pulse" />
+                   <div className="h-[320px] w-full rounded-[2.5rem] bg-muted animate-pulse" />
+              </div>
+          </div>
+          <div className="space-y-6">
+              <div className="flex justify-between">
+                  <div className="h-8 w-48 rounded-full bg-muted animate-pulse" />
+                  <div className="h-6 w-20 rounded-full bg-muted animate-pulse" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {[1, 2, 3, 4].map(i => (
+                      <div key={i} className="h-[260px] w-full rounded-[2rem] bg-muted animate-pulse" />
+                  ))}
+              </div>
+          </div>
         </div>
       );
     }

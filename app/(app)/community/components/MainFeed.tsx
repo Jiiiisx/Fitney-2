@@ -44,9 +44,21 @@ export default function MainFeed() {
 
   if (isLoading && uniquePosts.length === 0) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
-        <Loader2 className="w-10 h-10 animate-spin text-primary" />
-        <p className="text-muted-foreground font-medium animate-pulse">Connecting to community...</p>
+      <div className="max-w-2xl mx-auto space-y-6">
+        {[1, 2].map(i => (
+          <div key={i} className="bg-card p-6 rounded-[2rem] space-y-4 border shadow-sm animate-pulse">
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 rounded-full bg-muted" />
+              <div className="space-y-2">
+                <div className="h-4 w-32 bg-muted rounded" />
+                <div className="h-3 w-20 bg-muted rounded" />
+              </div>
+            </div>
+            <div className="h-4 w-full bg-muted rounded" />
+            <div className="h-4 w-3/4 bg-muted rounded" />
+            <div className="h-64 w-full rounded-2xl bg-muted" />
+          </div>
+        ))}
       </div>
     );
   }
