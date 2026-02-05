@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Check, Flame, Loader, X } from "lucide-react";
+import { cn } from "@/app/lib/utils";
 
 interface WeekData {
   week: string;
