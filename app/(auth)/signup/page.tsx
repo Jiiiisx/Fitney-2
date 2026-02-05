@@ -37,11 +37,13 @@ export default function SignupPage() {
 
   const handleGoogleSignup = () => {
     if (typeof window !== 'undefined' && (window as any).google) {
-      (window as any).google.accounts.id.initialize({
+      const google = (window as any).google;
+      google.accounts.id.initialize({
         client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
-        callback: handleGoogleResponse
+        callback: handleGoogleResponse,
+        ux_mode: "popup"
       });
-      (window as any).google.accounts.id.prompt();
+      google.accounts.id.prompt();
     }
   };
 

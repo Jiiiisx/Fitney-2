@@ -35,12 +35,17 @@ export default function LoginPage() {
 
   const handleGoogleLogin = () => {
     if (typeof window !== 'undefined' && (window as any).google) {
-      (window as any).google.accounts.id.initialize({
+      const google = (window as any).google;
+      google.accounts.id.initialize({
         client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
-        callback: handleGoogleResponse
+        callback: handleGoogleResponse,
+        ux_mode: "popup"
       });
-      // Trigger the selection popup
-      (window as any).google.accounts.id.prompt();
+      google.accounts.id.prompt(); // Also show one-tap if available
+      
+      // Explicitly trigger the selector for the custom button
+      // Use a hidden div to render the standard button but trigger it manually
+      // or use the 'prompt' which is standard for custom UI.
     }
   };
 
