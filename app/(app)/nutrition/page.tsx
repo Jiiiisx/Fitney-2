@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import NutritionWizard from './components/NutritionWizard';
 import NutritionResults from './components/NutritionResults';
 import { calculateTDEE } from '@/app/lib/nutrition-calculator';
@@ -13,29 +13,14 @@ export default function NutritionPage() {
   const { data: profileData, isLoading: loading, mutate } = useSWR('/api/users/profile', (url) => fetchWithAuth(url));
   const [userData, setUserData] = useState<any>(null);
   const [prefilledData, setPrefilledData] = useState<any>(null);
+  const [isSmartLoading, setIsSmartLoading] = useState(true);
 
-  useEffect(() => {
-    if (profileData) {
-      if (profileData.nutritionProfile && profileData.nutritionProfile.tdee) {
-        setUserData({
-            ...profileData.nutritionProfile,
-            // Ensure height/weight are numbers from the main profile measurements
-            weight: profileData.weight ? parseFloat(profileData.weight) : null,
-            height: profileData.height ? parseFloat(profileData.height) : null,
-        });
-      } else {
-        // If no nutrition profile, pre-fill from general onboarding data
-        setPrefilledData({
-          gender: profileData.gender || 'male',
-          weight: profileData.weight || '',
-          height: profileData.height || '',
-          age: profileData.dob ? Math.floor((new Date().getTime() - new Date(profileData.dob).getTime()) / 3.154e+10) : '',
-        });
-      }
-    }
-  }, [profileData]);
+  const calculateAge = (dob: string) => {
+    if (!dob) return 25;
+    return Math.floor((new Date().getTime() - new Date(dob).getTime()) / 3.154e+10);
+  };
 
-  const handleWizardComplete = async (wizardData: any) => { 
+  const handleWizardComplete = useCallback(async (wizardData: any) => { 
     try {
       const tdee = calculateTDEE({
         ...wizardData,
@@ -53,9 +38,8 @@ export default function NutritionPage() {
       });
 
       if (result.success) {
-        // Optimistic update
         setUserData({ ...wizardData, tdee });
-        mutate(); // Refresh SWR to get updated nutritionProfile from API
+        mutate(); 
         toast.success("Nutrition profile saved!");
       } else {
         toast.error(result.error || "Failed to save profile");
@@ -64,25 +48,62 @@ export default function NutritionPage() {
       console.error("Failed to save profile", error);
       toast.error("An unexpected error occurred");
     }
-  };
+  }, [mutate]);
+
+  useEffect(() => {
+    async function initNutrition() {
+      if (!profileData) return;
+
+      // 1. If we already have specific nutrition data, show results
+      if (profileData.nutritionProfile && profileData.nutritionProfile.tdee) {
+        setUserData(profileData.nutritionProfile);
+        setIsSmartLoading(false);
+        return;
+      }
+
+      // 2. SMART AUTO-INIT: If user has physical data from main onboarding but NO nutrition profile
+      // We can auto-calculate and save a baseline to avoid the wizard
+      if (profileData.gender && profileData.weight && profileData.height && profileData.dob) {
+        console.log("Smart Auto-initializing nutrition profile...");
+        
+        const wizardData = {
+            gender: profileData.gender,
+            age: calculateAge(profileData.dob).toString(),
+            weight: profileData.weight.toString(),
+            height: profileData.height.toString(),
+            activityLevel: 'lightly_active', // Default safe baseline
+            mainGoal: profileData.mainGoal || 'Maintenance'
+        };
+
+        // Automatically complete the wizard in the background
+        await handleWizardComplete(wizardData);
+        setIsSmartLoading(false);
+      } else {
+        // 3. If data is missing even from general profile, prepare pre-filled wizard
+        setPrefilledData({
+          gender: profileData.gender || 'male',
+          weight: profileData.weight || '',
+          height: profileData.height || '',
+          age: profileData.dob ? calculateAge(profileData.dob).toString() : '',
+        });
+        setIsSmartLoading(false);
+      }
+    }
+
+    initNutrition();
+  }, [profileData, handleWizardComplete]);
 
   const handleEdit = () => {
     setPrefilledData(userData);
     setUserData(null);
   };
 
-  const handleCancel = () => {
-    if (profileData?.nutritionProfile?.tdee) {
-        setUserData(profileData.nutritionProfile);
-    }
-  };
-
   const renderContent = () => {
-    if (loading && !profileData) {
+    if ((loading || isSmartLoading) && !userData) {
       return (
         <div className="h-[60vh] flex flex-col items-center justify-center gap-4">
           <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-          <p className="text-muted-foreground animate-pulse">Synchronizing nutrition data...</p>
+          <p className="text-muted-foreground animate-pulse">Analyzing your nutrition plan...</p>
         </div>
       );
     }
@@ -90,7 +111,7 @@ export default function NutritionPage() {
     if (userData) {
       return <NutritionResults userData={userData} onEdit={handleEdit} />;
     } else {
-      return <NutritionWizard onComplete={handleWizardComplete} onCancel={handleCancel} initialData={prefilledData} />;
+      return <NutritionWizard onComplete={handleWizardComplete} initialData={prefilledData} />;
     }
   };
 
