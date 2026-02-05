@@ -3,9 +3,16 @@ import { db } from '@/app/lib/db';
 import { users, passwordResetTokens } from '@/app/lib/schema';
 import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Konfigurasi Transporter Gmail
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_APP_PASSWORD,
+  },
+});
 
 export async function POST(req: Request) {
   try {
@@ -42,24 +49,31 @@ export async function POST(req: Request) {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const resetLink = `${baseUrl}/reset-password?token=${token}`;
 
-    // Kirim email sungguhan menggunakan Resend
-    if (process.env.RESEND_API_KEY) {
-      await resend.emails.send({
-        from: 'Fitney <onboarding@resend.dev>', // Ganti dengan domain Anda jika sudah diverifikasi
+    // Kirim email menggunakan Gmail (Nodemailer)
+    if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
+      await transporter.sendMail({
+        from: `"Fitney Support" <${process.env.GMAIL_USER}>`,
         to: email,
         subject: 'Reset Your Fitney Password',
         html: `
-          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #333;">Password Reset Request</h2>
-            <p>Hello,</p>
-            <p>We received a request to reset your password for your Fitney account. Click the button below to choose a new password:</p>
-            <div style="margin: 30px 0;">
-              <a href="${resetLink}" style="background-color: #FFD54F; color: #333; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold;">Reset Password</a>
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px; overflow: hidden;">
+            <div style="background-color: #FFD54F; padding: 20px; text-align: center;">
+              <h1 style="margin: 0; color: #333;">Fitney</h1>
             </div>
-            <p>This link will expire in 1 hour.</p>
-            <p>If you didn't request this, you can safely ignore this email.</p>
-            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
-            <p style="color: #888; font-size: 12px;">Fitney App - Your Fitness Companion</p>
+            <div style="padding: 30px;">
+              <h2 style="color: #333;">Password Reset Request</h2>
+              <p style="color: #555; line-height: 1.6;">Hello,</p>
+              <p style="color: #555; line-height: 1.6;">We received a request to reset your password for your Fitney account. Click the button below to choose a new password:</p>
+              <div style="margin: 40px 0; text-align: center;">
+                <a href="${resetLink}" style="background-color: #FFD54F; color: #333; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">Reset Password</a>
+              </div>
+              <p style="color: #555; line-height: 1.6;">This link will expire in <strong>1 hour</strong>.</p>
+              <p style="color: #555; line-height: 1.6;">If you didn't request this, you can safely ignore this email.</p>
+            </div>
+            <div style="background-color: #f9f9f9; padding: 20px; text-align: center; color: #888; font-size: 12px;">
+              <p>Fitney App - Your Fitness Companion</p>
+              <p>© 2026 Fitney Project</p>
+            </div>
           </div>
         `
       });
