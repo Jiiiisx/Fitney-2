@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-// Remove dynamic import if heavy lazy loading is not needed; regular import is safer for initial debugging
 import StatsSidebar from "./_components/StatsSidebar";
 import TodaysPlanBanner from "./_components/TodaysPlanBanner";
 import DailyGoals from "./_components/DailyGoals";
@@ -11,88 +10,37 @@ import GamificationStreak from "./_components/GamificationStreak";
 import ProgressCharts from "./_components/ProgressCharts";
 import WorkoutBreakdown from "./_components/WorkoutBreakdown";
 import CompleteProfileBanner from "./_components/CompleteProfileBanner";
-import DashboardInsight from "./_components/DashboardInsight";
 import QuickActions from "./_components/QuickActions";
 import PremiumAnalytics from "./_components/PremiumAnalytics";
 import AIWorkoutGenerator from "./_components/AIWorkoutGenerator";
 import PremiumTrends from "./_components/PremiumTrends";
 import PremiumTools from "./_components/PremiumTools";
-import { Megaphone, X, Loader2, Share2 } from "lucide-react";
+import { Megaphone, X, Loader2, Share2 } from "lucide-center";
 import { motion, AnimatePresence } from "framer-motion";
-import toast from "react-hot-toast";
 import ShareModal from "../components/sharing/ShareModal";
 import { Button } from "@/components/ui/button";
+import { fetchWithAuth } from "@/app/lib/fetch-helper";
+import useSWR from 'swr';
 
-// Flexible interface to match API response and component props
-interface DashboardData {
-  isPremium: boolean;
-  role: string;
-  today: {
-    duration: number;
-    calories: number;
-    workouts: number;
-    water?: number;
-  };
-  todaysPlan: any;
-  weekly: { name: string; value: number }[];
-  recent: any[];
-  streak: number;
-  insight?: string;
-  breakdown: {
-    mostFrequent: string;
-    avgDuration: number;
-    heatmap: { date: string; count: number }[];
-  };
-  fitnessRadar: any[]; // Add this
-  trendData: any[];
-}
-
-interface UserProfile {
-  fullName: string;
-  id: string;
-  imageUrl?: string;
-}
+const fetcher = (url: string) => fetchWithAuth(url);
 
 export default function DashboardPage() {
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading: loading } = useSWR("/api/stats/dashboard", fetcher, {
+    revalidateOnFocus: true,
+    dedupingInterval: 5000
+  });
+  const { data: announcementData, mutate: mutateAnn } = useSWR("/api/announcements", fetcher);
+  const { data: userProfile } = useSWR("/api/users/profile", fetcher);
+
   const [announcement, setAnnouncement] = useState<any>(null);
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const [dashRes, annRes, profileRes] = await Promise.all([
-          fetch("/api/stats/dashboard", { credentials: 'include' }),
-          fetch("/api/announcements"),
-          fetch("/api/users/profile")
-        ]);
+    if (announcementData && announcementData.length > 0) {
+      setAnnouncement(announcementData[0]);
+    }
+  }, [announcementData]);
 
-        if (dashRes.ok) {
-          const result = await dashRes.json();
-          setData(result);
-        }
-        
-        if (annRes.ok) {
-          const annResult = await annRes.json();
-          if (annResult.length > 0) setAnnouncement(annResult[0]);
-        }
-
-        if (profileRes.ok) {
-          const profileResult = await profileRes.json();
-          setUserProfile(profileResult);
-        }
-      } catch (error) {
-        console.error("Failed to fetch dashboard data", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDashboardData();
-  }, []);
-
-  if (loading) {
+  if (loading && !data) {
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center gap-4">
         <Loader2 className="w-10 h-10 animate-spin text-primary" />
@@ -101,14 +49,11 @@ export default function DashboardPage() {
     );
   }
 
-  // Prepare safe default data to prevent errors when null
   const safeStats = data?.today || { duration: 0, calories: 0, workouts: 0 };
   const safeTodaysPlan = data?.todaysPlan || null;
   const safeWeekly = data?.weekly || [];
   const safeRecent = data?.recent || [];
   const safeStreak = data?.streak || 0;
-  const safeInsight = data?.insight || "";
-  // Prepare breakdown data with default values
   const safeBreakdown = data?.breakdown || { mostFrequent: "N/A", avgDuration: 0, heatmap: [] };
 
   const shareData = {
@@ -125,9 +70,8 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen lg:h-full relative">
-      {/* Floating Share Button - Minimalist & Elegant */}
       <AnimatePresence>
-        {!loading && (
+        {data && (
           <motion.div 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -150,7 +94,6 @@ export default function DashboardPage() {
       </AnimatePresence>
 
       <div className="flex flex-col lg:grid lg:grid-cols-3 min-h-screen lg:h-full">
-        {/* Main Content Area (Scrollable) */}
         <div className="order-2 lg:order-1 lg:col-span-2 space-y-6 lg:space-y-8 overflow-y-auto p-6 lg:p-8 pb-[10.5rem] lg:pb-[10.5rem] scrollbar-hide">
           {announcement && (
             <motion.div 
@@ -177,45 +120,23 @@ export default function DashboardPage() {
             </motion.div>
           )}
           <CompleteProfileBanner />
-
           <AIWorkoutGenerator isPremium={data?.isPremium || false} />
-
           <TodaysPlanBanner stats={safeStats} plan={safeTodaysPlan} isLoading={loading} />
-
-          <div className="lg:hidden">
-            <QuickActions />
-          </div>
-
+          <div className="lg:hidden"><QuickActions /></div>
           <GamificationStreak streak={safeStreak} isLoading={loading} />
-
           <DailyGoals stats={safeStats} targets={data?.targets} />
-
           <RecentActivityList workouts={safeRecent} isLoading={loading} />
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <ProgressCharts weeklyData={safeWeekly} isLoading={loading} />
-            <PremiumAnalytics 
-                data={data?.fitnessRadar || []} 
-                isPremium={data?.isPremium || false} 
-            />
+            <PremiumAnalytics data={data?.fitnessRadar || []} isPremium={data?.isPremium || false} />
           </div>
-
-          {/* Send breakdown data to component */}
           <WorkoutBreakdown stats={safeBreakdown} isLoading={loading} />
-
-          <PremiumTrends 
-            data={data?.trendData || []} 
-            isPremium={data?.isPremium || false} 
-          />
-
+          <PremiumTrends data={data?.trendData || []} isPremium={data?.isPremium || false} />
           <PremiumTools isPremium={data?.isPremium || false} />
-
           {(data?.role === 'user' || data?.role === 'pro' || data?.role === 'premium') && (
               <UpgradeBanner currentRole={data?.role || 'user'} />
           )}
         </div>
-
-        {/* Stats Sidebar (Hero Section in Mobile) */}
         <div className="order-1 lg:order-2 lg:col-span-1 space-y-6 lg:space-y-8 px-6 py-12 sm:py-16 lg:p-8 bg-white dark:bg-neutral-950 lg:bg-muted lg:border-l border-border lg:overflow-y-auto scrollbar-hide rounded-b-[3rem] lg:rounded-none shadow-xl lg:shadow-none z-20 relative">
           <StatsSidebar />
         </div>
