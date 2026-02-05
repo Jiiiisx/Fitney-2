@@ -1287,82 +1287,158 @@ export default function AdminDashboard() {
                                         </div>
                                     </div>
 
-                                    {/* Food List Table */}
-                                    <div className="lg:col-span-3 bg-card border rounded-[2rem] shadow-xl overflow-hidden">
-                                        <div className="overflow-x-auto">
-                                            <table className="w-full border-collapse">
-                                                <thead>
-                                                    <tr className="bg-muted/50 text-left text-[10px] font-black text-muted-foreground uppercase tracking-widest">
-                                                        <th className="px-8 py-6">Food Item</th>
-                                                        <th className="px-8 py-6">Calories</th>
-                                                        <th className="px-8 py-6">P / C / F (100g)</th>
-                                                        <th className="px-8 py-6 text-right">Actions</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-border/50">
-                                                    {contentLoading ? (
-                                                        <tr><td colSpan={4} className="py-32 text-center"><Loader2 className="w-12 h-12 animate-spin mx-auto text-primary opacity-50" /></td></tr>
-                                                    ) : foodList.length > 0 ? (
-                                                        foodList.map((food: any) => (
-                                                            <tr key={food.id} className="hover:bg-muted/20 transition-colors group">
-                                                                <td className="px-8 py-6">
-                                                                    <p className="font-bold text-foreground leading-tight">{food.name}</p>
-                                                                    <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-tighter">Per 100g serving</p>
-                                                                </td>
-                                                                <td className="px-8 py-6">
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span className="text-sm font-black">{Math.round(food.caloriesPer100g)}</span>
-                                                                        <span className="text-[10px] font-bold text-muted-foreground uppercase">kcal</span>
-                                                                    </div>
-                                                                </td>
-                                                                <td className="px-8 py-6">
-                                                                    <div className="flex gap-4">
-                                                                        <div className="flex items-center gap-1.5">
-                                                                            <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                                                                            <span className="text-xs font-bold">{Math.round(food.proteinPer100g)}g</span>
+                                    {/* Food List Area */}
+                                    <div className="lg:col-span-3 space-y-6">
+                                        <div className="bg-card border rounded-[2rem] shadow-xl overflow-hidden">
+                                            {/* Desktop Table (Hidden on Mobile) */}
+                                            <div className="hidden md:block overflow-x-auto">
+                                                <table className="w-full border-collapse">
+                                                    <thead>
+                                                        <tr className="bg-muted/50 text-left text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                                                            <th className="px-8 py-6">Food Item</th>
+                                                            <th className="px-8 py-6">Calories</th>
+                                                            <th className="px-8 py-6">P / C / F (100g)</th>
+                                                            <th className="px-8 py-6 text-right">Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-border/50">
+                                                        {contentLoading ? (
+                                                            <tr><td colSpan={4} className="py-32 text-center"><Loader2 className="w-12 h-12 animate-spin mx-auto text-primary opacity-50" /></td></tr>
+                                                        ) : foodList.length > 0 ? (
+                                                            foodList.map((food: any) => (
+                                                                <tr key={food.id} className="hover:bg-muted/20 transition-colors group">
+                                                                    <td className="px-8 py-6">
+                                                                        <p className="font-bold text-foreground leading-tight">{food.name}</p>
+                                                                        <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-tighter">Per 100g serving</p>
+                                                                    </td>
+                                                                    <td className="px-8 py-6">
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className="text-sm font-black">{Math.round(food.caloriesPer100g)}</span>
+                                                                            <span className="text-[10px] font-bold text-muted-foreground uppercase">kcal</span>
                                                                         </div>
-                                                                        <div className="flex items-center gap-1.5">
-                                                                            <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                                                                            <span className="text-xs font-bold">{Math.round(food.carbsPer100g)}g</span>
+                                                                    </td>
+                                                                    <td className="px-8 py-6">
+                                                                        <div className="flex gap-4">
+                                                                            <div className="flex items-center gap-1.5">
+                                                                                <div className="w-1.5 h-1.5 rounded-full bg-red-500" />
+                                                                                <span className="text-xs font-bold">{Math.round(food.proteinPer100g)}g</span>
+                                                                            </div>
+                                                                            <div className="flex items-center gap-1.5">
+                                                                                <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+                                                                                <span className="text-xs font-bold">{Math.round(food.carbsPer100g)}g</span>
+                                                                            </div>
+                                                                            <div className="flex items-center gap-1.5">
+                                                                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                                                                                <span className="text-xs font-bold">{Math.round(food.fatPer100g)}g</span>
+                                                                            </div>
                                                                         </div>
-                                                                        <div className="flex items-center gap-1.5">
-                                                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                                                                            <span className="text-xs font-bold">{Math.round(food.fatPer100g)}g</span>
+                                                                    </td>
+                                                                    <td className="px-8 py-6 text-right">
+                                                                        <div className="flex justify-end gap-2">
+                                                                            <button 
+                                                                                onClick={() => setEditingFood(food)}
+                                                                                className="p-3 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-2xl transition-all"
+                                                                            >
+                                                                                <Edit3 className="w-5 h-5" />
+                                                                            </button>
+                                                                            <button 
+                                                                                onClick={() => handleDeleteFood(food.id)}
+                                                                                className="p-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-2xl transition-all"
+                                                                            >
+                                                                                <Trash2 className="w-5 h-5" />
+                                                                            </button>
                                                                         </div>
+                                                                    </td>
+                                                                </tr>
+                                                            ))
+                                                        ) : (
+                                                            <tr><td colSpan={4} className="py-32 text-center text-muted-foreground font-medium italic">No food items found.</td></tr>
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            {/* Mobile Card Layout (Visible on Mobile) */}
+                                            <div className="md:hidden divide-y divide-border/50">
+                                                {contentLoading ? (
+                                                    <div className="py-20 text-center"><Loader2 className="w-10 h-10 animate-spin mx-auto text-primary opacity-50" /></div>
+                                                ) : foodList.length > 0 ? (
+                                                    foodList.map((food: any) => (
+                                                        <div key={food.id} className="p-6 space-y-4">
+                                                            <div className="flex items-start justify-between gap-4">
+                                                                <div className="min-w-0 flex-1">
+                                                                    <p className="font-bold text-foreground text-base leading-tight break-words">{food.name}</p>
+                                                                    <p className="text-[10px] text-muted-foreground mt-1 uppercase font-bold tracking-widest opacity-60">Per 100g serving</p>
+                                                                </div>
+                                                                <div className="flex gap-1">
+                                                                    <button onClick={() => setEditingFood(food)} className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all"><Edit3 className="w-4 h-4" /></button>
+                                                                    <button onClick={() => handleDeleteFood(food.id)} className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all"><Trash2 className="w-4 h-4" /></button>
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div className="grid grid-cols-2 gap-3">
+                                                                <div className="bg-muted/30 p-3 rounded-2xl border border-border/50 flex flex-col items-center justify-center">
+                                                                    <span className="text-xl font-black text-neutral-900 dark:text-white">{Math.round(food.caloriesPer100g)}</span>
+                                                                    <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground">Calories</span>
+                                                                </div>
+                                                                <div className="bg-muted/30 p-3 rounded-2xl border border-border/50 flex flex-col gap-1.5">
+                                                                    <div className="flex items-center justify-between w-full">
+                                                                        <span className="text-[8px] font-black uppercase text-red-500">Prot</span>
+                                                                        <span className="text-[10px] font-black">{Math.round(food.proteinPer100g)}g</span>
                                                                     </div>
-                                                                </td>
-                                                                <td className="px-8 py-6 text-right">
-                                                                    <div className="flex justify-end gap-2">
-                                                                        <button 
-                                                                            onClick={() => setEditingFood(food)}
-                                                                            className="p-3 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-2xl transition-all"
-                                                                        >
-                                                                            <Edit3 className="w-5 h-5" />
-                                                                        </button>
-                                                                        <button 
-                                                                            onClick={() => handleDeleteFood(food.id)}
-                                                                            className="p-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-2xl transition-all"
-                                                                        >
-                                                                            <Trash2 className="w-5 h-5" />
-                                                                        </button>
+                                                                    <div className="flex items-center justify-between w-full">
+                                                                        <span className="text-[8px] font-black uppercase text-orange-500">Carb</span>
+                                                                        <span className="text-[10px] font-black">{Math.round(food.carbsPer100g)}g</span>
                                                                     </div>
-                                                                </td>
-                                                            </tr>
-                                                        ))
-                                                    ) : (
-                                                        <tr><td colSpan={4} className="py-32 text-center text-muted-foreground font-medium italic">No food items found.</td></tr>
-                                                    )}
-                                                </tbody>
-                                            </table>
+                                                                    <div className="flex items-center justify-between w-full">
+                                                                        <span className="text-[8px] font-black uppercase text-blue-500">Fat</span>
+                                                                        <span className="text-[10px] font-black">{Math.round(food.fatPer100g)}g</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))
+                                                ) : (
+                                                    <div className="py-20 text-center text-muted-foreground italic text-sm">No food items found.</div>
+                                                )}
+                                            </div>
                                         </div>
-                                        {/* Pagination */}
-                                        <div className="p-6 border-t border-border/50 bg-muted/5 flex items-center justify-between">
-                                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
-                                                Page {foodPage} of {Math.ceil(totalFoods / LIMIT) || 1}
+
+                                        {/* Nutrition Pagination */}
+                                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-card border rounded-3xl p-6 shadow-sm">
+                                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">
+                                                Showing {((foodPage - 1) * LIMIT) + 1} - {Math.min(foodPage * LIMIT, totalFoods)} of {totalFoods}
                                             </p>
                                             <div className="flex items-center gap-2">
-                                                <Button variant="ghost" size="sm" disabled={foodPage === 1} onClick={() => setFoodPage(p => p - 1)}><ChevronLeft className="w-4 h-4" /></Button>
-                                                <Button variant="ghost" size="sm" disabled={foodPage >= Math.ceil(totalFoods / LIMIT)} onClick={() => setFoodPage(p => p + 1)}><ChevronRight className="w-4 h-4" /></Button>
+                                                <Button 
+                                                    variant="outline" 
+                                                    size="sm" 
+                                                    className="rounded-xl h-10 px-4 font-bold"
+                                                    disabled={foodPage === 1}
+                                                    onClick={() => setFoodPage(p => p - 1)}
+                                                >
+                                                    <ChevronLeft className="w-4 h-4 mr-1" /> Prev
+                                                </Button>
+                                                <div className="hidden sm:flex items-center gap-1">
+                                                    {[...Array(Math.ceil(totalFoods / LIMIT))].map((_, i) => (
+                                                        <button 
+                                                            key={i}
+                                                            onClick={() => setFoodPage(i + 1)}
+                                                            className={`w-10 h-10 rounded-xl text-xs font-black transition-all ${foodPage === i + 1 ? 'bg-primary text-primary-foreground shadow-lg' : 'hover:bg-muted text-muted-foreground'}`}
+                                                        >
+                                                            {i + 1}
+                                                        </button>
+                                                    )).slice(Math.max(0, foodPage - 3), Math.min(Math.ceil(totalFoods / LIMIT), foodPage + 2))}
+                                                </div>
+                                                <Button 
+                                                    variant="outline" 
+                                                    size="sm" 
+                                                    className="rounded-xl h-10 px-4 font-bold"
+                                                    disabled={foodPage >= Math.ceil(totalFoods / LIMIT)}
+                                                    onClick={() => setFoodPage(p => p + 1)}
+                                                >
+                                                    Next <ChevronRight className="w-4 h-4 ml-1" />
+                                                </Button>
                                             </div>
                                         </div>
                                     </div>
