@@ -76,10 +76,13 @@ export async function GET(req: NextRequest) {
             role: true,
           }
         },
-        likes: true,
-        comments: true,
+        likes: {
+          where: (postLikes, { eq }) => eq(postLikes.userId, currentUserId),
+          limit: 1, // Only check if current user liked it
+        },
         savedBy: {
           where: (savedPosts, { eq }) => eq(savedPosts.userId, currentUserId),
+          limit: 1,
         }
       }
     });
@@ -97,7 +100,6 @@ export async function GET(req: NextRequest) {
       userId: post.userId,
       content: post.content,
       images: post.images || [], // Handle JSON
-      // Backward compat if needed, but we removed imageUrl column
       createdAt: post.createdAt,
       user: {
         name: post.user.fullName || post.user.username,
@@ -105,9 +107,9 @@ export async function GET(req: NextRequest) {
         username: post.user.username,
         role: post.user.role
       },
-      likesCount: post.likes.length,
-      commentsCount: post.comments.length,
-      isLiked: post.likes.some(like => like.userId === currentUserId),
+      likesCount: post.likesCount, // Use denormalized count
+      commentsCount: post.commentsCount, // Use denormalized count
+      isLiked: post.likes.length > 0, // Efficient check
       isSaved: post.savedBy && post.savedBy.length > 0,
     }));
 

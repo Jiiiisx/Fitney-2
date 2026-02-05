@@ -18,7 +18,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     pathname === "/dashboard" ||
     pathname === "/settings" ||
     pathname === "/community" ||
-    pathname === "/ai-coach";
+    pathname === "/ai-coach" ||
+    pathname === "/planner";
 
   useEffect(() => {
     const syncHistory = async () => {
@@ -57,13 +58,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               "relative z-20 transition-all duration-700 overflow-hidden",
               isFixedLayoutPage ? "lg:flex-grow" : "",
               pathname === "/settings" ? "lg:overflow-y-auto" : "",
-              (pathname === "/dashboard" || pathname === "/community" || pathname === "/ai-coach") 
+              (pathname === "/dashboard" || pathname === "/community" || pathname === "/ai-coach" || pathname === "/planner") 
                 ? "bg-white dark:bg-neutral-950 mt-4 rounded-t-[3.5rem] shadow-[0_-20px_50px_-15px_rgba(0,0,0,0.05)] border-t border-white/50" 
                 : "p-6 sm:p-8"
             )}>
               <div className={cn(
                 "h-full",
-                (pathname === "/dashboard" || pathname === "/community" || pathname === "/ai-coach") ? "p-2 sm:p-4 lg:p-0" : ""
+                (pathname === "/dashboard" || pathname === "/community" || pathname === "/ai-coach" || pathname === "/planner") ? "p-2 sm:p-4 lg:p-0" : ""
               )}>
                 {children}
               </div>

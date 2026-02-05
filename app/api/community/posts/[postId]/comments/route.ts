@@ -78,6 +78,11 @@ export async function POST(
       content: content.trim(),
     }).returning();
 
+    // Increment commentsCount
+    await db.update(posts)
+      .set({ commentsCount: sql`${posts.commentsCount} + 1` })
+      .where(eq(posts.id, postIdInt));
+
     // Fetch user info untuk dikembalikan ke frontend
     const user = await db.query.users.findFirst({
       where: (users, { eq }) => eq(users.id, auth.user.userId),

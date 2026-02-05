@@ -53,6 +53,11 @@ export async function POST(
           )
         );
 
+      // Decrement likesCount
+      await db.update(posts)
+        .set({ likesCount: sql`${posts.likesCount} - 1` })
+        .where(eq(posts.id, postIdInt));
+
       return NextResponse.json({ 
         liked: false, 
         message: "Post unliked" 
@@ -63,6 +68,11 @@ export async function POST(
         postId: postIdInt,
         userId: userId,
       });
+
+      // Increment likesCount
+      await db.update(posts)
+        .set({ likesCount: sql`${posts.likesCount} + 1` })
+        .where(eq(posts.id, postIdInt));
 
       // KIRIM NOTIFIKASI
       if (post.userId !== userId) {

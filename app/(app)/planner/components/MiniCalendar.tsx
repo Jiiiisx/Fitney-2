@@ -30,33 +30,33 @@ export default function MiniCalendar() {
   const weekDays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
   return (
-    <div className="p-4">
+    <div className="p-2 sm:p-4">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-bold text-foreground">
+      <div className="flex items-center justify-between mb-3 sm:mb-4 px-1">
+        <h3 className="font-bold text-sm sm:text-base text-foreground">
           {format(currentDate, 'MMMM yyyy')}
         </h3>
         <div className="flex gap-1">
           <button onClick={prevMonth} className="p-1 hover:bg-muted rounded-full transition-colors">
-            <ChevronLeft className="w-4 h-4 text-muted-foreground" />
+            <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
           </button>
           <button onClick={nextMonth} className="p-1 hover:bg-muted rounded-full transition-colors">
-            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-muted-foreground" />
           </button>
         </div>
       </div>
 
       {/* Days Header */}
-      <div className="grid grid-cols-7 mb-2 text-center">
+      <div className="grid grid-cols-7 mb-1 sm:mb-2 text-center">
         {weekDays.map(day => (
-          <div key={day} className="text-xs font-medium text-muted-foreground py-1">
+          <div key={day} className="text-[10px] sm:text-xs font-bold text-muted-foreground py-1">
             {day}
           </div>
         ))}
       </div>
 
       {/* Calendar Grid */}
-      <div className="grid grid-cols-7 gap-y-1 text-center">
+      <div className="grid grid-cols-7 gap-y-0.5 sm:gap-y-1 text-center">
         {calendarDays.map((day, idx) => {
           const isCurrentMonth = isSameMonth(day, monthStart);
           const isToday = isSameDay(day, new Date());
@@ -65,7 +65,7 @@ export default function MiniCalendar() {
             <div 
               key={idx} 
               className={`
-                text-sm py-1.5 rounded-full flex items-center justify-center
+                text-[11px] sm:text-sm py-1 sm:py-1.5 rounded-full flex items-center justify-center
                 ${!isCurrentMonth ? 'text-muted-foreground/30' : 'text-foreground'}
                 ${isToday ? 'bg-primary text-primary-foreground font-bold shadow-sm' : ''}
               `}

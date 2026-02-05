@@ -48,11 +48,11 @@ export default function PlannerPage() {
         onOpenChange={setTemplatesModalOpen}
         onPlanStarted={handlePlanChange}
       />
-      <div className="bg-transparent min-h-screen p-6 sm:p-6 lg:p-8">
-        <div className="grid lg:grid-cols-12 gap-8 items-start">
+      <div className="bg-transparent min-h-screen">
+        <div className="grid lg:grid-cols-12 gap-6 lg:gap-8 items-start">
             {/* LEFT SIDEBAR - STICKY */}
-            <aside className="lg:col-span-3 lg:sticky lg:top-8 space-y-8">
-                <div className="bg-card rounded-3xl p-6 shadow-sm border">
+            <aside className="lg:col-span-3 lg:sticky lg:top-8 space-y-6 lg:space-y-8">
+                <div className="bg-card rounded-3xl p-4 sm:p-6 shadow-sm border">
                     <PlannerSidebar
                         onAddWorkoutClick={handleAddWorkoutClick}
                         onTemplatesClick={handleTemplatesClick}
@@ -67,7 +67,7 @@ export default function PlannerPage() {
                 </div>
 
                 {/* Daily Tip Widget */}
-                <div className="bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-950/20 dark:to-orange-950/20 rounded-3xl p-6 shadow-sm border border-yellow-100 dark:border-yellow-900/50">
+                <div className="bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-950/20 dark:to-orange-950/20 rounded-3xl p-4 sm:p-6 shadow-sm border border-yellow-100 dark:border-yellow-900/50">
                     <h3 className="font-bold text-yellow-700 dark:text-yellow-500 mb-2 flex items-center gap-2">
                         <Zap className="w-4 h-4 fill-yellow-500 text-yellow-500" /> 
                         Daily Tip
@@ -79,9 +79,9 @@ export default function PlannerPage() {
             </aside>
 
             {/* MAIN CONTENT */}
-            <main className="lg:col-span-9 space-y-8">
+            <main className="lg:col-span-9 space-y-6 lg:space-y-8">
                 {/* 1. CALENDAR GRID */}
-                <div className="bg-card rounded-3xl p-6 lg:p-8 shadow-sm border min-h-[500px]">
+                <div className="bg-card rounded-3xl p-4 sm:p-6 lg:p-8 shadow-sm border min-h-[500px]">
                     <CalendarGrid 
                         planVersion={planVersion}
                         onChooseProgramClick={handleTemplatesClick} 
@@ -91,7 +91,7 @@ export default function PlannerPage() {
                 </div>
 
                 {/* 2. UPCOMING WORKOUT */}
-                <div className="bg-card rounded-3xl p-6 shadow-sm border">
+                <div className="bg-card rounded-3xl p-4 sm:p-6 shadow-sm border">
                     <UpcomingWorkout planVersion={planVersion} />
                 </div>
 
@@ -112,7 +112,7 @@ export default function PlannerPage() {
                 <WeeklySummary planVersion={planVersion} />
 
                 {/* 4. GOALS & SUGGESTIONS */}
-                <div className="grid lg:grid-cols-2 gap-8">
+                <div className="grid lg:grid-cols-2 gap-6 lg:gap-8">
                     {/* GoalTracker and Recommendations have bg-card internally too. */}
                     <GoalTracker planVersion={planVersion} />
                     <Recommendations 

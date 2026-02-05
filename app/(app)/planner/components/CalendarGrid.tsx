@@ -240,7 +240,7 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion, onPlan
       return (
         <div 
           key={index} 
-          className="xl:flex xl:flex-col xl:flex-1 min-w-[140px]"
+          className="flex flex-col w-[200px] sm:w-[250px] xl:w-full xl:flex-1 shrink-0"
           onDragOver={(e) => {
               e.preventDefault();
               e.currentTarget.classList.add("bg-primary/5");
@@ -302,8 +302,8 @@ export default function CalendarGrid({ onChooseProgramClick, planVersion, onPlan
       </div>
       
       {/* Scrollable Container for Mobile/Tablet */}
-      <div className="pb-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:flex xl:flex-row gap-6">
+      <div className="pb-4 overflow-x-auto scrollbar-hide">
+        <div className="flex flex-row xl:flex-row gap-4 lg:gap-6 min-w-max xl:min-w-0 xl:grid xl:grid-cols-7">
             {renderContent()}
         </div>
       </div>

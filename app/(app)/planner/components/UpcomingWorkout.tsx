@@ -93,22 +93,22 @@ export default function UpcomingWorkout({ planVersion }: UpcomingWorkoutProps) {
       <h2 className="text-base font-semibold mb-3 text-secondary-foreground">
         Next Upcoming Workout
       </h2>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h3 className="font-bold text-lg text-foreground">{nextWorkout.name}</h3>
-          <p className="text-sm text-secondary-foreground">
+          <h3 className="font-bold text-lg text-foreground leading-tight">{nextWorkout.name}</h3>
+          <p className="text-sm text-secondary-foreground mt-1">
             {nextWorkout.description || 'Get ready for your next session.'}
           </p>
         </div>
-        <div className="flex items-center space-x-6 text-sm text-secondary-foreground">
+        <div className="flex items-center space-x-4 sm:space-x-6 text-sm text-secondary-foreground shrink-0">
           <div className="flex items-center">
             <Calendar className="w-4 h-4 mr-2" />
-            <span>{format(parseISO(nextWorkout.date), 'EEEE')}</span>
+            <span className="font-medium">{format(parseISO(nextWorkout.date), 'EEEE')}</span>
           </div>
           {nextWorkout.duration_minutes && (
             <div className="flex items-center">
               <Clock className="w-4 h-4 mr-2" />
-              <span>{nextWorkout.duration_minutes} min</span>
+              <span className="font-medium">{nextWorkout.duration_minutes} min</span>
             </div>
           )}
         </div>
