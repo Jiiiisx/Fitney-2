@@ -4,6 +4,7 @@ import { users, passwordResetTokens } from '@/app/lib/schema';
 import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import nodemailer from 'nodemailer';
+import { authRateLimit } from "@/app/lib/ratelimit"; // Import authRateLimit
 
 // Konfigurasi Transporter Gmail yang lebih stabil
 const transporter = nodemailer.createTransport({
@@ -18,8 +19,44 @@ const transporter = nodemailer.createTransport({
 
 export async function POST(req: Request) {
   try {
+    // 1. Rate Limiting Check
+    const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
+    const { success, limit, reset, remaining } = await authRateLimit.limit(ip);
+    
+    if (!success) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { 
+          status: 429,
+          headers: {
+            "X-RateLimit-Limit": limit.toString(),
+            "X-RateLimit-Remaining": remaining.toString(),
+            "X-RateLimit-Reset": reset.toString(),
+          }
+        }
+      );
+    }
+
     const body = await req.json();
-    const { email } = body;
+    const { email, turnstileToken } = body; // Get turnstileToken from body
+
+    // 2. Cloudflare Turnstile Verification
+    if (process.env.NODE_ENV === 'production') { // Only verify in production
+        const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                secret: process.env.TURNSTILE_SECRET_KEY,
+                response: turnstileToken,
+                remoteip: ip,
+            }),
+        });
+
+        const verifyData = await verifyRes.json();
+        if (!verifyData.success) {
+            return NextResponse.json({ error: "Security check failed. Please try again." }, { status: 403 });
+        }
+    }
 
     if (!email) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
@@ -83,7 +120,6 @@ export async function POST(req: Request) {
         console.log(`✅ Email sent successfully to ${email}`);
       } catch (mailError) {
         console.error('❌ GMAIL_SEND_ERROR:', mailError);
-        // Tetap lanjutkan agar tidak membocorkan error ke user
       }
     } else {
       console.error('❌ GMAIL_USER or GMAIL_APP_PASSWORD is not set in environment variables');

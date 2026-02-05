@@ -7,21 +7,29 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ChevronLeft, Loader2, CheckCircle2 } from "lucide-react";
 import { toast } from "react-hot-toast";
+import { Turnstile } from '@marsidev/react-turnstile'; // Import Turnstile
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string>(''); // State for Turnstile token
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
+    if (!turnstileToken && process.env.NODE_ENV === 'production') {
+      toast.error("Please complete the security check.");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, turnstileToken }), // Include turnstileToken
       });
 
       const data = await response.json();
@@ -36,6 +44,7 @@ export default function ForgotPasswordPage() {
       toast.error(error instanceof Error ? error.message : "Failed to send reset link");
     } finally {
       setIsLoading(false);
+      setTurnstileToken(''); // Reset token after submission
     }
   };
 
@@ -88,6 +97,17 @@ export default function ForgotPasswordPage() {
             disabled={isLoading}
           />
         </div>
+
+        {/* Turnstile component */}
+        {process.env.NODE_ENV === 'production' && (
+          <Turnstile 
+            options={{ sitekey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY! }} 
+            onSuccess={setTurnstileToken} 
+            onExpire={() => setTurnstileToken('')}
+            onVerify={setTurnstileToken}
+          />
+        )}
+        
         <Button 
           type="submit" 
           className="w-full py-6 text-lg font-semibold bg-yellow-400 text-yellow-900 hover:bg-yellow-500"
