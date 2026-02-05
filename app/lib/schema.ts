@@ -71,6 +71,7 @@ export const exercises = pgTable('exercises', {
 }, (table) => {
   return {
     exercisesCategoryIdIdx: index('exercises_category_id_idx').on(table.categoryId),
+    exercisesNameIdx: index('exercises_name_idx').on(table.name),
   };
 });
 
@@ -168,6 +169,10 @@ export const foods = pgTable('foods', {
   proteinPer100g: numeric('protein_per_100g', { precision: 10, scale: 2 }),
   carbsPer100g: numeric('carbs_per_100g', { precision: 10, scale: 2 }),
   fatPer100g: numeric('fat_per_100g', { precision: 10, scale: 2 }),
+}, (table) => {
+  return {
+    foodsNameIdx: index('foods_name_idx').on(table.name),
+  };
 });
 
 export const foodLogs = pgTable('food_logs', {
@@ -176,6 +181,10 @@ export const foodLogs = pgTable('food_logs', {
   foodId: integer('food_id').notNull().references(() => foods.id),
   date: date('date').notNull(),
   servingSizeG: numeric('serving_size_g', { precision: 10, scale: 2 }).notNull(),
+}, (table) => {
+  return {
+    foodLogsUserDateIdx: index('food_logs_user_date_idx').on(table.userId, table.date),
+  };
 });
 
 // Goal Tracking
@@ -191,6 +200,10 @@ export const userGoals = pgTable('user_goals', {
   endDate: date('end_date'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+}, (table) => {
+  return {
+    userGoalsUserIdIdx: index('user_goals_user_id_idx').on(table.userId),
+  };
 });
 
 // Social/Community Features
