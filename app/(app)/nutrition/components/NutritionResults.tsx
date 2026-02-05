@@ -528,7 +528,7 @@ export default function NutritionResults({ userData, onEdit }: NutritionResultsP
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {recipes.map(recipe => (
+              {recipes.map((recipe, index) => (
                 <a 
                   key={recipe.id} 
                   href={`https://spoonacular.com/recipes/${recipe.title.replace(/\s+/g, '-')}-${recipe.id}`} 
@@ -538,7 +538,14 @@ export default function NutritionResults({ userData, onEdit }: NutritionResultsP
                 >
                   <div className="bg-card rounded-2xl overflow-hidden border border-border/50 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full flex flex-col">
                     <div className="relative w-full h-40">
-                      <Image src={recipe.image} alt={recipe.title} layout="fill" objectFit="cover" className="group-hover:scale-105 transition-transform duration-500" />
+                      <Image 
+                        src={recipe.image} 
+                        alt={recipe.title} 
+                        layout="fill" 
+                        objectFit="cover" 
+                        className="group-hover:scale-105 transition-transform duration-500"
+                        priority={index < 4}
+                      />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
                         <span className="text-white text-xs font-medium flex items-center gap-1">
                           View Recipe <Plus className="w-3 h-3" />

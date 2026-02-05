@@ -85,7 +85,7 @@ export default function DashboardPage() {
       } catch (error) {
         console.error("Failed to fetch dashboard data", error);
       } finally {
-        setTimeout(() => setLoading(false), 800); // Add a small delay for smoother feel
+        setLoading(false);
       }
     };
 
