@@ -1049,58 +1049,137 @@ export default function AdminDashboard() {
                                         </div>
                                     </div>
 
-                                    {/* Exercise List Table */}
-                                    <div className="lg:col-span-3 bg-card border rounded-[2rem] shadow-xl overflow-hidden">
-                                        <div className="overflow-x-auto">
-                                            <table className="w-full border-collapse">
-                                                <thead>
-                                                    <tr className="bg-muted/50 text-left text-[10px] font-black text-muted-foreground uppercase tracking-widest">
-                                                        <th className="px-8 py-6">Exercise</th>
-                                                        <th className="px-8 py-6">Category</th>
-                                                        <th className="px-8 py-6 text-right">Actions</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-border/50">
-                                                    {contentLoading ? (
-                                                        <tr><td colSpan={3} className="py-32 text-center"><Loader2 className="w-12 h-12 animate-spin mx-auto text-primary opacity-50" /></td></tr>
-                                                    ) : exerciseList.length > 0 ? (
-                                                        exerciseList.map((ex: any) => (
-                                                            <tr key={ex.id} className="hover:bg-muted/20 transition-colors group">
-                                                                <td className="px-8 py-6">
-                                                                    <div className="flex items-center gap-4">
-                                                                        <div className="w-14 h-14 rounded-2xl bg-muted overflow-hidden border-2 border-background flex items-center justify-center shrink-0">
-                                                                            {ex.imageUrl ? (
-                                                                                <img src={ex.imageUrl} alt={ex.name} className="w-full h-full object-cover" />
-                                                                            ) : (
-                                                                                <ImageIcon className="w-6 h-6 text-muted-foreground" />
-                                                                            )}
+                                    {/* Exercise List Area */}
+                                    <div className="lg:col-span-3 space-y-6">
+                                        <div className="bg-card border rounded-[2rem] shadow-xl overflow-hidden">
+                                            {/* Header Table (Hidden on Mobile) */}
+                                            <div className="hidden md:block overflow-x-auto">
+                                                <table className="w-full border-collapse">
+                                                    <thead>
+                                                        <tr className="bg-muted/50 text-left text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                                                            <th className="px-8 py-6">Exercise</th>
+                                                            <th className="px-8 py-6">Category</th>
+                                                            <th className="px-8 py-6 text-right">Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-border/50">
+                                                        {contentLoading ? (
+                                                            <tr><td colSpan={3} className="py-32 text-center"><Loader2 className="w-12 h-12 animate-spin mx-auto text-primary opacity-50" /></td></tr>
+                                                        ) : exerciseList.length > 0 ? (
+                                                            exerciseList.map((ex: any) => (
+                                                                <tr key={ex.id} className="hover:bg-muted/20 transition-colors group">
+                                                                    <td className="px-8 py-6">
+                                                                        <div className="flex items-center gap-4">
+                                                                            <div className="w-14 h-14 rounded-2xl bg-muted overflow-hidden border-2 border-background flex items-center justify-center shrink-0">
+                                                                                {ex.imageUrl ? (
+                                                                                    <img src={ex.imageUrl} alt={ex.name} className="w-full h-full object-cover" />
+                                                                                ) : (
+                                                                                    <ImageIcon className="w-6 h-6 text-muted-foreground" />
+                                                                                )}
+                                                                            </div>
+                                                                            <div>
+                                                                                <p className="font-bold text-foreground leading-tight">{ex.name}</p>
+                                                                                <p className="text-[10px] text-muted-foreground line-clamp-1 mt-1">{ex.description || 'No description provided.'}</p>
+                                                                            </div>
                                                                         </div>
-                                                                        <div>
-                                                                            <p className="font-bold text-foreground leading-tight">{ex.name}</p>
-                                                                            <p className="text-[10px] text-muted-foreground line-clamp-1 mt-1">{ex.description || 'No description provided.'}</p>
-                                                                        </div>
-                                                                    </div>
-                                                                </td>
-                                                                <td className="px-8 py-6">
-                                                                    <span className="text-[10px] px-3 py-1 rounded-lg font-black uppercase bg-primary/10 text-primary border border-primary/20">
+                                                                    </td>
+                                                                    <td className="px-8 py-6">
+                                                                        <span className="text-[10px] px-3 py-1 rounded-lg font-black uppercase bg-primary/10 text-primary border border-primary/20">
+                                                                            {ex.categoryName || 'General'}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td className="px-8 py-6 text-right">
+                                                                        <button 
+                                                                            onClick={() => handleDeleteExercise(ex.id)}
+                                                                            className="p-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-2xl transition-all"
+                                                                        >
+                                                                            <Trash2 className="w-5 h-5" />
+                                                                        </button>
+                                                                    </td>
+                                                                </tr>
+                                                            ))
+                                                        ) : (
+                                                            <tr><td colSpan={3} className="py-32 text-center text-muted-foreground font-medium italic">No exercises found.</td></tr>
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            {/* Mobile Card Layout (Visible on Mobile) */}
+                                            <div className="md:hidden divide-y divide-border/50">
+                                                {contentLoading ? (
+                                                    <div className="py-20 text-center"><Loader2 className="w-10 h-10 animate-spin mx-auto text-primary opacity-50" /></div>
+                                                ) : exerciseList.length > 0 ? (
+                                                    exerciseList.map((ex: any) => (
+                                                        <div key={ex.id} className="p-6 space-y-4">
+                                                            <div className="flex items-start gap-4">
+                                                                <div className="w-16 h-16 rounded-2xl bg-muted overflow-hidden border-2 border-background flex items-center justify-center shrink-0 shadow-sm">
+                                                                    {ex.imageUrl ? (
+                                                                        <img src={ex.imageUrl} alt={ex.name} className="w-full h-full object-cover" />
+                                                                    ) : (
+                                                                        <ImageIcon className="w-6 h-6 text-muted-foreground" />
+                                                                    )}
+                                                                </div>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <p className="font-bold text-foreground text-base leading-tight break-words">{ex.name}</p>
+                                                                    <span className="inline-block mt-2 text-[9px] px-2 py-0.5 rounded-md font-black uppercase bg-primary/10 text-primary border border-primary/20">
                                                                         {ex.categoryName || 'General'}
                                                                     </span>
-                                                                </td>
-                                                                <td className="px-8 py-6 text-right">
-                                                                    <button 
-                                                                        onClick={() => handleDeleteExercise(ex.id)}
-                                                                        className="p-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-2xl transition-all"
-                                                                    >
-                                                                        <Trash2 className="w-5 h-5" />
-                                                                    </button>
-                                                                </td>
-                                                            </tr>
-                                                        ))
-                                                    ) : (
-                                                        <tr><td colSpan={3} className="py-32 text-center text-muted-foreground font-medium italic">No exercises found.</td></tr>
-                                                    )}
-                                                </tbody>
-                                            </table>
+                                                                </div>
+                                                                <button 
+                                                                    onClick={() => handleDeleteExercise(ex.id)}
+                                                                    className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all"
+                                                                >
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
+                                                            <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed italic bg-muted/30 p-3 rounded-xl border border-border/50">
+                                                                {ex.description || 'No instructions available.'}
+                                                            </p>
+                                                        </div>
+                                                    ))
+                                                ) : (
+                                                    <div className="py-20 text-center text-muted-foreground italic text-sm">No exercises found.</div>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Exercises Pagination */}
+                                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-card border rounded-3xl p-6 shadow-sm">
+                                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">
+                                                Showing {((exercisePage - 1) * LIMIT) + 1} - {Math.min(exercisePage * LIMIT, totalExercises)} of {totalExercises}
+                                            </p>
+                                            <div className="flex items-center gap-2">
+                                                <Button 
+                                                    variant="outline" 
+                                                    size="sm" 
+                                                    className="rounded-xl h-10 px-4 font-bold"
+                                                    disabled={exercisePage === 1}
+                                                    onClick={() => setExercisePage(p => p - 1)}
+                                                >
+                                                    <ChevronLeft className="w-4 h-4 mr-1" /> Prev
+                                                </Button>
+                                                <div className="hidden sm:flex items-center gap-1">
+                                                    {[...Array(Math.ceil(totalExercises / LIMIT))].map((_, i) => (
+                                                        <button 
+                                                            key={i}
+                                                            onClick={() => setExercisePage(i + 1)}
+                                                            className={`w-10 h-10 rounded-xl text-xs font-black transition-all ${exercisePage === i + 1 ? 'bg-primary text-primary-foreground shadow-lg' : 'hover:bg-muted text-muted-foreground'}`}
+                                                        >
+                                                            {i + 1}
+                                                        </button>
+                                                    )).slice(Math.max(0, exercisePage - 3), Math.min(Math.ceil(totalExercises / LIMIT), exercisePage + 2))}
+                                                </div>
+                                                <Button 
+                                                    variant="outline" 
+                                                    size="sm" 
+                                                    className="rounded-xl h-10 px-4 font-bold"
+                                                    disabled={exercisePage >= Math.ceil(totalExercises / LIMIT)}
+                                                    onClick={() => setExercisePage(p => p + 1)}
+                                                >
+                                                    Next <ChevronRight className="w-4 h-4 ml-1" />
+                                                </Button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
