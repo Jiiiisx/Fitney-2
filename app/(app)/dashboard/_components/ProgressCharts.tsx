@@ -114,7 +114,7 @@ export default function ProgressCharts({ weeklyData, isLoading }: ProgressCharts
       </CardHeader>
       <CardContent className="px-2 sm:px-6 pb-6">
         <div className="h-[250px] sm:h-[280px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
             {activeTab === "workout" ? (
               <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>

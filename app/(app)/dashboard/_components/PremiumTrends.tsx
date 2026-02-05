@@ -31,7 +31,7 @@ export default function PremiumTrends({ data, isPremium }: PremiumTrendsProps) {
                 <p className="text-xs text-muted-foreground">Correlation between daily calorie intake and weight fluctuation (Last 30 Days)</p>
             </CardHeader>
             <CardContent className="h-[300px] relative">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                     <LineChart data={data}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                         <XAxis 

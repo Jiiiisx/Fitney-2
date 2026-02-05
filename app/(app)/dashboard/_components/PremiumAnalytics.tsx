@@ -29,7 +29,7 @@ export default function PremiumAnalytics({ data, isPremium }: PremiumAnalyticsPr
                 <p className="text-xs text-muted-foreground">Comprehensive view of your physical health dimensions</p>
             </CardHeader>
             <CardContent className="h-[350px] relative">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                     <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
                         <PolarGrid stroke="hsl(var(--border))" />
                         <PolarAngleAxis 
