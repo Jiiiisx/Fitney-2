@@ -56,6 +56,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <main className={cn(
               "relative z-20 transition-all duration-700 overflow-hidden",
               isFixedLayoutPage ? "lg:flex-grow" : "",
+              pathname === "/settings" ? "lg:overflow-y-auto" : "",
               (pathname === "/dashboard" || pathname === "/community" || pathname === "/ai-coach") 
                 ? "bg-white dark:bg-neutral-950 mt-4 rounded-t-[3.5rem] shadow-[0_-20px_50px_-15px_rgba(0,0,0,0.05)] border-t border-white/50" 
                 : "p-6 sm:p-8"
