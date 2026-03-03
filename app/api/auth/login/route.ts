@@ -10,22 +10,34 @@ import { authRateLimit } from "@/app/lib/ratelimit";
 
 export async function POST(req: Request) {
   try {
-    // 1. Rate Limiting Check
-    const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
-    const { success, limit, reset, remaining } = await authRateLimit.limit(ip);
-    
-    if (!success) {
-      return NextResponse.json(
-        { error: "Too many attempts. Please try again in 10 minutes." },
-        { 
-          status: 429,
-          headers: {
-            "X-RateLimit-Limit": limit.toString(),
-            "X-RateLimit-Remaining": remaining.toString(),
-            "X-RateLimit-Reset": reset.toString(),
+    // 1. Rate Limiting Check (with fail-safe)
+    let rateLimitInfo = { success: true, limit: 10, reset: 0, remaining: 10 };
+    try {
+      const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
+      const result = await authRateLimit.limit(ip);
+      rateLimitInfo = { 
+        success: result.success, 
+        limit: result.limit, 
+        reset: result.reset, 
+        remaining: result.remaining 
+      };
+      
+      if (!rateLimitInfo.success) {
+        return NextResponse.json(
+          { error: "Too many attempts. Please try again later." },
+          { 
+            status: 429,
+            headers: {
+              "X-RateLimit-Limit": rateLimitInfo.limit.toString(),
+              "X-RateLimit-Remaining": rateLimitInfo.remaining.toString(),
+              "X-RateLimit-Reset": rateLimitInfo.reset.toString(),
+            }
           }
-        }
-      );
+        );
+      }
+    } catch (rlError) {
+      console.warn('Rate limit connection failed, skipping check:', rlError);
+      // Continue even if rate limiter is down (fail-safe)
     }
 
     const body = await req.json();
@@ -112,8 +124,14 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ user: userWithoutPassword });
-  } catch (error) {
-    console.error('LOGIN_ERROR', error);
-    return NextResponse.json({ error: 'Internal Server Down' }, { status: 500 });
+  } catch (error: any) {
+    console.error('LOGIN_ERROR:', error.message);
+    
+    // Check for specific database errors if needed
+    if (error.code === 'ECONNREFUSED') {
+      return NextResponse.json({ error: 'Database connection failed. Please try again later.' }, { status: 503 });
+    }
+
+    return NextResponse.json({ error: 'An unexpected error occurred. Please try again.' }, { status: 500 });
   }
 }

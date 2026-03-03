@@ -10,7 +10,8 @@ import Pricing from "../(marketing)/Pricing";
 import Faq from "../(marketing)/Faq";
 import ClosingCta from "../(marketing)/ClosingCta";
 import Footer from "../(marketing)/Footer";
-import { Loader2 } from "lucide-react";
+import { Loader2, Flame, Heart, CheckCircle2 } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
@@ -32,14 +33,14 @@ export default function Home() {
 
   return (
     <>
-      <div className="bg-gradient-to-b from-white to-[#fff9e6] min-h-screen lg:h-screen flex items-center pt-20 lg:pt-0">
+      <div className="bg-gradient-to-b from-white to-[#fff9e6] min-h-screen flex items-center pt-24 lg:pt-32 pb-20">
         <div className="container mx-auto px-6 lg:px-12">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-20">
             <div className="max-w-2xl mx-auto lg:mx-0 text-center lg:text-left flex flex-col items-center lg:items-start">
-              <h1 className="text-3xl sm:text-5xl lg:text-7xl font-black text-gray-800 tracking-tight leading-tight">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-gray-800 tracking-tight leading-[1.1]">
                 Find your healthiest you with
               </h1>
-              <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-yellow-500 mt-1 tracking-tight">
+              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black text-yellow-500 mt-0 tracking-tight">
                 Fitney
               </h1>
               <p className="text-gray-600 mt-6 text-base sm:text-xl max-w-xl mx-auto lg:mx-0 leading-relaxed opacity-90">
@@ -58,17 +59,105 @@ export default function Home() {
                 </button>
               </div>
             </div>
+
             <div className="hidden lg:block w-full max-w-none px-4">
-              <div className="relative">
-                <div className="absolute -inset-4 bg-yellow-400/20 rounded-[3rem] blur-3xl -z-10 animate-pulse"></div>
-                <Image
-                  src={heroImage}
-                  width={1200}
-                  height={1200}
-                  alt="Fitness"
-                  className="rounded-[2.5rem] shadow-2xl rotate-2 hover:rotate-0 transition-transform duration-500"
-                  priority
+              <div className="relative group">
+                {/* Decorative Background Shapes */}
+                <motion.div 
+                  animate={{ 
+                    scale: [1, 1.1, 1],
+                    rotate: [0, 5, 0] 
+                  }}
+                  transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+                  className="absolute -top-20 -right-20 w-64 h-64 bg-yellow-200/30 rounded-full blur-3xl -z-10"
                 />
+                <motion.div 
+                  animate={{ 
+                    scale: [1, 1.2, 1],
+                    rotate: [0, -5, 0] 
+                  }}
+                  transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                  className="absolute -bottom-20 -left-20 w-80 h-80 bg-orange-200/20 rounded-full blur-3xl -z-10"
+                />
+
+                {/* Main Image Container */}
+                <div className="relative z-10">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9, rotate: 5 }}
+                    animate={{ opacity: 1, scale: 1, rotate: 2 }}
+                    transition={{ duration: 0.8 }}
+                    whileHover={{ rotate: 0, scale: 1.02 }}
+                    className="relative"
+                  >
+                    <div className="absolute -inset-4 bg-yellow-400/20 rounded-[3rem] blur-2xl -z-10 opacity-50 group-hover:opacity-100 transition-opacity"></div>
+                    <Image
+                      src={heroImage}
+                      width={1200}
+                      height={1200}
+                      alt="Fitness"
+                      className="rounded-[2.5rem] shadow-2xl transition-all duration-500"
+                      priority
+                    />
+                  </motion.div>
+
+                  {/* Floating UI Elements */}
+                  <motion.div
+                    initial={{ x: 50, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.5, duration: 0.8 }}
+                    className="absolute -right-8 top-10 bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-white/50 z-20"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="bg-orange-100 p-2 rounded-xl">
+                        <Flame className="w-6 h-6 text-orange-500" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Calories</p>
+                        <p className="text-xl font-black text-gray-800">1,284 kcal</p>
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ x: -50, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: 0.7, duration: 0.8 }}
+                    className="absolute -left-12 bottom-20 bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-white/50 z-20"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="bg-green-100 p-2 rounded-xl">
+                        <CheckCircle2 className="w-6 h-6 text-green-500" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Goal Reached</p>
+                        <p className="text-sm font-bold text-gray-800">Daily Workout</p>
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ y: 50, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.9, duration: 0.8 }}
+                    className="absolute right-20 -bottom-10 bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-white/50 z-20"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="flex flex-col">
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Heart Rate</p>
+                        <div className="flex items-end gap-1">
+                          <p className="text-xl font-black text-gray-800">72</p>
+                          <p className="text-[10px] font-bold text-red-500 mb-1">BPM</p>
+                        </div>
+                      </div>
+                      <motion.div 
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ duration: 0.8, repeat: Infinity }}
+                      >
+                        <Heart className="w-6 h-6 text-red-500 fill-red-500" />
+                      </motion.div>
+                    </div>
+                  </motion.div>
+                </div>
               </div>
             </div>
           </div>

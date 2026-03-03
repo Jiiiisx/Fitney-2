@@ -1,11 +1,13 @@
 "use client";
 
+import Link from "next/link";
+
 const navigation = {
   links: [
-    { name: "About", href: "#" },
-    { name: "Pricing", href: "#" },
-    { name: "Privacy Policy", href: "#" },
-    { name: "Contact", href: "#" },
+    { name: "About", href: "/#about" },
+    { name: "Pricing", href: "/#pricing" },
+    { name: "Privacy Policy", href: "/privacy" },
+    { name: "Terms of Service", href: "/terms" },
   ],
   social: [
     {
@@ -70,12 +72,12 @@ export default function Footer() {
               <ul role="list" className="mt-6 space-y-4">
                 {navigation.links.slice(0, 2).map((item) => (
                   <li key={item.name}>
-                    <a
+                    <Link
                       href={item.href}
                       className="text-sm font-medium text-gray-600 hover:text-yellow-600 transition-colors"
                     >
                       {item.name}
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -87,12 +89,12 @@ export default function Footer() {
               <ul role="list" className="mt-6 space-y-4">
                 {navigation.links.slice(2).map((item) => (
                   <li key={item.name}>
-                    <a
+                    <Link
                       href={item.href}
                       className="text-sm font-medium text-gray-600 hover:text-yellow-600 transition-colors"
                     >
                       {item.name}
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -103,11 +105,11 @@ export default function Footer() {
         {/* Copyright */}
         <div className="mt-16 border-t border-gray-900/10 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-center">
           <p className="text-xs font-medium text-gray-500">
-            &copy; 2025 Fitney Inc. All rights reserved.
+            &copy; 2026 Fitney Inc. All rights reserved.
           </p>
           <div className="flex gap-6">
-             <a href="#" className="text-[10px] font-bold text-gray-400 hover:text-gray-600 uppercase tracking-widest">Policy</a>
-             <a href="#" className="text-[10px] font-bold text-gray-400 hover:text-gray-600 uppercase tracking-widest">Terms</a>
+             <Link href="/privacy" className="text-[10px] font-bold text-gray-400 hover:text-gray-600 uppercase tracking-widest">Privacy Policy</Link>
+             <Link href="/terms" className="text-[10px] font-bold text-gray-400 hover:text-gray-600 uppercase tracking-widest">Terms of Service</Link>
           </div>
         </div>
       </div>

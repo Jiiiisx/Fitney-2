@@ -26,32 +26,46 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string>("");
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 500);
-    return () => clearTimeout(timer);
+    
+    const initGoogle = () => {
+      if (typeof window !== 'undefined' && (window as any).google) {
+        const google = (window as any).google;
+        google.accounts.id.initialize({
+          client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+          callback: handleGoogleResponse,
+          auto_select: false,
+          use_fedcm_for_prompt: true
+        });
+        
+        const googleBtnWrapper = document.getElementById("google-button-wrapper");
+        if (googleBtnWrapper) {
+          google.accounts.id.renderButton(googleBtnWrapper, { 
+            theme: "outline", 
+            size: "large",
+            width: googleBtnWrapper.offsetWidth,
+            shape: "pill"
+          });
+        }
+      }
+    };
+
+    const scriptTimer = setTimeout(initGoogle, 1000);
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(scriptTimer);
+    };
   }, []);
 
-  const handleGoogleLogin = () => {
-    if (typeof window !== 'undefined' && (window as any).google) {
-      const google = (window as any).google;
-      google.accounts.id.initialize({
-        client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
-        callback: handleGoogleResponse,
-        ux_mode: "popup"
-      });
-      google.accounts.id.prompt(); // Also show one-tap if available
-      
-      // Explicitly trigger the selector for the custom button
-      // Use a hidden div to render the standard button but trigger it manually
-      // or use the 'prompt' which is standard for custom UI.
-    }
-  };
-
+  // No need for handleGoogleLogin function with overlay strategy
+  
   const handleGoogleResponse = async (response: any) => {
     try {
-      setLoading(true);
+      setIsSubmitting(true);
       const res = await fetch('/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -68,11 +82,11 @@ export default function LoginPage() {
       } else {
         const data = await res.json();
         setError(data.error || 'Google login failed');
-        setLoading(false);
+        setIsSubmitting(false);
       }
     } catch (err) {
       setError('Something went wrong with Google login');
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -84,6 +98,8 @@ export default function LoginPage() {
       setError("Please complete the security check.");
       return;
     }
+
+    setIsSubmitting(true);
 
     try {
       const res = await fetch('/api/auth/login', {
@@ -106,10 +122,12 @@ export default function LoginPage() {
       } else {
         const data = await res.json();
         setError(data.error || 'Invalid credentials');
+        setIsSubmitting(false);
       }
     } catch (err) {
       setError('Something went wrong');
       console.error(err);
+      setIsSubmitting(false);
     }
   };
 
@@ -136,17 +154,22 @@ export default function LoginPage() {
       </div>
 
       <div className="space-y-8">
-        {/* Custom Premium Google Button */}
-        <button
-          type="button"
-          onClick={handleGoogleLogin}
-          className="w-full h-14 bg-white dark:bg-neutral-900 border-2 border-neutral-100 dark:border-neutral-800 rounded-2xl flex items-center justify-center gap-3 font-bold text-neutral-700 dark:text-white hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all active:scale-[0.98] shadow-sm hover:shadow-xl hover:shadow-neutral-200/50 dark:hover:shadow-black/20 group"
-        >
-          <div className="bg-white p-1.5 rounded-lg shadow-sm group-hover:scale-110 transition-transform duration-300">
-            <GoogleIcon />
+        {/* Custom Premium Google Button with Transparent Native Overlay */}
+        <div className="relative h-14 w-full">
+          {/* Your Pretty Design Button */}
+          <div className="absolute inset-0 bg-white dark:bg-neutral-900 border-2 border-neutral-100 dark:border-neutral-800 rounded-2xl flex items-center justify-center gap-3 font-bold text-neutral-700 dark:text-white group">
+            <div className="bg-white p-1.5 rounded-lg shadow-sm group-hover:scale-110 transition-transform duration-300">
+              <GoogleIcon />
+            </div>
+            Sign in with Google
           </div>
-          Sign in with Google
-        </button>
+          
+          {/* The REAL Google Button (Invisible but clickable) */}
+          <div 
+            id="google-button-wrapper" 
+            className="absolute inset-0 opacity-[0.01] z-20 overflow-hidden cursor-pointer [&>div]:h-full [&>div]:w-full"
+          ></div>
+        </div>
 
         <div className="flex items-center gap-4">
           <div className="flex-grow h-px bg-neutral-100 dark:bg-neutral-800"></div>
@@ -196,14 +219,25 @@ export default function LoginPage() {
           <div className="flex justify-center py-2">
             <Turnstile 
               siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!} 
-              onVerify={(token) => setTurnstileToken(token)}
+              onSuccess={(token) => setTurnstileToken(token)}
             />
           </div>
 
           {error && <p className="text-red-500 text-xs font-bold text-center bg-red-50 dark:bg-red-950/20 py-3 rounded-xl border border-red-100 dark:border-red-900/30">{error}</p>}
           
-          <Button type="submit" className="w-full h-14 text-lg font-black rounded-2xl bg-yellow-400 text-yellow-950 hover:bg-yellow-500 shadow-lg shadow-yellow-400/20 active:scale-[0.98] transition-all">
-            Sign In
+          <Button 
+            type="submit" 
+            disabled={isSubmitting}
+            className="w-full h-14 text-lg font-black rounded-2xl bg-yellow-400 text-yellow-950 hover:bg-yellow-500 shadow-lg shadow-yellow-400/20 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            {isSubmitting ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Signing In...</span>
+              </div>
+            ) : (
+              "Sign In"
+            )}
           </Button>
           
           <div className="flex items-center justify-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
@@ -219,6 +253,11 @@ export default function LoginPage() {
           Sign Up
         </Link>
       </p>
+
+      <div className="mt-8 pt-8 border-t border-neutral-100 dark:border-neutral-800 flex justify-center gap-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-40">
+        <Link href="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
+        <Link href="/terms" className="hover:text-primary transition-colors">Terms of Service</Link>
+      </div>
     </div>
   );
 }
