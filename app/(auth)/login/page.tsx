@@ -261,7 +261,7 @@ export default function LoginPage() {
         </Link>
       </p>
 
-      <div className="mt-8 pt-8 border-t border-neutral-100 dark:border-neutral-800 flex justify-center gap-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-40">
+      <div className="mt-8 pt-8 border-t border-neutral-100 dark:border-neutral-800 flex justify-center gap-6 text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-40 lg:hidden">
         <Link href="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
         <Link href="/terms" className="hover:text-primary transition-colors">Terms of Service</Link>
       </div>
