@@ -43,7 +43,7 @@ export default function LoginPage() {
           callback: handleGoogleResponse,
           auto_select: false,
           itp_support: true,
-          use_fedcm_for_prompt: true
+          use_fedcm_for_prompt: false // Set to false to avoid automatic FedCM prompt conflict
         });
         
         const googleBtnWrapper = document.getElementById("google-button-wrapper");
@@ -51,7 +51,7 @@ export default function LoginPage() {
           google.accounts.id.renderButton(googleBtnWrapper, { 
             theme: "outline", 
             size: "large",
-            width: googleBtnWrapper.offsetWidth,
+            width: googleBtnWrapper.clientWidth || 400,
             shape: "pill"
           });
           (window as any).google_auth_initialized = true;
@@ -59,7 +59,7 @@ export default function LoginPage() {
       }
     };
 
-    const scriptTimer = setTimeout(initGoogle, 1000);
+    const scriptTimer = setTimeout(initGoogle, 1500); // Wait a bit longer for DOM to settle
     return () => {
       clearTimeout(timer);
       clearTimeout(scriptTimer);
@@ -68,6 +68,7 @@ export default function LoginPage() {
 
   const handleGoogleResponse = async (response: any) => {
     try {
+      if (!response.credential) return;
       setIsSubmitting(true);
       setError('');
       

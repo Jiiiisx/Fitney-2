@@ -16,17 +16,27 @@ export async function POST(req: Request) {
     }
 
     // Verify Google Token via Google API
-    const verifyRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${credential}`);
+    let verifyRes;
+    try {
+      verifyRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${credential}`);
+    } catch (fetchError: any) {
+      console.error('GOOGLE_FETCH_ERROR:', fetchError.message);
+      return NextResponse.json({ error: 'Failed to reach Google servers. Check your internet connection.' }, { status: 503 });
+    }
     
     if (!verifyRes.ok) {
-      return NextResponse.json({ error: 'Invalid Google token' }, { status: 401 });
+      const errorData = await verifyRes.json();
+      console.error('GOOGLE_VERIFY_FAILURE:', errorData);
+      return NextResponse.json({ error: 'Invalid Google token or expired session' }, { status: 401 });
     }
 
     const payload = await verifyRes.json();
 
     // Basic validation
-    if (payload.aud !== process.env.GOOGLE_CLIENT_ID) {
-      return NextResponse.json({ error: 'Invalid audience' }, { status: 401 });
+    const clientId = process.env.GOOGLE_CLIENT_ID || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    if (payload.aud !== clientId) {
+      console.error('GOOGLE_AUDIENCE_MISMATCH:', { payloadAud: payload.aud, envId: clientId });
+      return NextResponse.json({ error: 'Invalid audience configuration' }, { status: 401 });
     }
 
     const { email, name, picture, sub: googleId } = payload;

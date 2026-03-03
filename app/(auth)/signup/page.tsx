@@ -45,7 +45,7 @@ export default function SignupPage() {
           callback: handleGoogleResponse,
           auto_select: false,
           itp_support: true,
-          use_fedcm_for_prompt: true
+          use_fedcm_for_prompt: false // Set to false to avoid automatic FedCM prompt conflict
         });
         
         const googleBtnWrapper = document.getElementById("google-button-wrapper");
