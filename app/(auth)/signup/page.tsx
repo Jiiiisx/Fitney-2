@@ -36,11 +36,15 @@ export default function SignupPage() {
     
     const initGoogle = () => {
       if (typeof window !== 'undefined' && (window as any).google) {
+        // Prevent double initialization
+        if ((window as any).google_auth_initialized) return;
+
         const google = (window as any).google;
         google.accounts.id.initialize({
           client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
           callback: handleGoogleResponse,
           auto_select: false,
+          itp_support: true,
           use_fedcm_for_prompt: true
         });
         
@@ -52,6 +56,7 @@ export default function SignupPage() {
             width: googleBtnWrapper.offsetWidth,
             shape: "pill"
           });
+          (window as any).google_auth_initialized = true;
         }
       }
     };
@@ -63,11 +68,11 @@ export default function SignupPage() {
     };
   }, []);
 
-  // No need for handleGoogleSignup function with overlay strategy
-
   const handleGoogleResponse = async (response: any) => {
     try {
       setIsSubmitting(true);
+      setError('');
+
       const res = await fetch('/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -78,11 +83,12 @@ export default function SignupPage() {
         router.push('/dashboard');
       } else {
         const data = await res.json();
-        setError(data.error || 'Google signup failed');
+        setError(data.error || 'Signup failed. Check if you are registered as a test user.');
         setIsSubmitting(false);
       }
     } catch (err) {
-      setError('Something went wrong with Google login');
+      console.error('Google Auth Error:', err);
+      setError('Connection to Google login server failed.');
       setIsSubmitting(false);
     }
   };
